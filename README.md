@@ -1,50 +1,35 @@
-# Welcome to your Expo app 👋
+## Techstack
+- **Framework:** React Native / Expo (SDK 54) 
+- **Routing:** Expo Router
+- **State/Forms:** React Hook Form + Zod
+- **Testing:** Jest + React Testing Library
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**EXPO** because I realized on device rendering requires much higher performance, we needed React Native for performance, Capacitor basically just tricks the device into making a website which then we're limited to JS performance which is dogshit. We can dev for all 3 platforms using typescript. Kotlin also kinda works but multi platform is really jank. 
 
-## Get started
+SideNote: We may need to migrate to SDK55 soonish
 
-1. Install dependencies
+A litle bit on EXPO how to use
+- Each file is a **Page**
+- We **do not** need a master stack navitgator
+- Also we don't need to manage tokens
 
-   ```bash
-   npm install
-   ```
+**Zod** is a hook for forms, basically removed a crap ton of if statements. Pretty easy to use just get AI to gen the forms but must make logic first.
 
-2. Start the app
+**Jest** is industry standard for testing for React Native, since we use expo we don't need docker for env testing which is really nice but downside is that we need E2E testing.
 
-   ```bash
-   npx expo start
-   ```
+## How to run
+Clone the repo 
 
-In the output, you'll find options to open the app in a
+run ``` npm install ```
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+run ``` npm start ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Scan QR Code with iPhone Camera App
+- Ensure iPhone and Laptop is on same network 
+- Ensure the EXPO GO app is installed
 
-## Get a fresh project
+Or Run in web via LocalHost
 
-When you're ready, run:
+For Testing ``` npm test ```
 
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Note: App is pretty big, may take a while to clone.
