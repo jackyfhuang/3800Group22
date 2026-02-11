@@ -1,98 +1,240 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
+import React, { useState } from 'react';
+import { StyleSheet, ScrollView, TouchableOpacity, View, RefreshControl, Alert } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+
+type ChildProfile = {
+  fullName: string;
+  age: number;
+  height: number;
+  weight: number;
+  gender?: string;
+  medicalNotes?: string;
+  id?: string;
+};
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const router = useRouter();
+  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
+  const loadChildren = async () => {
+    try {
+      // Try to load as array first (new format)
+      const childrenJson = await AsyncStorage.getItem('children_list');
+      if (childrenJson) {
+        const childrenList = JSON.parse(childrenJson);
+        setChildren(childrenList);
+        return;
+      }
+
+      // Fallback: check for old single child format
+      const oldChildJson = await AsyncStorage.getItem('child_profile');
+      if (oldChildJson) {
+        const oldChild = JSON.parse(oldChildJson);
+        // Migrate to new format
+        const migratedChild = { ...oldChild, id: Date.now().toString() };
+        await AsyncStorage.setItem('children_list', JSON.stringify([migratedChild]));
+        await AsyncStorage.removeItem('child_profile');
+        setChildren([migratedChild]);
+      } else {
+        setChildren([]);
+      }
+    } catch (error) {
+      console.error('Error loading children:', error);
+      setChildren([]);
+    }
+  };
+
+  // Reload when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadChildren();
+    }, [])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadChildren();
+    setRefreshing(false);
+  };
+
+  const handleDeleteChild = async (id: string, name: string) => {
+    Alert.alert(
+      'Delete Child',
+      `Are you sure you want to delete ${name}'s profile?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const updatedChildren = children.filter(child => child.id !== id);
+              await AsyncStorage.setItem('children_list', JSON.stringify(updatedChildren));
+              setChildren(updatedChildren);
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete child profile');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+      <ThemedView style={styles.header}>
+        <ThemedText type="title">ChildGuard</ThemedText>
+        <ThemedText style={styles.subtitle}>Your Child Profiles</ThemedText>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => router.push('/add_child')}>
+        <IconSymbol name="plus.circle.fill" size={24} color="#fff" />
+        <ThemedText style={styles.addButtonText}>Add New Child</ThemedText>
+      </TouchableOpacity>
+
+      {children.length === 0 ? (
+        <ThemedView style={styles.emptyState}>
+          <IconSymbol name="person.circle" size={64} color="#999" />
+          <ThemedText style={styles.emptyText}>No children added yet</ThemedText>
+          <ThemedText style={styles.emptySubtext}>
+            Tap "Add New Child" to create your first profile
+          </ThemedText>
+        </ThemedView>
+      ) : (
+        <View style={styles.childrenList}>
+          {children.map((child) => (
+            <TouchableOpacity
+              key={child.id}
+              style={styles.childCard}
+              onPress={() => router.push({ pathname: '/add_child', params: { id: child.id } })}>
+              <View style={styles.childCardHeader}>
+                <View style={styles.childInfo}>
+                  <ThemedText type="defaultSemiBold" style={styles.childName}>
+                    {child.fullName}
+                  </ThemedText>
+                  <ThemedText style={styles.childDetails}>
+                    Age: {child.age} • {child.height}cm • {child.weight}kg
+                    {child.gender && ` • ${child.gender}`}
+                  </ThemedText>
+                </View>
+                <TouchableOpacity
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleDeleteChild(child.id!, child.fullName);
+                  }}
+                  style={styles.deleteButton}>
+                  <IconSymbol name="trash" size={20} color="#FF4444" />
+                </TouchableOpacity>
+              </View>
+              {child.medicalNotes && (
+                <ThemedText style={styles.medicalNotes} numberOfLines={2}>
+                  {child.medicalNotes}
+                </ThemedText>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 20,
+  },
+  header: {
+    marginBottom: 24,
+  },
+  subtitle: {
+    fontSize: 16,
+    opacity: 0.7,
+    marginTop: 4,
+  },
+  addButton: {
+    backgroundColor: '#007AFF',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
     gap: 8,
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  stepContainer: {
-    gap: 8,
+  addButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+    marginTop: 40,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  emptySubtext: {
+    fontSize: 14,
+    opacity: 0.6,
+    textAlign: 'center',
+  },
+  childrenList: {
+    gap: 12,
+  },
+  childCard: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  childCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  childInfo: {
+    flex: 1,
+  },
+  childName: {
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  childDetails: {
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  deleteButton: {
+    padding: 8,
+  },
+  medicalNotes: {
+    fontSize: 13,
+    opacity: 0.6,
+    marginTop: 8,
+    fontStyle: 'italic',
   },
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -13,7 +13,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Zod essentially can make input field rules really easy 
@@ -32,9 +32,11 @@ type ChildFormData = z.infer<typeof childSchema>;
 
 export default function AddChildScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const isEditMode = !!id;
 
   // Hook Logic, 
-const { control, handleSubmit, formState: { errors } } = useForm({
+const { control, handleSubmit, formState: { errors }, reset } = useForm({
   resolver: zodResolver(childSchema),
   defaultValues: {
     fullName: '',
@@ -46,21 +48,84 @@ const { control, handleSubmit, formState: { errors } } = useForm({
   }
 });
 
+  // Load existing child data if editing
+  useEffect(() => {
+    if (isEditMode && id) {
+      loadChildForEdit(id);
+    }
+  }, [id, isEditMode]);
+
+  const loadChildForEdit = async (childId: string) => {
+    try {
+      const childrenJson = await AsyncStorage.getItem('children_list');
+      if (childrenJson) {
+        const childrenList = JSON.parse(childrenJson);
+        const child = childrenList.find((c: any) => c.id === childId);
+        if (child) {
+          reset({
+            fullName: child.fullName || '',
+            age: child.age,
+            height: child.height,
+            weight: child.weight,
+            gender: child.gender || '',
+            medicalNotes: child.medicalNotes || '',
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading child for edit:', error);
+    }
+  };
+
   // SUBMIT HANDLER
 const onSubmit = async (data: ChildFormData) => {
   try {
-    // Convert JSON to a String (AsyncStorage only stores strings)
-    const jsonString = JSON.stringify(data);
+    // Get existing children list
+    const childrenJson = await AsyncStorage.getItem('children_list');
+    let childrenList = childrenJson ? JSON.parse(childrenJson) : [];
 
-    // Save it to the phone's disk
-    // We use a unique key 'child_profile' so we can find it later
-    await AsyncStorage.setItem('child_profile', jsonString);
+    if (isEditMode && id) {
+      // Update existing child
+      const childIndex = childrenList.findIndex((c: any) => c.id === id);
+      if (childIndex !== -1) {
+        childrenList[childIndex] = {
+          ...data,
+          id: id, // Keep the same ID
+        };
+        Alert.alert("Success", "Child profile updated!");
+      } else {
+        Alert.alert("Error", "Child profile not found");
+        return;
+      }
+    } else {
+      // Add new child with unique ID
+      const newChild = {
+        ...data,
+        id: Date.now().toString(), // Simple ID generation
+      };
+      childrenList.push(newChild);
+      Alert.alert("Success", "Child profile saved!");
+    }
 
-    console.log("Saved to Disk:", jsonString);
-    Alert.alert("Success", "Child saved to phone storage!");
+    // Save updated list back to storage
+    await AsyncStorage.setItem('children_list', JSON.stringify(childrenList));
+
+    // Also migrate old single child format if it exists
+    const oldChildJson = await AsyncStorage.getItem('child_profile');
+    if (oldChildJson && !isEditMode) {
+      // Only migrate if we're adding a new child (not editing)
+      const oldChild = JSON.parse(oldChildJson);
+      const migratedChild = { ...oldChild, id: (Date.now() + 1).toString() };
+      const updatedList = [...childrenList, migratedChild];
+      await AsyncStorage.setItem('children_list', JSON.stringify(updatedList));
+      await AsyncStorage.removeItem('child_profile');
+    }
+
+    console.log("Saved to Disk:", childrenList);
     router.back();
     
   } catch (e) {
+    console.error("Save error:", e);
     Alert.alert("Error", "Failed to save data");
   }
 };
@@ -72,7 +137,7 @@ const onSubmit = async (data: ChildFormData) => {
       style={{ flex: 1 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.header}>New Child Profile</Text>
+        <Text style={styles.header}>{isEditMode ? 'Edit Child Profile' : 'New Child Profile'}</Text>
 
         {/* --- FORM FIELD: Full Name --- */}
         <View style={styles.inputGroup}>
@@ -196,7 +261,7 @@ const onSubmit = async (data: ChildFormData) => {
 
         {/* --- SUBMIT BUTTON --- */}
         <TouchableOpacity style={styles.button} onPress={handleSubmit(onSubmit)}>
-          <Text style={styles.buttonText}>Save Child Profile</Text>
+          <Text style={styles.buttonText}>{isEditMode ? 'Update Profile' : 'Save Child Profile'}</Text>
         </TouchableOpacity>
 
         {/* Spacer for bottom scrolling */}
