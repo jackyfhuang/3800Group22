@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import AddChildScreen from '../add_child'; 
+import AddChildScreen from '../(tabs)/add_child'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // required for the component to render without crashing
