@@ -1,22 +1,23 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as MediaLibrary from "expo-media-library";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import ViewShot, { captureRef } from "react-native-view-shot";
-import { z } from "zod";
+import React, { useEffect } from 'react';
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  TextInput, 
+  TouchableOpacity, 
+  ScrollView, 
+  Alert, 
+  KeyboardAvoidingView, 
+  Platform 
+} from 'react-native';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import ViewShot, { captureRef } from 'react-native-view-shot';
+import * as MediaLibrary from 'expo-media-library';
 
 // Zod essentially can make input field rules really easy
 // This is where logic is controlled
@@ -38,6 +39,7 @@ const childSchema = z.object({
     .optional(),
 });
 
+
 // Auto gen TypeScript types from the schema
 type ChildFormData = z.infer<typeof childSchema>;
 
@@ -46,27 +48,22 @@ export default function AddChildScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const isEditMode = !!id;
 
-  // Hook Logic,
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm({
-    resolver: zodResolver(childSchema),
-    defaultValues: {
-      fullName: "",
-      gender: "",
-      medicalNotes: "",
-      age: undefined,
-      height: undefined,
-      weight: undefined,
-    },
-  });
+  // Hook Logic, 
+const { control, handleSubmit, formState: { errors, isDirty }, reset } = useForm({
+  resolver: zodResolver(childSchema),
+  defaultValues: {
+    fullName: '',
+    gender: '',
+    medicalNotes: '',
+    age: undefined, 
+    height: undefined,
+    weight: undefined,
+  }
+});
 
-  const [isExporting, setIsExporting] = useState(false);
-  const [captureData, setCaptureData] = useState<ChildFormData | null>(null);
-  const viewShotRef = useRef<ViewShot | null>(null);
+  const viewShotRef = React.createRef<ViewShot>();
+  const [captureData, setCaptureData] = React.useState<ChildFormData | null>(null);
+  const [isExporting, setIsExporting] = React.useState(false);
 
   // Load existing child data if editing
   useEffect(() => {
@@ -87,14 +84,84 @@ export default function AddChildScreen() {
             age: child.age,
             height: child.height,
             weight: child.weight,
-            gender: child.gender || "",
-            medicalNotes: child.medicalNotes || "",
-          });
+            gender: child.gender || '',
+            medicalNotes: child.medicalNotes || '',
+          }, { keepDefaultValues: false });
         }
       }
     } catch (error) {
       console.error("Error loading child for edit:", error);
     }
+  };
+
+  const handleBack = () => {
+    // If form has been modified, show confirmation
+    if (isDirty) {
+      if (Platform.OS === 'web') {
+        const confirmed = (typeof window !== 'undefined' && window.confirm)
+          ? window.confirm('Are you sure you want to go back? Your changes will not be saved.')
+          : true;
+        if (confirmed) {
+          router.back();
+        }
+      } else {
+        Alert.alert(
+          'Unsaved Changes',
+          'Are you sure you want to go back? Your changes will not be saved.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Discard Changes',
+              style: 'destructive',
+              onPress: () => router.back(),
+            },
+          ]
+        );
+      }
+    } else {
+      // No changes, just go back
+      router.back();
+    }
+  };
+
+  const handleDelete = async () => {
+    console.log('Delete button clicked, isEditMode:', isEditMode, 'id:', id);
+    if (!isEditMode || !id) {
+      console.log('Cannot delete: not in edit mode or no id');
+      return;
+    }
+
+    Alert.alert(
+      'Delete Child Profile',
+      `Are you sure you want to delete this child profile? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel', onPress: () => console.log('Delete cancelled') },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('Deleting child profile:', id);
+              const childrenJson = await AsyncStorage.getItem('children_list');
+              if (childrenJson) {
+                const childrenList = JSON.parse(childrenJson);
+                const updatedChildren = childrenList.filter((c: any) => c.id !== id);
+                await AsyncStorage.setItem('children_list', JSON.stringify(updatedChildren));
+                console.log('Child profile deleted successfully');
+                Alert.alert('Success', 'Child profile deleted');
+                router.back();
+              } else {
+                console.log('No children list found');
+                Alert.alert('Error', 'No children found');
+              }
+            } catch (error) {
+              console.error('Error deleting child:', error);
+              Alert.alert('Error', 'Failed to delete child profile');
+            }
+          },
+        },
+      ]
+    );
   };
 
   // SUBMIT HANDLER
@@ -211,9 +278,22 @@ export default function AddChildScreen() {
       style={{ flex: 1 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.header}>
-          {isEditMode ? "Edit Child Profile" : "New Child Profile"}
-        </Text>
+        <View style={styles.headerContainer}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity 
+              onPress={handleBack}
+              style={styles.backButton}
+              activeOpacity={0.7}>
+              <Text style={styles.backButtonText}>←</Text>
+            </TouchableOpacity>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.header}>{isEditMode ? 'Edit Profile' : 'Create Profile'}</Text>
+              <Text style={styles.headerSubtext}>
+                {isEditMode ? 'Update child information' : 'Add a new child profile'}
+              </Text>
+            </View>
+          </View>
+        </View>
 
         {/* --- FORM FIELD: Full Name --- */}
         <View style={styles.inputGroup}>
@@ -224,7 +304,8 @@ export default function AddChildScreen() {
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
                 style={[styles.input, errors.fullName && styles.errorInput]}
-                placeholder="e.g. Alex Johnson"
+                placeholder="Enter full name"
+                placeholderTextColor="#999"
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
@@ -246,7 +327,8 @@ export default function AddChildScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={[styles.input, errors.age && styles.errorInput]}
-                  placeholder="Yrs"
+                  placeholder="Age in years"
+                  placeholderTextColor="#999"
                   keyboardType="numeric"
                   onBlur={onBlur}
                   onChangeText={onChange}
@@ -267,7 +349,8 @@ export default function AddChildScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={styles.input}
-                  placeholder="M / F / Other"
+                  placeholder="Optional"
+                  placeholderTextColor="#999"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
@@ -287,7 +370,8 @@ export default function AddChildScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={[styles.input, errors.height && styles.errorInput]}
-                  placeholder="cm"
+                  placeholder="Height in cm"
+                  placeholderTextColor="#999"
                   keyboardType="numeric"
                   onBlur={onBlur}
                   onChangeText={onChange}
@@ -308,7 +392,8 @@ export default function AddChildScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={[styles.input, errors.weight && styles.errorInput]}
-                  placeholder="kg"
+                  placeholder="Weight in kg"
+                  placeholderTextColor="#999"
                   keyboardType="numeric"
                   onBlur={onBlur}
                   onChangeText={onChange}
@@ -331,7 +416,8 @@ export default function AddChildScreen() {
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Allergies, conditions, etc."
+                placeholder="Enter any medical notes, allergies, or conditions (optional)"
+                placeholderTextColor="#999"
                 multiline
                 numberOfLines={4}
                 onBlur={onBlur}
@@ -368,6 +454,13 @@ export default function AddChildScreen() {
             {isExporting ? "Working..." : "Export PDF & Image"}
           </Text>
         </TouchableOpacity>
+
+        {/* --- DELETE BUTTON (only in edit mode) --- */}
+        {isEditMode && (
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <Text style={styles.deleteButtonText}>Delete Profile</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Spacer for bottom scrolling */}
         <View style={{ height: 40 }} />
@@ -418,44 +511,75 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     flexGrow: 1,
   },
-  header: {
-    fontSize: 28,
-    fontWeight: "bold",
+  headerContainer: {
     marginBottom: 32,
-    color: "#1a1a1a",
     marginTop: 20,
   },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  backButtonText: {
+    fontSize: 28,
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  header: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#1a1a1a',
+    letterSpacing: -0.5,
+  },
+  headerSubtext: {
+    fontSize: 16,
+    color: '#666',
+  },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#666",
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   input: {
-    backgroundColor: "#F5F5F5",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
+    backgroundColor: '#FAFAFA',
+    borderWidth: 1.5,
+    borderColor: '#E8E8E8',
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: "#333",
+    color: '#1a1a1a',
+    minHeight: 52,
   },
   textArea: {
-    height: 100,
-    textAlignVertical: "top",
+    height: 120,
+    textAlignVertical: 'top',
+    paddingTop: 16,
   },
   errorInput: {
-    borderColor: "#FF4444",
-    backgroundColor: "#FFF0F0",
+    borderColor: '#FF4444',
+    backgroundColor: '#FFF5F5',
+    borderWidth: 1.5,
   },
   errorText: {
     color: "#FF4444",
@@ -466,19 +590,35 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: "#007AFF",
     paddingVertical: 18,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 10,
-    shadowColor: "#007AFF",
+    borderRadius: 14,
+    alignItems: 'center',
+    marginTop: 8,
+    shadowColor: '#007AFF',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 3,
   },
   buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  deleteButton: {
+    backgroundColor: '#fff',
+    paddingVertical: 18,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginTop: 12,
+    borderWidth: 1.5,
+    borderColor: '#FF4444',
+  },
+  deleteButtonText: {
+    color: '#FF4444',
+    fontSize: 17,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   secondaryButton: {
     marginTop: 12,
