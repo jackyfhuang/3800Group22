@@ -1,7 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as MediaLibrary from "expo-media-library";
-import * as Print from "expo-print";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -18,7 +17,6 @@ import {
 } from "react-native";
 import ViewShot, { captureRef } from "react-native-view-shot";
 import { z } from "zod";
-import { buildPdfHtml } from "../../components/pdf-builder";
 
 // Zod essentially can make input field rules really easy
 // This is where logic is controlled
@@ -163,21 +161,21 @@ export default function AddChildScreen() {
   const exportPdfAndImage = handleSubmit(async (data: ChildFormData) => {
     setIsExporting(true);
     try {
+      // fed data to the hidden capture card and render it before snapshot
       setCaptureData(data);
+      // slight delay to ensure ViewShot updates before capture
       await new Promise((resolve) => setTimeout(resolve, 30));
-
-      const html = buildPdfHtml(data);
-      const pdf = await Print.printToFileAsync({ html });
 
       if (!viewShotRef.current) {
         throw new Error("Capture view is not ready");
       }
+      // snapshot the offscreen card to PNG
       const shotUri = await captureRef(viewShotRef, {
         format: "png",
         quality: 1,
       });
       const safeName = sanitizeForFileSystem(data.fullName);
-
+      // ask Photos permission to save the image 
       const permission = await MediaLibrary.requestPermissionsAsync();
       if (permission.status !== "granted") {
         Alert.alert(
@@ -187,6 +185,7 @@ export default function AddChildScreen() {
         return;
       }
 
+      // save image to library and organize PDFs & images into per-child albums
       const asset = await MediaLibrary.createAssetAsync(shotUri);
       const albumName = `ChildGuardID - ${safeName}`;
       let album = await MediaLibrary.getAlbumAsync(albumName);
@@ -373,7 +372,7 @@ export default function AddChildScreen() {
         {/* Spacer for bottom scrolling */}
         <View style={{ height: 40 }} />
       </ScrollView>
-
+        {/* Hidden offscreen card for image capture */}
       <ViewShot
         ref={viewShotRef}
         options={{ format: "png", quality: 1 }}
