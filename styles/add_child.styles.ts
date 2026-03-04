@@ -5,7 +5,7 @@ export const addChildStyles = StyleSheet.create({
   // ─── Layout ───────────────────────────────────────────────────────────────
   container: {
     padding: spacing.xxl,
-    backgroundColor: colors.white,
+    backgroundColor: colors.appBackground,
     flexGrow: 1,
   },
 
@@ -28,7 +28,7 @@ export const addChildStyles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 28,
-    color: colors.primary,
+    color: colors.secondary,
     fontWeight: '600',
   },
   headerTextContainer: {
@@ -38,12 +38,12 @@ export const addChildStyles = StyleSheet.create({
     fontSize: typography.large,
     fontWeight: 'bold',
     marginBottom: spacing.sm,
-    color: colors.black,
+    color: colors.textPrimary,
     letterSpacing: -0.5,
   },
   headerSubtext: {
     fontSize: typography.default,
-    color: colors.midGray,
+    color: colors.textSubtle,
   },
 
   // ─── Form Fields ──────────────────────────────────────────────────────────
@@ -55,14 +55,19 @@ export const addChildStyles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   input: {
-    backgroundColor: colors.offWhite,
+    backgroundColor: colors.inputBackground,
     borderWidth: 1.5,
-    borderColor: colors.lightGray,
+    borderColor: colors.cardBorder,
     borderRadius: radius.md,
     padding: spacing.lg,
     fontSize: typography.default,
-    color: colors.black,
+    color: colors.textOnLight,
     minHeight: 52,
+    shadowColor: colors.inputShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   textArea: {
     height: 120,
@@ -81,10 +86,9 @@ export const addChildStyles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
 
-  // ─── Secondary Button ─────────────────────────────────────────────────────
-  secondaryButton: {
+  // ─── Export Button ────────────────────────────────────────────────────────
+  exportButton: {
     marginTop: spacing.md,
-    backgroundColor: '#111827',
   },
   disabledButton: {
     opacity: 0.6,
@@ -97,29 +101,29 @@ export const addChildStyles = StyleSheet.create({
     left: 0,
     width: 800,
     padding: spacing.xxl,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: colors.appBackground,
   },
   captureCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     padding: spacing.xxl,
     borderRadius: radius.xl,
-    borderColor: '#e5e7eb',
+    borderColor: colors.cardBorder,
     borderWidth: 1,
     shadowColor: colors.cardShadow,
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.15,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
   },
   captureTitle: {
     fontSize: typography.title,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.textPrimary,
     marginBottom: spacing.xs + 2,
   },
   captureName: {
     fontSize: typography.subtitle,
     fontWeight: '600',
-    color: '#2563eb',
+    color: colors.textName,
     marginBottom: spacing.lg,
   },
   captureRow: {
@@ -129,19 +133,19 @@ export const addChildStyles = StyleSheet.create({
   },
   captureLabel: {
     fontWeight: '600',
-    color: '#4b5563',
+    color: colors.textSubtle,
   },
   captureValue: {
-    color: '#111827',
+    color: colors.textOnLight,
   },
   captureSection: {
     marginTop: 14,
     marginBottom: spacing.xs + 2,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.textPrimary,
   },
   captureNotes: {
-    color: '#111827',
+    color: colors.textOnLight,
     lineHeight: 20,
   },
 });

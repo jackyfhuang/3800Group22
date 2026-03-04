@@ -4,9 +4,12 @@ import { Platform } from 'react-native';
 // All raw color values live here. Nothing else in the app should have hex codes.
 export const palette = {
   // Brand
+  navy: '#182835',
+  navyLight: '#4A6FA5',
   blue: '#007AFF',
-  blueLight: '#F0F7FF',
-  blueBorder: '#E0F0FF',
+  teal: '#119DA4',
+  amber: '#f2c180',
+  offWhite: '#f4f4f4',
 
   // Danger
   red: '#FF4444',
@@ -15,58 +18,82 @@ export const palette = {
   redBackground: '#FFF5F5',
 
   // Neutrals
-  black: '#1a1a1a',
-  darkGray: '#333',
-  midGray: '#666',
-  gray: '#999',
-  lightGray: '#E8E8E8',
+  black: '#000000',
+  white: '#FFFFFF',
+  lightBorder: '#E8E8E8',
   subtleBorder: '#F0F0F0',
-  offWhite: '#FAFAFA',
-  white: '#fff',
-  pureBlack: '#000',
+
+  // Teal tints
+  tealLight: '#EAF7F7',
+  tealBorder: '#B2E0E2',
+
+  // Blue tints
+  blueLight: '#F0F7FF',
+  blueBorder: '#E0F0FF',
 } as const;
 
-// ─── Semantic Colors ──────────────────────────────────────────────────────────
+// ─── Semantic Colors (Light Theme) ────────────────────────────────────────────
 // Named by purpose, not by appearance. Use these throughout the app.
 export const colors = {
+  // Backgrounds
+  appBackground: palette.offWhite,
+  cardBackground: palette.white,
+  inputBackground: palette.white,
+  tabBarBackground: palette.white,
+
+  // Actions
   primary: palette.blue,
   primaryLight: palette.blueLight,
   primaryBorder: palette.blueBorder,
   primaryShadow: palette.blue,
 
+  secondary: palette.teal,
+  secondaryLight: palette.tealLight,
+  secondaryBorder: palette.tealBorder,
+
+  // Danger
   danger: palette.red,
   dangerLight: palette.redLight,
   dangerBorder: palette.redBorder,
   dangerBackground: palette.redBackground,
 
-  black: palette.black,
-  darkGray: palette.darkGray,
-  midGray: palette.midGray,
-  gray: palette.gray,
-  lightGray: palette.lightGray,
+  // Text
+  textPrimary: palette.navy,
+  textName: palette.navyLight,
+  textSubtle: palette.teal,
+  textOnDark: palette.white,
+  textOnLight: palette.navy,
+
+  // Shadows
+  cardShadow: palette.amber,
+  inputShadow: palette.amber,
+
+  // Borders
+  cardBorder: palette.lightBorder,
   subtleBorder: palette.subtleBorder,
-  offWhite: palette.offWhite,
+
+  // Misc
   white: palette.white,
-  cardShadow: palette.pureBlack,
+  black: palette.black,
 } as const;
 
 // ─── Theme (Light / Dark) ─────────────────────────────────────────────────────
 // Used by ThemedText, ThemedView, and the navigation ThemeProvider.
 export const Colors = {
   light: {
-    text: palette.black,
-    background: palette.white,
+    text: palette.navy,
+    background: palette.offWhite,
     tint: palette.blue,
     icon: palette.blue,
-    tabIconDefault: palette.gray,
+    tabIconDefault: palette.navy,
     tabIconSelected: palette.blue,
   },
   dark: {
-    text: palette.black,
-    background: palette.white,
+    text: palette.white,
+    background: palette.navy,
     tint: palette.blue,
     icon: palette.blue,
-    tabIconDefault: palette.gray,
+    tabIconDefault: palette.offWhite,
     tabIconSelected: palette.blue,
   },
 } as const;

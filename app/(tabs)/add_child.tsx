@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { colors } from '@/styles';
 import {
   Text,
   View,
@@ -456,8 +457,8 @@ export default function AddChildScreen() {
         {/* Export Button */}
         <TouchableOpacity
           style={[
-            sharedStyles.primaryButton,
-            styles.secondaryButton,
+            sharedStyles.secondaryButton,
+            styles.exportButton,
             isExporting && styles.disabledButton,
           ]}
           onPress={exportPdfAndImage}

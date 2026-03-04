@@ -121,24 +121,15 @@ export default function HomeScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>ChildGuard</Text>
         <Text style={styles.subtitle}>Your Child Profiles</Text>
       </View>
-
-      {/* Add Child Button */}
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => router.push('/add_child')}
-        activeOpacity={0.8}>
-        <View style={styles.addButtonCircle}>
-          <IconSymbol name="plus" size={28} color="#007AFF" />
-        </View>
-        <Text style={styles.addButtonText}>Add New Child</Text>
-      </TouchableOpacity>
 
       {/* Empty State */}
       {children.length === 0 ? (
@@ -158,10 +149,15 @@ export default function HomeScreen() {
             <TouchableOpacity
               key={child.id}
               style={sharedStyles.card}
-              onPress={() => router.push({ pathname: '/add_child', params: { id: child.id } })}
-              activeOpacity={0.7}>
+              onPress={() =>
+                router.push({
+                  pathname: '/add_child',
+                  params: { id: child.id },
+                })
+              }
+              activeOpacity={0.7}
+            >
               <View style={styles.childCardContent}>
-
                 {/* Avatar Circle */}
                 <View style={styles.avatarContainer}>
                   <View style={styles.avatarCircle}>
@@ -214,15 +210,22 @@ export default function HomeScreen() {
               <View style={styles.cardActions}>
                 <TouchableOpacity
                   style={styles.editButton}
-                  onPress={() => router.push({ pathname: '/add_child', params: { id: child.id } })}
-                  activeOpacity={0.7}>
+                  onPress={() =>
+                    router.push({
+                      pathname: '/add_child',
+                      params: { id: child.id },
+                    })
+                  }
+                  activeOpacity={0.7}
+                >
                   <IconSymbol name="pencil" size={16} color="#007AFF" />
                   <Text style={styles.editButtonText}>Edit</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => handleDeleteChild(child.id!, child.fullName)}
                   style={styles.deleteButton}
-                  activeOpacity={0.7}>
+                  activeOpacity={0.7}
+                >
                   <IconSymbol name="trash" size={16} color="#FF4444" />
                   <Text style={styles.deleteButtonText}>Delete</Text>
                 </TouchableOpacity>
@@ -231,6 +234,18 @@ export default function HomeScreen() {
           ))}
         </View>
       )}
+      
+      {/* Add Child Button */}
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => router.push('/add_child')}
+        activeOpacity={0.8}
+      >
+        <View style={styles.addButtonCircle}>
+          <IconSymbol name="plus" size={28} color="#007AFF" />
+        </View>
+        <Text style={styles.addButtonText}>Add New Child</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }

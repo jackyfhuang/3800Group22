@@ -6,7 +6,7 @@ export { colors, spacing, radius, typography };
 
 // ─── Shared Component Styles ──────────────────────────────────────────────────
 export const sharedStyles = StyleSheet.create({
-  // Buttons
+  // ─── Buttons ──────────────────────────────────────────────────────────────
   primaryButton: {
     backgroundColor: colors.primary,
     paddingVertical: 18,
@@ -25,14 +25,32 @@ export const sharedStyles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.3,
   },
+  secondaryButton: {
+    backgroundColor: colors.secondary,
+    paddingVertical: 18,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    marginTop: spacing.sm,
+    shadowColor: colors.secondary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  secondaryButtonText: {
+    color: colors.white,
+    fontSize: typography.button,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
   dangerButton: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.dangerLight,
     paddingVertical: 18,
     borderRadius: radius.lg,
     alignItems: 'center',
     marginTop: spacing.md,
     borderWidth: 1.5,
-    borderColor: colors.danger,
+    borderColor: colors.dangerBorder,
   },
   dangerButtonText: {
     color: colors.danger,
@@ -41,33 +59,39 @@ export const sharedStyles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
-  // Labels
+  // ─── Labels ───────────────────────────────────────────────────────────────
   fieldLabel: {
     fontSize: typography.small,
     fontWeight: '600',
-    color: colors.midGray,
+    color: colors.textSubtle,
     marginBottom: spacing.md,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
 
-  // Cards
+  // ─── Cards ────────────────────────────────────────────────────────────────
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderRadius: radius.xl,
     padding: spacing.xl,
     borderWidth: 1,
-    borderColor: colors.lightGray,
+    borderColor: colors.cardBorder,
     shadowColor: colors.cardShadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
     marginBottom: spacing.xs,
   },
 
-  // nav bar
+  // ─── Tab Bar ──────────────────────────────────────────────────────────────
   tabBar: {
-    height: 55,
+    backgroundColor: colors.tabBarBackground,
+    borderTopWidth: 1,
+    borderTopColor: colors.cardBorder,
+    height: 70,
+    paddingBottom: 10,
+    paddingTop: 8,
+    marginBottom: 20,
   },
 });

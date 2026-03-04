@@ -5,7 +5,7 @@ export const homeStyles = StyleSheet.create({
   // ─── Layout ───────────────────────────────────────────────────────────────
   container: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: colors.appBackground,
   },
   contentContainer: {
     padding: spacing.xl,
@@ -14,45 +14,46 @@ export const homeStyles = StyleSheet.create({
   // ─── Header ───────────────────────────────────────────────────────────────
   header: {
     marginBottom: spacing.xxxl,
-    backgroundColor: colors.white,
+    backgroundColor: colors.appBackground,
   },
   title: {
     fontSize: typography.hero,
     fontWeight: 'bold',
-    color: colors.black,
+    color: colors.textPrimary,
     marginBottom: spacing.sm,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: typography.default,
-    color: colors.midGray,
+    color: colors.textSubtle,
     marginTop: spacing.xs,
   },
 
   // ─── Add Button ───────────────────────────────────────────────────────────
   addButton: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xl,
     borderRadius: radius.xl,
+    marginTop: spacing.xxl,
     marginBottom: spacing.xxl,
     gap: spacing.md,
     borderWidth: 2,
-    borderColor: '#E0E0E0',
+    borderColor: colors.secondaryBorder,
     borderStyle: 'dashed',
   },
   addButtonCircle: {
     width: 56,
     height: 56,
     borderRadius: radius.xxl,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.secondaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addButtonText: {
-    color: colors.primary,
+    color: colors.secondary,
     fontSize: typography.subtitle,
     fontWeight: '600',
   },
@@ -68,7 +69,7 @@ export const homeStyles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: colors.secondaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xxl,
@@ -76,12 +77,12 @@ export const homeStyles = StyleSheet.create({
   emptyText: {
     fontSize: 22,
     fontWeight: '600',
-    color: colors.black,
+    color: colors.textPrimary,
     marginBottom: spacing.sm,
   },
   emptySubtext: {
     fontSize: typography.default,
-    color: colors.gray,
+    color: colors.textSubtle,
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -101,11 +102,11 @@ export const homeStyles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.secondaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: colors.primaryBorder,
+    borderColor: colors.secondaryBorder,
   },
   childInfoContainer: {
     flex: 1,
@@ -119,7 +120,7 @@ export const homeStyles = StyleSheet.create({
   childName: {
     fontSize: typography.title,
     fontWeight: '600',
-    color: colors.black,
+    color: colors.textName,
     flex: 1,
   },
 
@@ -135,7 +136,7 @@ export const homeStyles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: typography.tiny,
-    color: colors.gray,
+    color: colors.textSubtle,
     marginBottom: spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -143,7 +144,7 @@ export const homeStyles = StyleSheet.create({
   detailValue: {
     fontSize: typography.default,
     fontWeight: '600',
-    color: colors.darkGray,
+    color: colors.textPrimary,
   },
 
   // ─── Medical Notes ────────────────────────────────────────────────────────
@@ -155,14 +156,14 @@ export const homeStyles = StyleSheet.create({
   },
   notesLabel: {
     fontSize: typography.tiny,
-    color: colors.gray,
+    color: colors.textSubtle,
     marginBottom: spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   notesText: {
     fontSize: typography.body,
-    color: colors.midGray,
+    color: colors.textPrimary,
     lineHeight: 20,
   },
 
@@ -181,13 +182,13 @@ export const homeStyles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs + 2,
     padding: spacing.md,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.secondaryLight,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.primaryBorder,
+    borderColor: colors.secondaryBorder,
   },
   editButtonText: {
-    color: colors.primary,
+    color: colors.secondary,
     fontSize: typography.body,
     fontWeight: '600',
   },
