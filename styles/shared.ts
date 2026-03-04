@@ -86,12 +86,16 @@ export const sharedStyles = StyleSheet.create({
 
   // ─── Tab Bar ──────────────────────────────────────────────────────────────
   tabBar: {
-    backgroundColor: colors.tabBarBackground,
-    borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
-    height: 70,
+    position: 'absolute',
+    backgroundColor: 'rgba(255, 255, 255, 0.74)',
+    borderTopWidth: 0,
+    height: 80,
     paddingBottom: 10,
     paddingTop: 8,
-    marginBottom: 20,
+    bottom: -15,
+    shadowColor: colors.cardShadow,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    borderRadius: radius.lg,
   },
 });
