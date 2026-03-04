@@ -1,29 +1,26 @@
 import React, { useEffect } from 'react';
-import { colors } from '@/styles';
 import {
-  Text,
   View,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import ViewShot, { captureRef } from 'react-native-view-shot';
 import * as MediaLibrary from 'expo-media-library';
 
 import { addChildStyles as styles, sharedStyles } from '@/styles';
+import { AppText } from '@/components/ui/app-text';
+import { AppTextInput } from '@/components/ui/app-text-input';
+import { FormField } from '@/components/ui/form-field';
 
 // ─── Validation Schema ────────────────────────────────────────────────────────
-// Zod essentially can make input field rules really easy
-// This is where logic is controlled
 const childSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
   age: z.coerce
@@ -42,7 +39,6 @@ const childSchema = z.object({
     .optional(),
 });
 
-// Auto gen TypeScript types from the schema
 type ChildFormData = z.infer<typeof childSchema>;
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -74,11 +70,8 @@ export default function AddChildScreen() {
   );
   const [isExporting, setIsExporting] = React.useState(false);
 
-  // Load existing child data if editing
   useEffect(() => {
-    if (isEditMode && id) {
-      loadChildForEdit(id);
-    }
+    if (isEditMode && id) loadChildForEdit(id);
   }, [id, isEditMode]);
 
   // ─── Data Handlers ────────────────────────────────────────────────────────
@@ -108,58 +101,45 @@ export default function AddChildScreen() {
   };
 
   const handleBack = () => {
-    if (isDirty) {
-      if (Platform.OS === 'web') {
-        const confirmed =
-          typeof window !== 'undefined' && window.confirm
-            ? window.confirm(
-                'Are you sure you want to go back? Your changes will not be saved.',
-              )
-            : true;
-        if (confirmed) {
-          router.back();
-        }
-      } else {
-        Alert.alert(
-          'Unsaved Changes',
-          'Are you sure you want to go back? Your changes will not be saved.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Discard Changes',
-              style: 'destructive',
-              onPress: () => router.back(),
-            },
-          ],
-        );
-      }
+    if (!isDirty) return router.back();
+
+    if (Platform.OS === 'web') {
+      const confirmed =
+        typeof window !== 'undefined' && window.confirm
+          ? window.confirm(
+              'Are you sure you want to go back? Your changes will not be saved.',
+            )
+          : true;
+      if (confirmed) router.back();
     } else {
-      router.back();
+      Alert.alert(
+        'Unsaved Changes',
+        'Are you sure you want to go back? Your changes will not be saved.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Discard Changes',
+            style: 'destructive',
+            onPress: () => router.back(),
+          },
+        ],
+      );
     }
   };
 
   const handleDelete = async () => {
-    console.log('Delete button clicked, isEditMode:', isEditMode, 'id:', id);
-    if (!isEditMode || !id) {
-      console.log('Cannot delete: not in edit mode or no id');
-      return;
-    }
+    if (!isEditMode || !id) return;
 
     Alert.alert(
       'Delete Child Profile',
-      `Are you sure you want to delete this child profile? This action cannot be undone.`,
+      'Are you sure you want to delete this child profile? This action cannot be undone.',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => console.log('Delete cancelled'),
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             try {
-              console.log('Deleting child profile:', id);
               const childrenJson = await AsyncStorage.getItem('children_list');
               if (childrenJson) {
                 const childrenList = JSON.parse(childrenJson);
@@ -170,12 +150,8 @@ export default function AddChildScreen() {
                   'children_list',
                   JSON.stringify(updatedChildren),
                 );
-                console.log('Child profile deleted successfully');
                 Alert.alert('Success', 'Child profile deleted');
                 router.back();
-              } else {
-                console.log('No children list found');
-                Alert.alert('Error', 'No children found');
               }
             } catch (error) {
               console.error('Error deleting child:', error);
@@ -213,15 +189,13 @@ export default function AddChildScreen() {
       if (oldChildJson && !isEditMode) {
         const oldChild = JSON.parse(oldChildJson);
         const migratedChild = { ...oldChild, id: (Date.now() + 1).toString() };
-        const updatedList = [...childrenList, migratedChild];
         await AsyncStorage.setItem(
           'children_list',
-          JSON.stringify(updatedList),
+          JSON.stringify([...childrenList, migratedChild]),
         );
         await AsyncStorage.removeItem('child_profile');
       }
 
-      console.log('Saved to Disk:', childrenList);
       router.back();
     } catch (e) {
       console.error('Save error:', e);
@@ -230,9 +204,8 @@ export default function AddChildScreen() {
   };
 
   const sanitizeForFileSystem = (value: string) => {
-    const fallback = 'child';
     const clean = value.trim().replace(/[^a-z0-9-_]+/gi, '_');
-    return clean.length ? clean.slice(0, 40) : fallback;
+    return clean.length ? clean.slice(0, 40) : 'child';
   };
 
   const exportPdfAndImage = handleSubmit(async (data: ChildFormData) => {
@@ -241,9 +214,7 @@ export default function AddChildScreen() {
       setCaptureData(data);
       await new Promise((resolve) => setTimeout(resolve, 30));
 
-      if (!viewShotRef.current) {
-        throw new Error('Capture view is not ready');
-      }
+      if (!viewShotRef.current) throw new Error('Capture view is not ready');
 
       const shotUri = await captureRef(viewShotRef, {
         format: 'png',
@@ -272,7 +243,7 @@ export default function AddChildScreen() {
       Alert.alert('Saved', `Image saved to Photos album: ${albumName}`);
     } catch (error) {
       console.error('Export error:', error);
-      Alert.alert('Error', 'Could not export the PDF and image.');
+      Alert.alert('Error', 'Could not export the image.');
     } finally {
       setIsExporting(false);
     }
@@ -293,165 +264,91 @@ export default function AddChildScreen() {
               style={styles.backButton}
               activeOpacity={0.7}
             >
-              <Text style={styles.backButtonText}>←</Text>
+              <AppText style={styles.backButtonText}>←</AppText>
             </TouchableOpacity>
             <View style={styles.headerTextContainer}>
-              <Text style={styles.headerTitle}>
+              <AppText variant="heading" style={styles.headerTitle}>
                 {isEditMode ? 'Edit Profile' : 'Create Profile'}
-              </Text>
-              <Text style={styles.headerSubtext}>
+              </AppText>
+              <AppText variant="subtitle" style={styles.headerSubtext}>
                 {isEditMode
                   ? 'Update child information'
                   : 'Add a new child profile'}
-              </Text>
+              </AppText>
             </View>
           </View>
         </View>
 
         {/* Full Name */}
-        <View style={styles.inputGroup}>
-          <Text style={sharedStyles.fieldLabel}>Full Name</Text>
-          <Controller
-            control={control}
-            name="fullName"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                style={[styles.input, errors.fullName && styles.errorInput]}
-                placeholder="Enter full name"
-                placeholderTextColor="#999"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-              />
-            )}
-          />
-          {errors.fullName && (
-            <Text style={styles.errorText}>{errors.fullName.message}</Text>
-          )}
-        </View>
+        <FormField
+          control={control}
+          name="fullName"
+          label="Full Name"
+          placeholder="Enter full name"
+          error={errors.fullName?.message}
+        />
 
         {/* Age & Gender Row */}
         <View style={styles.row}>
-          <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
-            <Text style={sharedStyles.fieldLabel}>Age</Text>
-            <Controller
-              control={control}
-              name="age"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={[styles.input, errors.age && styles.errorInput]}
-                  placeholder="Age in years"
-                  placeholderTextColor="#999"
-                  keyboardType="numeric"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value?.toString()}
-                />
-              )}
-            />
-            {errors.age && (
-              <Text style={styles.errorText}>{errors.age.message}</Text>
-            )}
-          </View>
-
-          <View style={[styles.inputGroup, { flex: 1 }]}>
-            <Text style={sharedStyles.fieldLabel}>Gender (Optional)</Text>
-            <Controller
-              control={control}
-              name="gender"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Optional"
-                  placeholderTextColor="#999"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                />
-              )}
-            />
-          </View>
+          <FormField
+            control={control}
+            name="age"
+            label="Age"
+            placeholder="Age in years"
+            keyboardType="numeric"
+            error={errors.age?.message}
+            containerStyle={{ flex: 1, marginRight: 10 }}
+          />
+          <FormField
+            control={control}
+            name="gender"
+            label="Gender (Optional)"
+            placeholder="Optional"
+            containerStyle={{ flex: 1 }}
+          />
         </View>
 
         {/* Height & Weight Row */}
         <View style={styles.row}>
-          <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
-            <Text style={sharedStyles.fieldLabel}>Height (cm)</Text>
-            <Controller
-              control={control}
-              name="height"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={[styles.input, errors.height && styles.errorInput]}
-                  placeholder="Height in cm"
-                  placeholderTextColor="#999"
-                  keyboardType="numeric"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value?.toString()}
-                />
-              )}
-            />
-            {errors.height && (
-              <Text style={styles.errorText}>{errors.height.message}</Text>
-            )}
-          </View>
-
-          <View style={[styles.inputGroup, { flex: 1 }]}>
-            <Text style={sharedStyles.fieldLabel}>Weight (kg)</Text>
-            <Controller
-              control={control}
-              name="weight"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={[styles.input, errors.weight && styles.errorInput]}
-                  placeholder="Weight in kg"
-                  placeholderTextColor="#999"
-                  keyboardType="numeric"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value?.toString()}
-                />
-              )}
-            />
-            {errors.weight && (
-              <Text style={styles.errorText}>{errors.weight.message}</Text>
-            )}
-          </View>
+          <FormField
+            control={control}
+            name="height"
+            label="Height (cm)"
+            placeholder="Height in cm"
+            keyboardType="numeric"
+            error={errors.height?.message}
+            containerStyle={{ flex: 1, marginRight: 10 }}
+          />
+          <FormField
+            control={control}
+            name="weight"
+            label="Weight (kg)"
+            placeholder="Weight in kg"
+            keyboardType="numeric"
+            error={errors.weight?.message}
+            containerStyle={{ flex: 1 }}
+          />
         </View>
 
         {/* Medical Notes */}
-        <View style={styles.inputGroup}>
-          <Text style={sharedStyles.fieldLabel}>Medical Notes</Text>
-          <Controller
-            control={control}
-            name="medicalNotes"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="Enter any medical notes, allergies, or conditions (optional)"
-                placeholderTextColor="#999"
-                multiline
-                numberOfLines={4}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-              />
-            )}
-          />
-          {errors.medicalNotes && (
-            <Text style={styles.errorText}>{errors.medicalNotes.message}</Text>
-          )}
-        </View>
+        <FormField
+          control={control}
+          name="medicalNotes"
+          label="Medical Notes"
+          placeholder="Enter any medical notes, allergies, or conditions (optional)"
+          multiline
+          numberOfLines={4}
+          error={errors.medicalNotes?.message}
+        />
 
         {/* Save Button */}
         <TouchableOpacity
           style={sharedStyles.primaryButton}
           onPress={handleSubmit(onSubmit)}
         >
-          <Text style={sharedStyles.primaryButtonText}>
+          <AppText variant="label" style={sharedStyles.primaryButtonText}>
             {isEditMode ? 'Update Profile' : 'Save Child Profile'}
-          </Text>
+          </AppText>
         </TouchableOpacity>
 
         {/* Export Button */}
@@ -464,9 +361,9 @@ export default function AddChildScreen() {
           onPress={exportPdfAndImage}
           disabled={isExporting}
         >
-          <Text style={sharedStyles.primaryButtonText}>
-            {isExporting ? 'Working...' : 'Export Image'}
-          </Text>
+          <AppText variant="label" style={sharedStyles.secondaryButtonText}>
+            {isExporting ? 'Working...' : 'Export PDF & Image'}
+          </AppText>
         </TouchableOpacity>
 
         {/* Delete Button (edit mode only) */}
@@ -475,7 +372,9 @@ export default function AddChildScreen() {
             style={sharedStyles.dangerButton}
             onPress={handleDelete}
           >
-            <Text style={sharedStyles.dangerButtonText}>Delete Profile</Text>
+            <AppText variant="label" style={sharedStyles.dangerButtonText}>
+              Delete Profile
+            </AppText>
           </TouchableOpacity>
         )}
 
@@ -489,32 +388,40 @@ export default function AddChildScreen() {
         style={styles.hiddenCapture}
       >
         <View style={styles.captureCard}>
-          <Text style={styles.captureTitle}>Child Guard ID</Text>
-          <Text style={styles.captureName}>
+          <AppText variant="heading" style={styles.captureTitle}>
+            Child Guard ID
+          </AppText>
+          <AppText variant="label" style={styles.captureName}>
             {(captureData?.fullName || '').trim() || 'Name missing'}
-          </Text>
+          </AppText>
           <View style={styles.captureRow}>
-            <Text style={styles.captureLabel}>Age</Text>
-            <Text style={styles.captureValue}>{captureData?.age ?? ''}</Text>
+            <AppText style={styles.captureLabel}>Age</AppText>
+            <AppText style={styles.captureValue}>
+              {captureData?.age ?? ''}
+            </AppText>
           </View>
           <View style={styles.captureRow}>
-            <Text style={styles.captureLabel}>Gender</Text>
-            <Text style={styles.captureValue}>
+            <AppText style={styles.captureLabel}>Gender</AppText>
+            <AppText style={styles.captureValue}>
               {captureData?.gender || '—'}
-            </Text>
+            </AppText>
           </View>
           <View style={styles.captureRow}>
-            <Text style={styles.captureLabel}>Height (cm)</Text>
-            <Text style={styles.captureValue}>{captureData?.height ?? ''}</Text>
+            <AppText style={styles.captureLabel}>Height (cm)</AppText>
+            <AppText style={styles.captureValue}>
+              {captureData?.height ?? ''}
+            </AppText>
           </View>
           <View style={styles.captureRow}>
-            <Text style={styles.captureLabel}>Weight (kg)</Text>
-            <Text style={styles.captureValue}>{captureData?.weight ?? ''}</Text>
+            <AppText style={styles.captureLabel}>Weight (kg)</AppText>
+            <AppText style={styles.captureValue}>
+              {captureData?.weight ?? ''}
+            </AppText>
           </View>
-          <Text style={styles.captureSection}>Medical Notes</Text>
-          <Text style={styles.captureNotes}>
+          <AppText style={styles.captureSection}>Medical Notes</AppText>
+          <AppText style={styles.captureNotes}>
             {captureData?.medicalNotes || 'None provided'}
-          </Text>
+          </AppText>
         </View>
       </ViewShot>
     </KeyboardAvoidingView>

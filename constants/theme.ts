@@ -67,6 +67,7 @@ export const colors = {
   // Shadows
   cardShadow: palette.amber,
   inputShadow: palette.amber,
+  inputSelection: palette.amber,
 
   // Borders
   cardBorder: palette.lightBorder,
