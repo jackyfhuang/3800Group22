@@ -65,4 +65,9 @@ export const sharedStyles = StyleSheet.create({
     elevation: 2,
     marginBottom: spacing.xs,
   },
+
+  // nav bar
+  tabBar: {
+    height: 55,
+  },
 });
