@@ -1,10 +1,6 @@
+import { colors, spacing, typography } from '@/styles';
 import React from 'react';
-import { Text, TextProps, StyleSheet } from 'react-native';
-import { colors, typography, spacing } from '@/styles';
-
-// Themed text component for app screens. Use the variant prop to apply
-// consistent typography styles (heading, subtitle, body, label, error etc.)
-// instead of manually applying colors and font sizes inline.
+import { StyleSheet, Text, TextProps } from 'react-native';
 
 type AppTextVariant =
   | 'heading'
@@ -35,7 +31,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: typography.default,
+    fontSize: typography.subtitle,
+    fontWeight: '600',
     color: colors.textSubtle,
   },
   body: {

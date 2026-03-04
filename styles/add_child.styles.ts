@@ -42,7 +42,8 @@ export const addChildStyles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   headerSubtext: {
-    fontSize: typography.default,
+    fontSize: typography.subtitle,
+    fontWeight: '600',
     color: colors.textSubtle,
   },
 

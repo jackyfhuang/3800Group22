@@ -24,7 +24,8 @@ export const homeStyles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: typography.default,
+    fontSize: typography.subtitle,
+    fontWeight: '600',
     color: colors.textSubtle,
     marginTop: spacing.xs,
   },

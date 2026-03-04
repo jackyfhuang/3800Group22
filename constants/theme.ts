@@ -126,7 +126,7 @@ export const typography = {
   body: 14,
   default: 16,
   button: 17,
-  subtitle: 18,
+  subtitle: 20,
   title: 20,
   heading: 22,
   large: 32,

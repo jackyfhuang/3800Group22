@@ -362,7 +362,7 @@ export default function AddChildScreen() {
           disabled={isExporting}
         >
           <AppText variant="label" style={sharedStyles.secondaryButtonText}>
-            {isExporting ? 'Working...' : 'Export PDF & Image'}
+            {isExporting ? 'Working...' : 'Export Image'}
           </AppText>
         </TouchableOpacity>
 
