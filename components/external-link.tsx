@@ -2,6 +2,10 @@ import { Href, Link } from 'expo-router';
 import { openBrowserAsync, WebBrowserPresentationStyle } from 'expo-web-browser';
 import { type ComponentProps } from 'react';
 
+// Link component that opens URLs inside an in-app browser on iOS and
+// Android rather than jumping to the external browser. Behaves as a
+// standard target="_blank" link on web.
+
 type Props = Omit<ComponentProps<typeof Link>, 'href'> & { href: Href & string };
 
 export function ExternalLink({ href, ...rest }: Props) {

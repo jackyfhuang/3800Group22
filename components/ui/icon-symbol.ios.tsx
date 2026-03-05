@@ -1,6 +1,10 @@
 import { SymbolView, SymbolViewProps, SymbolWeight } from 'expo-symbols';
 import { StyleProp, ViewStyle } from 'react-native';
 
+// Cross-platform icon component. Uses native SF Symbols on iOS and
+// Material Icons on Android and web. Always reference icons by their
+// SF Symbol name — the mapping table handles the Android/web fallback.
+
 export function IconSymbol({
   name,
   size = 24,
