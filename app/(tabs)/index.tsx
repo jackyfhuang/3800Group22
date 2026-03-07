@@ -14,6 +14,29 @@ type ChildProfile = {
   weight: number;
   gender?: string;
   medicalNotes?: string;
+  hasBirthmarks?: string;
+  birthmarksDescription?: string;
+  hasScars?: string;
+  scarsDescription?: string;
+  hasIdentifyingFeatures?: string;
+  identifyingFeaturesDescription?: string;
+  lastKnownLocation?: string;
+  schoolDaycareType?: string;
+  schoolDaycareName?: string;
+  sportsTeams?: string;
+  parent1Name?: string;
+  parent1Address?: string;
+  parent1Phone?: string;
+  parent2Name?: string;
+  parent2Address?: string;
+  parent2Phone?: string;
+  emergencyContacts?: Array<{
+    name: string;
+    relationship: string;
+    sex?: string;
+    phone: string;
+    address?: string;
+  }>;
   id?: string;
 };
 
@@ -151,7 +174,7 @@ export default function HomeScreen() {
               style={sharedStyles.card}
               onPress={() =>
                 router.push({
-                  pathname: '/add_child',
+                  pathname: '/view_child',
                   params: { id: child.id },
                 })
               }
