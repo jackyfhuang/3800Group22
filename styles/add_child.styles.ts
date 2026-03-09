@@ -1,5 +1,10 @@
-import { StyleSheet } from 'react-native';
-import { colors, spacing, radius, typography } from './shared';
+import { StyleSheet } from "react-native";
+import {
+    colors,
+    radius,
+    spacing,
+    typography,
+} from "./shared";
 
 export const addChildStyles = StyleSheet.create({
   // ─── Layout ───────────────────────────────────────────────────────────────
@@ -15,35 +20,35 @@ export const addChildStyles = StyleSheet.create({
     marginTop: spacing.xl,
   },
   headerTop: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: spacing.md,
   },
   backButton: {
     width: 44,
     height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: spacing.xs,
   },
   backButtonText: {
     fontSize: 28,
     color: colors.secondary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   headerTextContainer: {
     flex: 1,
   },
   headerTitle: {
     fontSize: typography.large,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: spacing.sm,
     color: colors.textPrimary,
     letterSpacing: -0.5,
   },
   headerSubtext: {
     fontSize: typography.subtitle,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.textSubtle,
   },
 
@@ -52,8 +57,8 @@ export const addChildStyles = StyleSheet.create({
     marginBottom: spacing.xxl,
   },
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   input: {
     backgroundColor: colors.inputBackground,
@@ -72,7 +77,7 @@ export const addChildStyles = StyleSheet.create({
   },
   textArea: {
     height: 120,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
     paddingTop: spacing.lg,
   },
   errorInput: {
@@ -97,7 +102,7 @@ export const addChildStyles = StyleSheet.create({
 
   // ─── Hidden Export Card ───────────────────────────────────────────────────
   hiddenCapture: {
-    position: 'absolute',
+    position: "absolute",
     top: -2000,
     left: 0,
     width: 800,
@@ -117,23 +122,23 @@ export const addChildStyles = StyleSheet.create({
   },
   captureTitle: {
     fontSize: typography.title,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.textPrimary,
     marginBottom: spacing.xs + 2,
   },
   captureName: {
     fontSize: typography.subtitle,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.textName,
     marginBottom: spacing.lg,
   },
   captureRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: spacing.sm,
   },
   captureLabel: {
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.textSubtle,
   },
   captureValue: {
@@ -142,11 +147,35 @@ export const addChildStyles = StyleSheet.create({
   captureSection: {
     marginTop: 14,
     marginBottom: spacing.xs + 2,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.textPrimary,
   },
   captureNotes: {
     color: colors.textOnLight,
     lineHeight: 20,
+  },
+  photoUploadCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.inputBackground,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: colors.cardBorder,
+    borderStyle: "dashed",
+  },
+  photoPreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  contactCard: {
+    backgroundColor: colors.cardBackground,
+    padding: spacing.lg,
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
 });

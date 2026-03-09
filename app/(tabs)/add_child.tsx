@@ -1,823 +1,673 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as MediaLibrary from 'expo-media-library';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { zodResolver } from "@hookform/resolvers/zod";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
+import * as MediaLibrary from "expo-media-library";
+import {
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  Controller,
+  useFieldArray,
+  useForm,
+} from "react-hook-form";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   TouchableOpacity,
   View,
-} from 'react-native';
-import ViewShot, { captureRef } from 'react-native-view-shot';
-import { z } from 'zod';
+} from "react-native";
+import ViewShot, {
+  captureRef,
+} from "react-native-view-shot";
+import { z } from "zod";
 
-import { AppDropdown } from '@/components/ui/app-dropdown';
-import { AppText } from '@/components/ui/app-text';
-import { FormField } from '@/components/ui/form-field';
-import { sharedStyles, addChildStyles as styles } from '@/styles';
+import { AppDropdown } from "@/components/ui/app-dropdown";
+import { AppText } from "@/components/ui/app-text";
+import { FormField } from "@/components/ui/form-field";
+import {
+  sharedStyles,
+  addChildStyles as styles,
+} from "@/styles";
 
 // ─── Validation Schema ────────────────────────────────────────────────────────
 const emergencyContactSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  relationship: z.string().min(1, 'Relationship is required'),
+  name: z.string().min(1, "Name is required"),
+  relationship: z
+    .string()
+    .min(1, "Relationship is required"),
   sex: z.string().optional(),
-  phone: z.string().min(1, 'Phone is required'),
+  phone: z.string().min(1, "Phone is required"),
   address: z.string().optional(),
 });
 
+// Helper for numeric coercion to prevent empty strings from defaulting to 0
+const numericField = (
+  minVal: number,
+  maxVal: number,
+  label: string,
+) =>
+  z
+    .string()
+    .transform((val) => {
+      const trimmed = val.trim();
+      if (trimmed === "") return undefined;
+      const num = Number(trimmed);
+      if (isNaN(num))
+        throw new Error(
+          `${label} must be a number`,
+        );
+      if (num < minVal)
+        throw new Error(`${label} seems too low`);
+      if (num > maxVal)
+        throw new Error(
+          `${label} seems too high`,
+        );
+      return num;
+    })
+    .optional()
+    .refine((val) => val !== undefined, {
+      message: `${label} is required`,
+    });
+
 const childSchema = z.object({
-  fullName: z.string().min(2, 'Name must be at least 2 characters'),
-  age: z.coerce
-    .number()
-    .min(0, 'Age cannot be negative')
-    .max(18, 'Must be under 18'),
-  height: z.coerce
-    .number()
-    .min(30, 'Height (cm) seems too low')
-    .max(250, 'Height seems too high'),
-  weight: z.coerce.number().min(2, 'Weight (kg) seems too low'),
+  fullName: z
+    .string()
+    .min(2, "Name must be at least 2 characters"),
+  imageUri: z.string().optional(),
+  age: numericField(0, 18, "Age"),
+  height: numericField(30, 250, "Height"),
+  weight: numericField(2, 200, "Weight"),
   gender: z.string().optional(),
   medicalNotes: z
     .string()
-    .max(300, 'Notes are too long (max 300 chars)')
+    .max(300, "Notes too long")
     .optional(),
-  // Birthmarks and Scars
   hasBirthmarks: z.string().optional(),
   birthmarksDescription: z.string().optional(),
   hasScars: z.string().optional(),
   scarsDescription: z.string().optional(),
-  // Other identifying features
   hasIdentifyingFeatures: z.string().optional(),
-  identifyingFeaturesDescription: z.string().optional(),
-  // Location and School/Daycare
+  identifyingFeaturesDescription: z
+    .string()
+    .optional(),
   lastKnownLocation: z.string().optional(),
-  schoolDaycareType: z.string().optional(), // 'school', 'daycare', 'none'
+  schoolDaycareType: z.string().optional(),
   schoolDaycareName: z.string().optional(),
   sportsTeams: z.string().optional(),
-  // Parents
   parent1Name: z.string().optional(),
   parent1Address: z.string().optional(),
   parent1Phone: z.string().optional(),
   parent2Name: z.string().optional(),
   parent2Address: z.string().optional(),
   parent2Phone: z.string().optional(),
-  // Emergency Contacts (1-3)
-  emergencyContacts: z.array(emergencyContactSchema).min(1, 'At least one emergency contact is required'),
+  emergencyContacts: z
+    .array(emergencyContactSchema)
+    .min(1, "At least one contact required"),
 });
 
 type ChildFormData = z.infer<typeof childSchema>;
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function AddChildScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id } = useLocalSearchParams<{
+    id?: string;
+  }>();
   const isEditMode = !!id;
+  const viewShotRef = useRef<ViewShot>(null);
 
   const {
     control,
     handleSubmit,
-    formState: { errors, isDirty },
+    formState: { errors },
     reset,
     watch,
+    setValue,
   } = useForm<ChildFormData>({
-    resolver: zodResolver(childSchema),
+    resolver: zodResolver(childSchema as any),
     defaultValues: {
-      fullName: '',
-      gender: '',
-      medicalNotes: '',
-      age: undefined,
-      height: undefined,
-      weight: undefined,
-      hasBirthmarks: '',
-      birthmarksDescription: '',
-      hasScars: '',
-      scarsDescription: '',
-      hasIdentifyingFeatures: '',
-      identifyingFeaturesDescription: '',
-      lastKnownLocation: '',
-      schoolDaycareType: '',
-      schoolDaycareName: '',
-      sportsTeams: '',
-      parent1Name: '',
-      parent1Address: '',
-      parent1Phone: '',
-      parent2Name: '',
-      parent2Address: '',
-      parent2Phone: '',
-      emergencyContacts: [{ name: '', relationship: '', sex: '', phone: '', address: '' }],
+      fullName: "",
+      imageUri: "",
+      gender: "",
+      medicalNotes: "",
+      emergencyContacts: [
+        {
+          name: "",
+          relationship: "",
+          sex: "",
+          phone: "",
+          address: "",
+        },
+      ],
     },
   });
 
-  // Watch conditional fields
-  const hasBirthmarks = watch('hasBirthmarks');
-  const hasScars = watch('hasScars');
-  const hasIdentifyingFeatures = watch('hasIdentifyingFeatures');
-  const schoolDaycareType = watch('schoolDaycareType');
+  const [captureData, setCaptureData] =
+    useState<ChildFormData | null>(null);
+  const [isExporting, setIsExporting] =
+    useState(false);
 
-  // Emergency contacts field array
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'emergencyContacts',
-  });
+  // Watch fields for conditional rendering
+  const watchedFields = watch([
+    "hasBirthmarks",
+    "hasScars",
+    "hasIdentifyingFeatures",
+    "schoolDaycareType",
+    "imageUri",
+  ]);
+  const [
+    hasBirthmarks,
+    hasScars,
+    hasIdentifyingFeatures,
+    schoolDaycareType,
+    imageUri,
+  ] = watchedFields;
 
-  const viewShotRef = React.createRef<ViewShot>();
-  const [captureData, setCaptureData] = React.useState<ChildFormData | null>(
-    null,
-  );
-  const [isExporting, setIsExporting] = React.useState(false);
+  const { fields, append, remove } =
+    useFieldArray({
+      control,
+      name: "emergencyContacts",
+    });
 
   useEffect(() => {
     if (isEditMode && id) loadChildForEdit(id);
   }, [id, isEditMode]);
 
-  // ─── Data Handlers ────────────────────────────────────────────────────────
-  const loadChildForEdit = async (childId: string) => {
-    try {
-      const childrenJson = await AsyncStorage.getItem('children_list');
-      if (childrenJson) {
-        const childrenList = JSON.parse(childrenJson);
-        const child = childrenList.find((c: any) => c.id === childId);
-        if (child) {
-          reset(
-            {
-              fullName: child.fullName || '',
-              age: child.age,
-              height: child.height,
-              weight: child.weight,
-              gender: child.gender || '',
-              medicalNotes: child.medicalNotes || '',
-              hasBirthmarks: child.hasBirthmarks || '',
-              birthmarksDescription: child.birthmarksDescription || '',
-              hasScars: child.hasScars || '',
-              scarsDescription: child.scarsDescription || '',
-              hasIdentifyingFeatures: child.hasIdentifyingFeatures || '',
-              identifyingFeaturesDescription: child.identifyingFeaturesDescription || '',
-              lastKnownLocation: child.lastKnownLocation || '',
-              schoolDaycareType: child.schoolDaycareType || '',
-              schoolDaycareName: child.schoolDaycareName || '',
-              sportsTeams: child.sportsTeams || '',
-              parent1Name: child.parent1Name || '',
-              parent1Address: child.parent1Address || '',
-              parent1Phone: child.parent1Phone || '',
-              parent2Name: child.parent2Name || '',
-              parent2Address: child.parent2Address || '',
-              parent2Phone: child.parent2Phone || '',
-              emergencyContacts: child.emergencyContacts || [{ name: '', relationship: '', sex: '', phone: '', address: '' }],
-            },
-            { keepDefaultValues: false },
-          );
-        }
-      }
-    } catch (error) {
-      console.error('Error loading child for edit:', error);
+  const pickImage = async () => {
+    const { status } =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Denied",
+        "We need access to your photos to add a profile picture.",
+      );
+      return;
     }
+    const result =
+      await ImagePicker.launchImageLibraryAsync({
+        mediaTypes:
+          ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+    if (!result.canceled)
+      setValue("imageUri", result.assets[0].uri, {
+        shouldDirty: true,
+      });
   };
 
-  const handleBack = () => {
-    if (!isDirty) return router.back();
-
-    if (Platform.OS === 'web') {
-      const confirmed =
-        typeof window !== 'undefined' && window.confirm
-          ? window.confirm(
-              'Are you sure you want to go back? Your changes will not be saved.',
-            )
-          : true;
-      if (confirmed) router.back();
-    } else {
-      Alert.alert(
-        'Unsaved Changes',
-        'Are you sure you want to go back? Your changes will not be saved.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Discard Changes',
-            style: 'destructive',
-            onPress: () => router.back(),
-          },
-        ],
+  const loadChildForEdit = async (
+    childId: string,
+  ) => {
+    try {
+      const childrenJson =
+        await AsyncStorage.getItem(
+          "children_list",
+        );
+      if (childrenJson) {
+        const childrenList =
+          JSON.parse(childrenJson);
+        const child = childrenList.find(
+          (c: any) => c.id === childId,
+        );
+        if (child) reset(child);
+      }
+    } catch (error) {
+      console.error(
+        "Error loading child:",
+        error,
       );
     }
   };
 
-  const handleDelete = async () => {
-    if (!isEditMode || !id) return;
-
-    Alert.alert(
-      'Delete Child Profile',
-      'Are you sure you want to delete this child profile? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const childrenJson = await AsyncStorage.getItem('children_list');
-              if (childrenJson) {
-                const childrenList = JSON.parse(childrenJson);
-                const updatedChildren = childrenList.filter(
-                  (c: any) => c.id !== id,
-                );
-                await AsyncStorage.setItem(
-                  'children_list',
-                  JSON.stringify(updatedChildren),
-                );
-                Alert.alert('Success', 'Child profile deleted');
-                router.back();
-              }
-            } catch (error) {
-              console.error('Error deleting child:', error);
-              Alert.alert('Error', 'Failed to delete child profile');
-            }
-          },
-        },
-      ],
-    );
+  const onInvalid = (errors: any) => {
+    console.log('Form validation errors:', errors);
+    Alert.alert("Validation Error", "Please check the form for errors.");
   };
-
-  const onSubmit = async (data: ChildFormData) => {
-    try {
-      const childrenJson = await AsyncStorage.getItem('children_list');
-      let childrenList = childrenJson ? JSON.parse(childrenJson) : [];
+      const childrenJson =
+        await AsyncStorage.getItem(
+          "children_list",
+        );
+      let childrenList = childrenJson
+        ? JSON.parse(childrenJson)
+        : [];
 
       if (isEditMode && id) {
-        const childIndex = childrenList.findIndex((c: any) => c.id === id);
-        if (childIndex !== -1) {
-          childrenList[childIndex] = { ...data, id };
-          Alert.alert('Success', 'Child profile updated!');
-        } else {
-          Alert.alert('Error', 'Child profile not found');
-          return;
-        }
-      } else {
-        childrenList.push({ ...data, id: Date.now().toString() });
-        Alert.alert('Success', 'Child profile saved!');
-      }
-
-      await AsyncStorage.setItem('children_list', JSON.stringify(childrenList));
-
-      // Migrate old single child format if it exists
-      const oldChildJson = await AsyncStorage.getItem('child_profile');
-      if (oldChildJson && !isEditMode) {
-        const oldChild = JSON.parse(oldChildJson);
-        const migratedChild = { ...oldChild, id: (Date.now() + 1).toString() };
-        await AsyncStorage.setItem(
-          'children_list',
-          JSON.stringify([...childrenList, migratedChild]),
+        const index = childrenList.findIndex(
+          (c: any) => c.id === id,
         );
-        await AsyncStorage.removeItem('child_profile');
+        if (index !== -1)
+          childrenList[index] = { ...data, id };
+      } else {
+        childrenList.push({
+          ...data,
+          id: Date.now().toString(),
+        });
       }
 
+      await AsyncStorage.setItem(
+        "children_list",
+        JSON.stringify(childrenList),
+      );
+      console.log('Profile saved successfully');
+      Alert.alert("Success", "Profile saved!");
       router.back();
     } catch (e) {
-      console.error('Save error:', e);
-      Alert.alert('Error', 'Failed to save data');
+      console.log('Error saving profile:', e);
+      Alert.alert("Error", "Failed to save data");
     }
   };
 
-  const sanitizeForFileSystem = (value: string) => {
-    const clean = value.trim().replace(/[^a-z0-9-_]+/gi, '_');
-    return clean.length ? clean.slice(0, 40) : 'child';
-  };
+  const exportPdfAndImage = handleSubmit(
+    async (data) => {
+      setIsExporting(true);
+      setCaptureData(data as ChildFormData);
 
-  const exportPdfAndImage = handleSubmit(async (data: ChildFormData) => {
-    setIsExporting(true);
-    try {
-      setCaptureData(data);
-      await new Promise((resolve) => setTimeout(resolve, 30));
+      // Delay capture to allow the ViewShot (including any images) to render
+      setTimeout(async () => {
+        try {
+          if (!viewShotRef.current)
+            throw new Error(
+              "Capture view not ready",
+            );
+          const uri = await captureRef(
+            viewShotRef,
+            { format: "png", quality: 1 },
+          );
 
-      if (!viewShotRef.current) throw new Error('Capture view is not ready');
+          const permission =
+            await MediaLibrary.requestPermissionsAsync();
+          if (permission.status === "granted") {
+            const asset =
+              await MediaLibrary.createAssetAsync(
+                uri,
+              );
+            await MediaLibrary.createAlbumAsync(
+              "ChildGuardID",
+              asset,
+              false,
+            );
+            Alert.alert(
+              "Export Successful",
+              "ID Card saved to gallery.",
+            );
+          }
+        } catch (error) {
+          Alert.alert(
+            "Error",
+            "Could not export image.",
+          );
+        } finally {
+          setIsExporting(false);
+        }
+      }, 600);
+    },
+  );
 
-      const shotUri = await captureRef(viewShotRef, {
-        format: 'png',
-        quality: 1,
-      });
-      const safeName = sanitizeForFileSystem(data.fullName);
-
-      const permission = await MediaLibrary.requestPermissionsAsync();
-      if (permission.status !== 'granted') {
-        Alert.alert(
-          'Permission needed',
-          'Please allow photo library access to save the image.',
-        );
-        return;
-      }
-
-      const asset = await MediaLibrary.createAssetAsync(shotUri);
-      const albumName = `ChildGuardID - ${safeName}`;
-      let album = await MediaLibrary.getAlbumAsync(albumName);
-      if (!album) {
-        album = await MediaLibrary.createAlbumAsync(albumName, asset, false);
-      } else {
-        await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-      }
-
-      Alert.alert('Saved', `Image saved to Photos album: ${albumName}`);
-    } catch (error) {
-      console.error('Export error:', error);
-      Alert.alert('Error', 'Could not export the image.');
-    } finally {
-      setIsExporting(false);
-    }
-  });
-
-  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={
+        Platform.OS === "ios"
+          ? "padding"
+          : "height"
+      }
       style={{ flex: 1 }}
     >
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Header */}
+      <ScrollView
+        contentContainerStyle={styles.container}
+      >
         <View style={styles.headerContainer}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity
-              onPress={handleBack}
-              style={styles.backButton}
-              activeOpacity={0.7}
-            >
-              <AppText style={styles.backButtonText}>←</AppText>
-            </TouchableOpacity>
-            <View style={styles.headerTextContainer}>
-              <AppText variant="heading" style={styles.headerTitle}>
-                {isEditMode ? 'Edit Profile' : 'Create Profile'}
-              </AppText>
-              <AppText variant="subtitle" style={styles.headerSubtext}>
-                {isEditMode
-                  ? 'Update child information'
-                  : 'Add a new child profile'}
-              </AppText>
-            </View>
-          </View>
+          <AppText variant="heading">
+            {isEditMode
+              ? "Edit Profile"
+              : "Create Profile"}
+          </AppText>
         </View>
 
-        {/* Full Name */}
+        {/* Photo Upload Section */}
+        <View
+          style={{
+            alignItems: "center",
+            marginVertical: 20,
+          }}
+        >
+          <TouchableOpacity
+            onPress={pickImage}
+            style={styles.photoUploadCircle}
+          >
+            {imageUri ? (
+              <Image
+                source={{ uri: imageUri }}
+                style={styles.photoPreview}
+              />
+            ) : (
+              <AppText
+                style={{ textAlign: "center" }}
+              >
+                Tap to Add Photo
+              </AppText>
+            )}
+          </TouchableOpacity>
+        </View>
+
         <FormField
           control={control}
           name="fullName"
           label="Full Name"
-          placeholder="Enter full name"
           error={errors.fullName?.message}
         />
 
-        {/* Age & Gender Row */}
         <View style={styles.row}>
           <FormField
             control={control}
             name="age"
             label="Age"
-            placeholder="Age in years"
             keyboardType="numeric"
+            containerStyle={{
+              flex: 1,
+              marginRight: 10,
+            }}
             error={errors.age?.message}
-            containerStyle={{ flex: 1, marginRight: 10 }}
           />
           <FormField
             control={control}
             name="gender"
-            label="Gender (Optional)"
-            placeholder="Optional"
+            label="Gender"
             containerStyle={{ flex: 1 }}
           />
         </View>
 
-        {/* Height & Weight Row */}
         <View style={styles.row}>
           <FormField
             control={control}
             name="height"
             label="Height (cm)"
-            placeholder="Height in cm"
             keyboardType="numeric"
+            containerStyle={{
+              flex: 1,
+              marginRight: 10,
+            }}
             error={errors.height?.message}
-            containerStyle={{ flex: 1, marginRight: 10 }}
           />
           <FormField
             control={control}
             name="weight"
             label="Weight (kg)"
-            placeholder="Weight in kg"
             keyboardType="numeric"
-            error={errors.weight?.message}
             containerStyle={{ flex: 1 }}
+            error={errors.weight?.message}
           />
         </View>
 
-        {/* Medical Notes */}
         <FormField
           control={control}
           name="medicalNotes"
           label="Medical Notes"
-          placeholder="Enter any medical notes, allergies, or conditions (optional)"
           multiline
           numberOfLines={4}
           error={errors.medicalNotes?.message}
         />
 
-        {/* Section: Identifying Features */}
-        <AppText variant="heading" style={{ marginTop: 20, marginBottom: 16, fontSize: 20 }}>
+        {/* Identifying Features */}
+        <AppText
+          variant="heading"
+          style={{ marginTop: 20 }}
+        >
           Identifying Features
         </AppText>
 
-        {/* Birthmarks */}
         <Controller
           control={control}
           name="hasBirthmarks"
-          render={({ field: { onChange, value } }) => (
+          render={({
+            field: { onChange, value },
+          }) => (
             <AppDropdown
-              label="Does your child have any birthmarks?"
+              label="Birthmarks?"
               options={[
-                { label: 'No', value: 'no' },
-                { label: 'Yes', value: 'yes' },
+                { label: "Yes", value: "yes" },
+                { label: "No", value: "no" },
               ]}
               value={value}
               onValueChange={onChange}
-              placeholder="Select"
             />
           )}
         />
-        {hasBirthmarks === 'yes' && (
+        {hasBirthmarks === "yes" && (
           <FormField
             control={control}
             name="birthmarksDescription"
-            label="Describe birthmarks"
-            placeholder="Enter description of birthmarks"
+            label="Details"
             multiline
-            numberOfLines={3}
-            error={errors.birthmarksDescription?.message}
           />
         )}
 
-        {/* Scars */}
         <Controller
           control={control}
           name="hasScars"
-          render={({ field: { onChange, value } }) => (
+          render={({
+            field: { onChange, value },
+          }) => (
             <AppDropdown
-              label="Does your child have any scars?"
+              label="Scars?"
               options={[
-                { label: 'No', value: 'no' },
-                { label: 'Yes', value: 'yes' },
+                { label: "Yes", value: "yes" },
+                { label: "No", value: "no" },
               ]}
               value={value}
               onValueChange={onChange}
-              placeholder="Select"
             />
           )}
         />
-        {hasScars === 'yes' && (
+        {hasScars === "yes" && (
           <FormField
             control={control}
             name="scarsDescription"
-            label="Describe scars"
-            placeholder="Enter description of scars"
+            label="Details"
             multiline
-            numberOfLines={3}
-            error={errors.scarsDescription?.message}
           />
         )}
 
-        {/* Other Identifying Features */}
-        <Controller
-          control={control}
-          name="hasIdentifyingFeatures"
-          render={({ field: { onChange, value } }) => (
-            <AppDropdown
-              label="Does your child have any other key identifying features?"
-              options={[
-                { label: 'No', value: 'no' },
-                { label: 'Yes', value: 'yes' },
-              ]}
-              value={value}
-              onValueChange={onChange}
-              placeholder="Select"
-            />
-          )}
-        />
-        {hasIdentifyingFeatures === 'yes' && (
-          <FormField
-            control={control}
-            name="identifyingFeaturesDescription"
-            label="Describe identifying features"
-            placeholder="Enter description of identifying features"
-            multiline
-            numberOfLines={3}
-            error={errors.identifyingFeaturesDescription?.message}
-          />
-        )}
-
-        {/* Last Known Location */}
-        <FormField
-          control={control}
-          name="lastKnownLocation"
-          label="Last Known Location (Optional)"
-          placeholder="Enter last known location"
-          error={errors.lastKnownLocation?.message}
-        />
-
-        {/* School/Daycare */}
         <Controller
           control={control}
           name="schoolDaycareType"
-          render={({ field: { onChange, value } }) => (
+          render={({
+            field: { onChange, value },
+          }) => (
             <AppDropdown
-              label="Is your child in school or daycare?"
+              label="School/Daycare?"
               options={[
-                { label: 'None', value: 'none' },
-                { label: 'School', value: 'school' },
-                { label: 'Daycare', value: 'daycare' },
+                {
+                  label: "School",
+                  value: "school",
+                },
+                {
+                  label: "Daycare",
+                  value: "daycare",
+                },
+                { label: "None", value: "none" },
               ]}
               value={value}
               onValueChange={onChange}
-              placeholder="Select"
             />
           )}
         />
-        {(schoolDaycareType === 'school' || schoolDaycareType === 'daycare') && (
+        {(schoolDaycareType === "school" ||
+          schoolDaycareType === "daycare") && (
           <FormField
             control={control}
             name="schoolDaycareName"
-            label={schoolDaycareType === 'school' ? 'School Name' : 'Daycare Name'}
-            placeholder={`Enter ${schoolDaycareType} name`}
-            error={errors.schoolDaycareName?.message}
+            label="Institution Name"
           />
         )}
 
-        {/* Sports Teams */}
-        <FormField
-          control={control}
-          name="sportsTeams"
-          label="Sports Teams (Optional)"
-          placeholder="Enter sports teams if applicable"
-          error={errors.sportsTeams?.message}
-        />
-
-        {/* Section: Parents Information */}
-        <AppText variant="heading" style={{ marginTop: 20, marginBottom: 16, fontSize: 20 }}>
-          Parents Information
+        {/* Emergency Contacts */}
+        <AppText
+          variant="heading"
+          style={{ marginTop: 20 }}
+        >
+          Emergency Contacts
         </AppText>
-
-        {/* Parent 1 */}
-        <FormField
-          control={control}
-          name="parent1Name"
-          label="Parent 1 - Full Name (Optional)"
-          placeholder="Enter full name"
-          error={errors.parent1Name?.message}
-        />
-        <FormField
-          control={control}
-          name="parent1Address"
-          label="Parent 1 - Address (Optional)"
-          placeholder="Enter address"
-          error={errors.parent1Address?.message}
-        />
-        <FormField
-          control={control}
-          name="parent1Phone"
-          label="Parent 1 - Phone Number (Optional)"
-          placeholder="Enter phone number"
-          keyboardType="phone-pad"
-          error={errors.parent1Phone?.message}
-        />
-
-        {/* Parent 2 */}
-        <FormField
-          control={control}
-          name="parent2Name"
-          label="Parent 2 - Full Name (Optional)"
-          placeholder="Enter full name"
-          error={errors.parent2Name?.message}
-        />
-        <FormField
-          control={control}
-          name="parent2Address"
-          label="Parent 2 - Address (Optional)"
-          placeholder="Enter address"
-          error={errors.parent2Address?.message}
-        />
-        <FormField
-          control={control}
-          name="parent2Phone"
-          label="Parent 2 - Phone Number (Optional)"
-          placeholder="Enter phone number"
-          keyboardType="phone-pad"
-          error={errors.parent2Phone?.message}
-        />
-
-        {/* Section: Emergency Contacts */}
-        <AppText variant="heading" style={{ marginTop: 20, marginBottom: 16, fontSize: 20 }}>
-          Emergency Contacts (Minimum 1, Maximum 3)
-        </AppText>
-
         {fields.map((field, index) => (
-          <View key={field.id} style={{ marginBottom: 24, padding: 16, backgroundColor: '#f8f9fa', borderRadius: 8 }}>
-            {fields.length > 1 && (
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <AppText variant="fieldLabel">Contact {index + 1}</AppText>
-                <TouchableOpacity
-                  onPress={() => remove(index)}
-                  style={{ padding: 8 }}
-                >
-                  <AppText style={{ color: '#dc3545', fontWeight: '600' }}>Remove</AppText>
-                </TouchableOpacity>
-              </View>
-            )}
+          <View
+            key={field.id}
+            style={styles.contactCard}
+          >
             <FormField
               control={control}
-              name={`emergencyContacts.${index}.name` as any}
+              name={
+                `emergencyContacts.${index}.name` as any
+              }
               label="Name"
-              placeholder="Enter name"
-              error={errors.emergencyContacts?.[index]?.name?.message}
             />
             <FormField
               control={control}
-              name={`emergencyContacts.${index}.relationship` as any}
+              name={
+                `emergencyContacts.${index}.relationship` as any
+              }
               label="Relationship"
-              placeholder="e.g., Grandparent, Aunt, Family Friend"
-              error={errors.emergencyContacts?.[index]?.relationship?.message}
             />
             <FormField
               control={control}
-              name={`emergencyContacts.${index}.sex` as any}
-              label="Sex (Optional)"
-              placeholder="Enter sex"
-              error={errors.emergencyContacts?.[index]?.sex?.message}
-            />
-            <FormField
-              control={control}
-              name={`emergencyContacts.${index}.phone` as any}
-              label="Phone Number"
-              placeholder="Enter phone number"
+              name={
+                `emergencyContacts.${index}.phone` as any
+              }
+              label="Phone"
               keyboardType="phone-pad"
-              error={errors.emergencyContacts?.[index]?.phone?.message}
             />
-            <FormField
-              control={control}
-              name={`emergencyContacts.${index}.address` as any}
-              label="Address (Optional)"
-              placeholder="Enter address"
-              error={errors.emergencyContacts?.[index]?.address?.message}
-            />
+            {fields.length > 1 && (
+              <TouchableOpacity
+                onPress={() => remove(index)}
+              >
+                <AppText
+                  style={{
+                    color: "red",
+                    marginTop: 5,
+                  }}
+                >
+                  Remove Contact
+                </AppText>
+              </TouchableOpacity>
+            )}
           </View>
         ))}
 
         {fields.length < 3 && (
           <TouchableOpacity
-            onPress={() => append({ name: '', relationship: '', sex: '', phone: '', address: '' })}
-            style={[sharedStyles.secondaryButton, { marginBottom: 20 }]}
+            onPress={() =>
+              append({
+                name: "",
+                relationship: "",
+                phone: "",
+              })
+            }
+            style={sharedStyles.secondaryButton}
           >
-            <AppText variant="label" style={sharedStyles.secondaryButtonText}>
-              + Add Emergency Contact
-            </AppText>
+            <AppText>+ Add Contact</AppText>
           </TouchableOpacity>
         )}
 
-        {errors.emergencyContacts && (
-          <AppText variant="error" style={{ marginBottom: 16 }}>
-            {errors.emergencyContacts.message || 'At least one emergency contact is required'}
-          </AppText>
-        )}
-
-        {/* Save Button */}
         <TouchableOpacity
           style={sharedStyles.primaryButton}
-          onPress={handleSubmit(onSubmit)}
+          onPress={handleSubmit(onSubmit as any, onInvalid)}
         >
-          <AppText variant="label" style={sharedStyles.primaryButtonText}>
-            {isEditMode ? 'Update Profile' : 'Save Child Profile'}
+          <AppText
+            style={sharedStyles.primaryButtonText}
+          >
+            Save Profile
           </AppText>
         </TouchableOpacity>
 
-        {/* Export Button */}
         <TouchableOpacity
           style={[
             sharedStyles.secondaryButton,
-            styles.exportButton,
-            isExporting && styles.disabledButton,
+            isExporting && { opacity: 0.5 },
           ]}
           onPress={exportPdfAndImage}
           disabled={isExporting}
         >
-          <AppText variant="label" style={sharedStyles.secondaryButtonText}>
-            {isExporting ? 'Working...' : 'Export Image'}
+          <AppText>
+            {isExporting
+              ? "Generating..."
+              : "Export ID Card Image"}
           </AppText>
         </TouchableOpacity>
-
-        {/* Delete Button (edit mode only) */}
-        {isEditMode && (
-          <TouchableOpacity
-            style={sharedStyles.dangerButton}
-            onPress={handleDelete}
-          >
-            <AppText variant="label" style={sharedStyles.dangerButtonText}>
-              Delete Profile
-            </AppText>
-          </TouchableOpacity>
-        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Hidden offscreen card for image capture */}
+      {/* HIDDEN CAPTURE CARD */}
       <ViewShot
         ref={viewShotRef}
-        options={{ format: 'png', quality: 1 }}
         style={styles.hiddenCapture}
       >
         <View style={styles.captureCard}>
-          <AppText variant="heading" style={styles.captureTitle}>
-            Child Guard ID
+          <AppText style={styles.captureTitle}>
+            CHILD GUARD ID
           </AppText>
-          <AppText variant="label" style={styles.captureName}>
-            {(captureData?.fullName || '').trim() || 'Name missing'}
-          </AppText>
-          <View style={styles.captureRow}>
-            <AppText style={styles.captureLabel}>Age</AppText>
-            <AppText style={styles.captureValue}>
-              {captureData?.age ?? ''}
-            </AppText>
+          <View
+            style={{
+              flexDirection: "row",
+              marginBottom: 20,
+            }}
+          >
+            {captureData?.imageUri && (
+              <Image
+                source={{
+                  uri: captureData.imageUri,
+                }}
+                style={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: 10,
+                  marginRight: 15,
+                }}
+              />
+            )}
+            <View style={{ flex: 1 }}>
+              <AppText style={styles.captureName}>
+                {captureData?.fullName}
+              </AppText>
+              <AppText style={{ fontSize: 16 }}>
+                Age: {captureData?.age}
+              </AppText>
+              <AppText style={{ fontSize: 16 }}>
+                H: {captureData?.height}cm | W:{" "}
+                {captureData?.weight}kg
+              </AppText>
+              {captureData?.gender && (
+                <AppText style={{ fontSize: 16 }}>
+                  Gender: {captureData.gender}
+                </AppText>
+              )}
+            </View>
           </View>
-          <View style={styles.captureRow}>
-            <AppText style={styles.captureLabel}>Gender</AppText>
-            <AppText style={styles.captureValue}>
-              {captureData?.gender || '—'}
-            </AppText>
-          </View>
-          <View style={styles.captureRow}>
-            <AppText style={styles.captureLabel}>Height (cm)</AppText>
-            <AppText style={styles.captureValue}>
-              {captureData?.height ?? ''}
-            </AppText>
-          </View>
-          <View style={styles.captureRow}>
-            <AppText style={styles.captureLabel}>Weight (kg)</AppText>
-            <AppText style={styles.captureValue}>
-              {captureData?.weight ?? ''}
-            </AppText>
-          </View>
-          {captureData?.lastKnownLocation && (
-            <View style={styles.captureRow}>
-              <AppText style={styles.captureLabel}>Last Known Location</AppText>
-              <AppText style={styles.captureValue}>
-                {captureData.lastKnownLocation}
+          {captureData?.medicalNotes && (
+            <View
+              style={{
+                borderTopWidth: 1,
+                borderColor: "#eee",
+                paddingTop: 10,
+              }}
+            >
+              <AppText
+                style={{ fontWeight: "bold" }}
+              >
+                Medical Notes:
+              </AppText>
+              <AppText numberOfLines={3}>
+                {captureData.medicalNotes}
               </AppText>
             </View>
-          )}
-          {captureData?.schoolDaycareType && captureData.schoolDaycareType !== 'none' && (
-            <View style={styles.captureRow}>
-              <AppText style={styles.captureLabel}>
-                {captureData.schoolDaycareType === 'school' ? 'School' : 'Daycare'}
-              </AppText>
-              <AppText style={styles.captureValue}>
-                {captureData.schoolDaycareName || '—'}
-              </AppText>
-            </View>
-          )}
-          {(captureData?.hasBirthmarks === 'yes' || captureData?.hasScars === 'yes' || captureData?.hasIdentifyingFeatures === 'yes') && (
-            <>
-              <AppText style={styles.captureSection}>Identifying Features</AppText>
-              {captureData.hasBirthmarks === 'yes' && captureData.birthmarksDescription && (
-                <AppText style={styles.captureNotes}>
-                  <AppText style={styles.captureLabel}>Birthmarks: </AppText>
-                  {captureData.birthmarksDescription}
-                </AppText>
-              )}
-              {captureData.hasScars === 'yes' && captureData.scarsDescription && (
-                <AppText style={styles.captureNotes}>
-                  <AppText style={styles.captureLabel}>Scars: </AppText>
-                  {captureData.scarsDescription}
-                </AppText>
-              )}
-              {captureData.hasIdentifyingFeatures === 'yes' && captureData.identifyingFeaturesDescription && (
-                <AppText style={styles.captureNotes}>
-                  <AppText style={styles.captureLabel}>Other Features: </AppText>
-                  {captureData.identifyingFeaturesDescription}
-                </AppText>
-              )}
-            </>
-          )}
-          <AppText style={styles.captureSection}>Medical Notes</AppText>
-          <AppText style={styles.captureNotes}>
-            {captureData?.medicalNotes || 'None provided'}
-          </AppText>
-          {captureData?.emergencyContacts && captureData.emergencyContacts.length > 0 && (
-            <>
-              <AppText style={styles.captureSection}>Emergency Contacts</AppText>
-              {captureData.emergencyContacts.map((contact: any, idx: number) => (
-                <View key={idx} style={{ marginBottom: 8 }}>
-                  <AppText style={styles.captureNotes}>
-                    <AppText style={styles.captureLabel}>{contact.name || '—'}</AppText>
-                    {contact.relationship && ` (${contact.relationship})`}
-                    {contact.phone && ` - ${contact.phone}`}
-                  </AppText>
-                </View>
-              ))}
-            </>
           )}
         </View>
       </ViewShot>

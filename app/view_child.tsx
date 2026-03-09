@@ -1,22 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  View,
-  ScrollView,
-  TouchableOpacity,
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
+import React, {
+  useEffect,
+  useState,
+} from "react";
+import {
   Alert,
-  Platform,
+  Image,
+  ScrollView,
   StyleSheet,
-} from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { AppText } from '@/components/ui/app-text';
-import { colors, spacing, radius, typography } from '@/styles';
+import { AppText } from "@/components/ui/app-text";
+import {
+  colors,
+  radius,
+  spacing,
+  typography,
+} from "@/styles";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ChildProfile = {
   fullName: string;
+  imageUri?: string; // Added imageUri to type
   age: number;
   height: number;
   weight: number;
@@ -48,20 +60,30 @@ type ChildProfile = {
   id?: string;
 };
 
-// ─── Helper Component ────────────────────────────────────────────────────────
+// ─── Helper Components ────────────────────────────────────────────────────────
 type InfoRowProps = {
   label: string;
   value: string | number | undefined;
 };
 
 function InfoRow({ label, value }: InfoRowProps) {
-  if (value === undefined || value === '' || value === null) return null;
+  if (
+    value === undefined ||
+    value === "" ||
+    value === null
+  )
+    return null;
   return (
     <View style={viewStyles.infoRow}>
-      <AppText variant="fieldLabel" style={viewStyles.infoLabel}>
+      <AppText
+        variant="fieldLabel"
+        style={viewStyles.infoLabel}
+      >
         {label}
       </AppText>
-      <AppText style={viewStyles.infoValue}>{String(value)}</AppText>
+      <AppText style={viewStyles.infoValue}>
+        {String(value)}
+      </AppText>
     </View>
   );
 }
@@ -71,10 +93,16 @@ type SectionProps = {
   children: React.ReactNode;
 };
 
-function Section({ title, children }: SectionProps) {
+function Section({
+  title,
+  children,
+}: SectionProps) {
   return (
     <View style={viewStyles.section}>
-      <AppText variant="heading" style={viewStyles.sectionTitle}>
+      <AppText
+        variant="heading"
+        style={viewStyles.sectionTitle}
+      >
         {title}
       </AppText>
       {children}
@@ -85,8 +113,11 @@ function Section({ title, children }: SectionProps) {
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function ViewChildScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id?: string }>();
-  const [child, setChild] = useState<ChildProfile | null>(null);
+  const { id } = useLocalSearchParams<{
+    id?: string;
+  }>();
+  const [child, setChild] =
+    useState<ChildProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -95,26 +126,40 @@ export default function ViewChildScreen() {
 
   const loadChild = async (childId: string) => {
     try {
-      const childrenJson = await AsyncStorage.getItem('children_list');
+      const childrenJson =
+        await AsyncStorage.getItem(
+          "children_list",
+        );
       if (childrenJson) {
-        const childrenList = JSON.parse(childrenJson);
-        const foundChild = childrenList.find((c: any) => c.id === childId);
+        const childrenList =
+          JSON.parse(childrenJson);
+        const foundChild = childrenList.find(
+          (c: any) => c.id === childId,
+        );
         if (foundChild) {
           setChild(foundChild);
         } else {
-          Alert.alert('Error', 'Child profile not found');
+          Alert.alert(
+            "Error",
+            "Child profile not found",
+          );
           router.back();
         }
       }
     } catch (error) {
-      console.error('Error loading child:', error);
-      Alert.alert('Error', 'Failed to load child profile');
+      console.error(
+        "Error loading child:",
+        error,
+      );
+      Alert.alert(
+        "Error",
+        "Failed to load child profile",
+      );
       router.back();
     } finally {
       setLoading(false);
     }
   };
-
 
   if (loading) {
     return (
@@ -124,177 +169,152 @@ export default function ViewChildScreen() {
     );
   }
 
-  if (!child) {
-    return (
-      <View style={viewStyles.container}>
-        <AppText>Child profile not found</AppText>
-      </View>
-    );
-  }
-
-  // Check if any fields in a section have values
-  const hasBasicInfo =
-    child.fullName ||
-    child.age !== undefined ||
-    child.height !== undefined ||
-    child.weight !== undefined ||
-    child.gender;
-
-  const hasIdentifyingFeatures =
-    child.hasBirthmarks === 'yes' ||
-    child.hasScars === 'yes' ||
-    child.hasIdentifyingFeatures === 'yes' ||
-    child.lastKnownLocation ||
-    child.schoolDaycareType ||
-    child.sportsTeams;
-
-  const hasParentInfo = child.parent1Name || child.parent2Name;
-
-  const hasEmergencyContacts =
-    child.emergencyContacts && child.emergencyContacts.length > 0;
+  if (!child) return null;
 
   return (
-    <ScrollView style={viewStyles.container} contentContainerStyle={viewStyles.contentContainer}>
+    <ScrollView
+      style={viewStyles.container}
+      contentContainerStyle={
+        viewStyles.contentContainer
+      }
+    >
       {/* Header */}
       <View style={viewStyles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={viewStyles.backButton}
-          activeOpacity={0.7}
         >
-          <AppText style={viewStyles.backButtonText}>←</AppText>
-        </TouchableOpacity>
-        <View style={viewStyles.headerTextContainer}>
-          <AppText variant="heading" style={viewStyles.headerTitle}>
-            Child Profile
+          <AppText
+            style={viewStyles.backButtonText}
+          >
+            ←
           </AppText>
-        </View>
-      </View>
-
-      {/* Avatar */}
-      <View style={viewStyles.avatarContainer}>
-        <View style={viewStyles.avatarCircle}>
-          <IconSymbol name="person.fill" size={48} color="#007AFF" />
-        </View>
-        <AppText variant="heading" style={viewStyles.childName}>
-          {child.fullName || 'Unnamed Child'}
+        </TouchableOpacity>
+        <AppText
+          variant="heading"
+          style={viewStyles.headerTitle}
+        >
+          Child Profile
         </AppText>
       </View>
 
-      {/* Basic Information */}
-      {hasBasicInfo && (
-        <Section title="Basic Information">
-          <InfoRow label="Full Name" value={child.fullName} />
-          <InfoRow label="Age" value={child.age ? `${child.age} years` : undefined} />
-          <InfoRow label="Height" value={child.height ? `${child.height} cm` : undefined} />
-          <InfoRow label="Weight" value={child.weight ? `${child.weight} kg` : undefined} />
-          <InfoRow label="Gender" value={child.gender} />
-        </Section>
-      )}
-
-      {/* Medical Notes */}
-      {child.medicalNotes && (
-        <Section title="Medical Information">
-          <View style={viewStyles.textBlock}>
-            <AppText style={viewStyles.textBlockContent}>{child.medicalNotes}</AppText>
-          </View>
-        </Section>
-      )}
-
-      {/* Identifying Features */}
-      {hasIdentifyingFeatures && (
-        <Section title="Identifying Features">
-          {child.hasBirthmarks === 'yes' && child.birthmarksDescription && (
-            <View style={viewStyles.textBlock}>
-              <AppText variant="fieldLabel" style={viewStyles.textBlockLabel}>
-                Birthmarks
-              </AppText>
-              <AppText style={viewStyles.textBlockContent}>
-                {child.birthmarksDescription}
-              </AppText>
-            </View>
-          )}
-          {child.hasScars === 'yes' && child.scarsDescription && (
-            <View style={viewStyles.textBlock}>
-              <AppText variant="fieldLabel" style={viewStyles.textBlockLabel}>
-                Scars
-              </AppText>
-              <AppText style={viewStyles.textBlockContent}>
-                {child.scarsDescription}
-              </AppText>
-            </View>
-          )}
-          {child.hasIdentifyingFeatures === 'yes' && child.identifyingFeaturesDescription && (
-            <View style={viewStyles.textBlock}>
-              <AppText variant="fieldLabel" style={viewStyles.textBlockLabel}>
-                Other Identifying Features
-              </AppText>
-              <AppText style={viewStyles.textBlockContent}>
-                {child.identifyingFeaturesDescription}
-              </AppText>
-            </View>
-          )}
-          <InfoRow label="Last Known Location" value={child.lastKnownLocation} />
-          {child.schoolDaycareType && child.schoolDaycareType !== 'none' && (
-            <InfoRow
-              label={child.schoolDaycareType === 'school' ? 'School' : 'Daycare'}
-              value={child.schoolDaycareName}
+      {/* Avatar with Dynamic Image */}
+      <View style={viewStyles.avatarContainer}>
+        <View style={viewStyles.avatarCircle}>
+          {child.imageUri ? (
+            <Image
+              source={{ uri: child.imageUri }}
+              style={{
+                width: 100,
+                height: 100,
+                borderRadius: 50,
+              }}
+            />
+          ) : (
+            <IconSymbol
+              name="person.fill"
+              size={48}
+              color="#007AFF"
             />
           )}
-          <InfoRow label="Sports Teams" value={child.sportsTeams} />
-        </Section>
-      )}
+        </View>
+        <AppText
+          variant="heading"
+          style={viewStyles.childName}
+        >
+          {child.fullName || "Unnamed Child"}
+        </AppText>
+      </View>
 
-      {/* Parents Information */}
-      {hasParentInfo && (
-        <Section title="Parents Information">
-          {child.parent1Name && (
-            <View style={viewStyles.subsection}>
-              <AppText variant="fieldLabel" style={viewStyles.subsectionTitle}>
-                Parent 1
-              </AppText>
-              <InfoRow label="Name" value={child.parent1Name} />
-              <InfoRow label="Address" value={child.parent1Address} />
-              <InfoRow label="Phone" value={child.parent1Phone} />
-            </View>
-          )}
-          {child.parent2Name && (
-            <View style={viewStyles.subsection}>
-              <AppText variant="fieldLabel" style={viewStyles.subsectionTitle}>
-                Parent 2
-              </AppText>
-              <InfoRow label="Name" value={child.parent2Name} />
-              <InfoRow label="Address" value={child.parent2Address} />
-              <InfoRow label="Phone" value={child.parent2Phone} />
-            </View>
-          )}
+      {/* Basic Info Section */}
+      <Section title="Basic Information">
+        <InfoRow
+          label="Full Name"
+          value={child.fullName}
+        />
+        <InfoRow
+          label="Age"
+          value={
+            child.age
+              ? `${child.age} years`
+              : undefined
+          }
+        />
+        <InfoRow
+          label="Height"
+          value={
+            child.height
+              ? `${child.height} cm`
+              : undefined
+          }
+        />
+        <InfoRow
+          label="Weight"
+          value={
+            child.weight
+              ? `${child.weight} kg`
+              : undefined
+          }
+        />
+        <InfoRow
+          label="Gender"
+          value={child.gender}
+        />
+      </Section>
+
+      {/* Medical Info */}
+      {child.medicalNotes && (
+        <Section title="Medical Information">
+          <AppText
+            style={viewStyles.textBlockContent}
+          >
+            {child.medicalNotes}
+          </AppText>
         </Section>
       )}
 
       {/* Emergency Contacts */}
-      {hasEmergencyContacts && (
-        <Section title="Emergency Contacts">
-          {child.emergencyContacts?.map((contact, index) => (
-            <View key={index} style={viewStyles.contactCard}>
-              <AppText variant="fieldLabel" style={viewStyles.contactTitle}>
-                Contact {index + 1}
-              </AppText>
-              <InfoRow label="Name" value={contact.name} />
-              <InfoRow label="Relationship" value={contact.relationship} />
-              <InfoRow label="Sex" value={contact.sex} />
-              <InfoRow label="Phone" value={contact.phone} />
-              <InfoRow label="Address" value={contact.address} />
-            </View>
-          ))}
-        </Section>
-      )}
+      {child.emergencyContacts &&
+        child.emergencyContacts.length > 0 && (
+          <Section title="Emergency Contacts">
+            {child.emergencyContacts.map(
+              (contact, index) => (
+                <View
+                  key={index}
+                  style={viewStyles.contactCard}
+                >
+                  <AppText
+                    variant="fieldLabel"
+                    style={
+                      viewStyles.contactTitle
+                    }
+                  >
+                    Contact {index + 1}
+                  </AppText>
+                  <InfoRow
+                    label="Name"
+                    value={contact.name}
+                  />
+                  <InfoRow
+                    label="Relationship"
+                    value={contact.relationship}
+                  />
+                  <InfoRow
+                    label="Phone"
+                    value={contact.phone}
+                  />
+                </View>
+              ),
+            )}
+          </Section>
+        )}
 
       <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
-// ─── Styles ────────────────────────────────────────────────────────────────────
+// ... viewStyles remain the same as your original file
 const viewStyles = StyleSheet.create({
   container: {
     flex: 1,
@@ -304,34 +324,30 @@ const viewStyles = StyleSheet.create({
     padding: spacing.xl,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: spacing.xxxl,
     marginTop: spacing.xl,
   },
   backButton: {
     width: 44,
     height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.xs,
+    alignItems: "center",
+    justifyContent: "center",
   },
   backButtonText: {
     fontSize: 28,
     color: colors.secondary,
-    fontWeight: '600',
-  },
-  headerTextContainer: {
-    flex: 1,
+    fontWeight: "600",
   },
   headerTitle: {
     fontSize: typography.large,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.textPrimary,
-    letterSpacing: -0.5,
+    marginLeft: spacing.md,
   },
   avatarContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: spacing.xxxl,
   },
   avatarCircle: {
@@ -339,15 +355,16 @@ const viewStyles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     backgroundColor: colors.secondaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 3,
     borderColor: colors.secondaryBorder,
     marginBottom: spacing.lg,
+    overflow: "hidden", // Added to ensure image doesn't bleed out
   },
   childName: {
     fontSize: typography.title,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.textName,
   },
   section: {
@@ -360,7 +377,7 @@ const viewStyles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: typography.subtitle,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.textPrimary,
     marginBottom: spacing.lg,
   },
@@ -374,31 +391,12 @@ const viewStyles = StyleSheet.create({
   infoValue: {
     fontSize: typography.default,
     color: colors.textPrimary,
-    fontWeight: '500',
-  },
-  textBlock: {
-    marginBottom: spacing.lg,
-  },
-  textBlockLabel: {
-    marginBottom: spacing.xs,
-    color: colors.textSubtle,
+    fontWeight: "500",
   },
   textBlockContent: {
     fontSize: typography.default,
     color: colors.textPrimary,
     lineHeight: 22,
-  },
-  subsection: {
-    marginBottom: spacing.xl,
-    paddingBottom: spacing.xl,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.subtleBorder,
-  },
-  subsectionTitle: {
-    fontSize: typography.default,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
   },
   contactCard: {
     backgroundColor: colors.inputBackground,
@@ -410,7 +408,7 @@ const viewStyles = StyleSheet.create({
   },
   contactTitle: {
     fontSize: typography.default,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.textPrimary,
     marginBottom: spacing.md,
   },
