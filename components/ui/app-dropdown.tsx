@@ -1,13 +1,10 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   TouchableOpacity,
-  Modal,
   StyleSheet,
-  Platform,
 } from 'react-native';
 import { AppText } from './app-text';
-import { AppTextInput } from './app-text-input';
 import { colors, radius, spacing, typography } from '@/styles';
 
 type DropdownOption = {
@@ -42,44 +39,36 @@ export function AppDropdown({
           {label}
         </AppText>
       )}
-      <TouchableOpacity
-        style={[
-          styles.dropdown,
-          hasError && styles.errorDropdown,
-          isOpen && styles.focusedDropdown,
-        ]}
-        onPress={() => setIsOpen(true)}
-        activeOpacity={0.7}
-      >
-        <AppText
-          style={[
-            styles.dropdownText,
-            !selectedOption && styles.placeholderText,
-          ]}
-        >
-          {selectedOption ? selectedOption.label : placeholder}
-        </AppText>
-        <AppText style={styles.arrow}>▼</AppText>
-      </TouchableOpacity>
-
-      <Modal
-        visible={isOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsOpen(false)}
-      >
+      <View>
         <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setIsOpen(false)}
+          style={[
+            styles.dropdown,
+            hasError && styles.errorDropdown,
+            isOpen && styles.focusedDropdown,
+          ]}
+          onPress={() => setIsOpen(!isOpen)}
+          activeOpacity={0.7}
         >
-          <View style={styles.modalContent}>
-            {options.map((option) => (
+          <AppText
+            style={[
+              styles.dropdownText,
+              !selectedOption && styles.placeholderText,
+            ]}
+          >
+            {selectedOption ? selectedOption.label : placeholder}
+          </AppText>
+          <AppText style={[styles.arrow, isOpen && styles.arrowOpen]}>{'\u25BC'}</AppText>
+        </TouchableOpacity>
+
+        {isOpen && (
+          <View style={styles.optionsContainer}>
+            {options.map((option, index) => (
               <TouchableOpacity
                 key={option.value}
                 style={[
                   styles.option,
                   value === option.value && styles.selectedOption,
+                  index === options.length - 1 && styles.lastOption,
                 ]}
                 onPress={() => {
                   onValueChange(option.value);
@@ -97,8 +86,8 @@ export function AppDropdown({
               </TouchableOpacity>
             ))}
           </View>
-        </TouchableOpacity>
-      </Modal>
+        )}
+      </View>
     </View>
   );
 }
@@ -129,6 +118,8 @@ const styles = StyleSheet.create({
   focusedDropdown: {
     borderColor: colors.inputSelection,
     shadowOpacity: 0.4,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
   errorDropdown: {
     borderColor: colors.danger,
@@ -146,30 +137,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSubtle,
     marginLeft: spacing.sm,
+    transform: [{ rotate: '0deg' }],
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  arrowOpen: {
+    transform: [{ rotate: '180deg' }],
   },
-  modalContent: {
-    backgroundColor: colors.background,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    minWidth: 280,
-    maxWidth: '90%',
-    maxHeight: '70%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+  optionsContainer: {
+    marginTop: 0,
+    backgroundColor: colors.inputBackground,
+    borderWidth: 1.5,
+    borderTopWidth: 0,
+    borderColor: colors.cardBorder,
+    borderBottomLeftRadius: radius.md,
+    borderBottomRightRadius: radius.md,
+    overflow: 'hidden',
   },
   option: {
     padding: spacing.lg,
-    borderRadius: radius.md,
-    marginBottom: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.cardBorder + '40',
+  },
+  lastOption: {
+    borderBottomWidth: 0,
   },
   selectedOption: {
     backgroundColor: colors.inputSelection + '20',
