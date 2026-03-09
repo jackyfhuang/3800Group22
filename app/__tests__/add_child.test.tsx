@@ -1,30 +1,70 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import AddChildScreen from '../(tabs)/add_child'; 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { render } from "@testing-library/react-native";
+import React from "react";
+import AddChildScreen from "../(tabs)/add_child";
 
-// required for the component to render without crashing
-jest.mock('expo-router', () => ({ useRouter: () => ({ back: jest.fn() }) }));
-jest.mock('@react-native-async-storage/async-storage', () => ({ setItem: jest.fn() }));
+// Mock dependencies
+jest.mock("expo-router", () => ({
+  useRouter: () => ({ back: jest.fn() }),
+  useLocalSearchParams: () => ({}),
+}));
 
-describe('AddChildScreen', () => {
+jest.mock(
+  "@react-native-async-storage/async-storage",
+  () => ({
+    getItem: jest.fn(() => Promise.resolve(null)),
+    setItem: jest.fn(() => Promise.resolve()),
+    removeItem: jest.fn(() => Promise.resolve()),
+  }),
+);
 
-  it('renders correctly', () => {
-    // Test if child input fields are present 
+jest.mock("expo-image-picker", () => ({
+  launchImageLibraryAsync: jest.fn(),
+  requestMediaLibraryPermissionsAsync: jest.fn(
+    () => Promise.resolve({ granted: true }),
+  ),
+}));
+
+jest.mock("expo-media-library", () => ({
+  requestPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ granted: true }),
+  ),
+}));
+
+describe("AddChildScreen", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('handles validation', async () => {
-    // Test invalid inputs
+  it("renders without crashing", () => {
+    const { getByText } = render(
+      <AddChildScreen />,
+    );
+
+    // Check that the screen renders
+    expect(
+      getByText("Create Profile"),
+    ).toBeTruthy();
   });
 
-  it('submits successfully', async () => {
-    // Test valid inputs
+  it("renders form fields", () => {
+    const { getByText } = render(
+      <AddChildScreen />,
+    );
+
+    // Check for form fields
+    expect(getByText("Full Name")).toBeTruthy();
+    expect(getByText("Age")).toBeTruthy();
+    expect(getByText("Gender")).toBeTruthy();
   });
 
-  it('persists data', async () => {
-    // Test if child data is stored correctly
-    // Jest is ran on the local machine, so we can't test AsyncStorage here
-    // We would need to use E2E testing on a real device for that
-  });
+  it("renders save button", () => {
+    const { getByText } = render(
+      <AddChildScreen />,
+    );
 
+    // Check for save button
+    expect(
+      getByText("Save Profile"),
+    ).toBeTruthy();
+  });
 });

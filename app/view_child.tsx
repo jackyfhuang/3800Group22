@@ -1,3 +1,4 @@
+import { ChildPassportCard } from "@/components/child-passport";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -11,6 +12,7 @@ import React, {
 import {
   Alert,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -119,6 +121,8 @@ export default function ViewChildScreen() {
   const [child, setChild] =
     useState<ChildProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showPassport, setShowPassport] =
+    useState(false);
 
   useEffect(() => {
     if (id) loadChild(id);
@@ -172,145 +176,200 @@ export default function ViewChildScreen() {
   if (!child) return null;
 
   return (
-    <ScrollView
-      style={viewStyles.container}
-      contentContainerStyle={
-        viewStyles.contentContainer
-      }
-    >
-      {/* Header */}
-      <View style={viewStyles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={viewStyles.backButton}
-        >
-          <AppText
-            style={viewStyles.backButtonText}
+    <View style={viewStyles.container}>
+      <ScrollView
+        contentContainerStyle={
+          viewStyles.contentContainer
+        }
+      >
+        {/* Header */}
+        <View style={viewStyles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={viewStyles.backButton}
           >
-            ←
+            <AppText
+              style={viewStyles.backButtonText}
+            >
+              ←
+            </AppText>
+          </TouchableOpacity>
+          <AppText
+            variant="heading"
+            style={viewStyles.headerTitle}
+          >
+            Child Profile
           </AppText>
-        </TouchableOpacity>
-        <AppText
-          variant="heading"
-          style={viewStyles.headerTitle}
-        >
-          Child Profile
-        </AppText>
-      </View>
-
-      {/* Avatar with Dynamic Image */}
-      <View style={viewStyles.avatarContainer}>
-        <View style={viewStyles.avatarCircle}>
-          {child.imageUri ? (
-            <Image
-              source={{ uri: child.imageUri }}
-              style={{
-                width: 100,
-                height: 100,
-                borderRadius: 50,
-              }}
-            />
-          ) : (
-            <IconSymbol
-              name="person.fill"
-              size={48}
-              color="#007AFF"
-            />
-          )}
         </View>
-        <AppText
-          variant="heading"
-          style={viewStyles.childName}
-        >
-          {child.fullName || "Unnamed Child"}
-        </AppText>
-      </View>
 
-      {/* Basic Info Section */}
-      <Section title="Basic Information">
-        <InfoRow
-          label="Full Name"
-          value={child.fullName}
-        />
-        <InfoRow
-          label="Age"
-          value={
-            child.age
-              ? `${child.age} years`
-              : undefined
-          }
-        />
-        <InfoRow
-          label="Height"
-          value={
-            child.height
-              ? `${child.height} cm`
-              : undefined
-          }
-        />
-        <InfoRow
-          label="Weight"
-          value={
-            child.weight
-              ? `${child.weight} kg`
-              : undefined
-          }
-        />
-        <InfoRow
-          label="Gender"
-          value={child.gender}
-        />
-      </Section>
-
-      {/* Medical Info */}
-      {child.medicalNotes && (
-        <Section title="Medical Information">
-          <AppText
-            style={viewStyles.textBlockContent}
-          >
-            {child.medicalNotes}
-          </AppText>
-        </Section>
-      )}
-
-      {/* Emergency Contacts */}
-      {child.emergencyContacts &&
-        child.emergencyContacts.length > 0 && (
-          <Section title="Emergency Contacts">
-            {child.emergencyContacts.map(
-              (contact, index) => (
-                <View
-                  key={index}
-                  style={viewStyles.contactCard}
-                >
-                  <AppText
-                    variant="fieldLabel"
-                    style={
-                      viewStyles.contactTitle
-                    }
-                  >
-                    Contact {index + 1}
-                  </AppText>
-                  <InfoRow
-                    label="Name"
-                    value={contact.name}
-                  />
-                  <InfoRow
-                    label="Relationship"
-                    value={contact.relationship}
-                  />
-                  <InfoRow
-                    label="Phone"
-                    value={contact.phone}
-                  />
-                </View>
-              ),
+        {/* Avatar with Dynamic Image */}
+        <View style={viewStyles.avatarContainer}>
+          <View style={viewStyles.avatarCircle}>
+            {child.imageUri ? (
+              <Image
+                source={{ uri: child.imageUri }}
+                style={{
+                  width: 100,
+                  height: 100,
+                  borderRadius: 50,
+                }}
+              />
+            ) : (
+              <IconSymbol
+                name="person.fill"
+                size={48}
+                color="#007AFF"
+              />
             )}
+          </View>
+          <AppText
+            variant="heading"
+            style={viewStyles.childName}
+          >
+            {child.fullName || "Unnamed Child"}
+          </AppText>
+        </View>
+
+        {/* Basic Info Section */}
+        <Section title="Basic Information">
+          <InfoRow
+            label="Full Name"
+            value={child.fullName}
+          />
+          <InfoRow
+            label="Age"
+            value={
+              child.age
+                ? `${child.age} years`
+                : undefined
+            }
+          />
+          <InfoRow
+            label="Height"
+            value={
+              child.height
+                ? `${child.height} cm`
+                : undefined
+            }
+          />
+          <InfoRow
+            label="Weight"
+            value={
+              child.weight
+                ? `${child.weight} kg`
+                : undefined
+            }
+          />
+          <InfoRow
+            label="Gender"
+            value={child.gender}
+          />
+        </Section>
+
+        {/* Medical Info */}
+        {child.medicalNotes && (
+          <Section title="Medical Information">
+            <AppText
+              style={viewStyles.textBlockContent}
+            >
+              {child.medicalNotes}
+            </AppText>
           </Section>
         )}
 
-      <View style={{ height: 40 }} />
-    </ScrollView>
+        {/* Emergency Contacts */}
+        {child.emergencyContacts &&
+          child.emergencyContacts.length > 0 && (
+            <Section title="Emergency Contacts">
+              {child.emergencyContacts.map(
+                (contact, index) => (
+                  <View
+                    key={index}
+                    style={viewStyles.contactCard}
+                  >
+                    <AppText
+                      variant="fieldLabel"
+                      style={
+                        viewStyles.contactTitle
+                      }
+                    >
+                      Contact {index + 1}
+                    </AppText>
+                    <InfoRow
+                      label="Name"
+                      value={contact.name}
+                    />
+                    <InfoRow
+                      label="Relationship"
+                      value={contact.relationship}
+                    />
+                    <InfoRow
+                      label="Phone"
+                      value={contact.phone}
+                    />
+                  </View>
+                ),
+              )}
+            </Section>
+          )}
+
+        {/* Passport Button */}
+        <TouchableOpacity
+          style={viewStyles.passportButton}
+          onPress={() => setShowPassport(true)}
+        >
+          <IconSymbol
+            name="doc.text"
+            size={20}
+            color={colors.white}
+          />
+          <AppText
+            style={viewStyles.passportButtonText}
+          >
+            Generate Passport
+          </AppText>
+        </TouchableOpacity>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+
+      {/* Passport Modal */}
+      <Modal
+        visible={showPassport}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() =>
+          setShowPassport(false)
+        }
+      >
+        <View style={viewStyles.modalContainer}>
+          <View style={viewStyles.modalHeader}>
+            <TouchableOpacity
+              onPress={() =>
+                setShowPassport(false)
+              }
+              style={viewStyles.closeButton}
+            >
+              <AppText
+                style={viewStyles.closeButtonText}
+              >
+                ✕ Close
+              </AppText>
+            </TouchableOpacity>
+          </View>
+          {child && (
+            <ChildPassportCard
+              child={
+                {
+                  ...child,
+                  id: child.id || id || "unknown",
+                } as any
+              }
+            />
+          )}
+        </View>
+      </Modal>
+    </View>
   );
 }
 
@@ -411,5 +470,40 @@ const viewStyles = StyleSheet.create({
     fontWeight: "600",
     color: colors.textPrimary,
     marginBottom: spacing.md,
+  },
+  passportButton: {
+    backgroundColor: colors.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    marginBottom: spacing.xl,
+    gap: spacing.sm,
+  },
+  passportButtonText: {
+    color: colors.white,
+    fontSize: typography.button,
+    fontWeight: "600",
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.appBackground,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    padding: spacing.lg,
+    backgroundColor: colors.cardBackground,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.cardBorder,
+  },
+  closeButton: {
+    padding: spacing.sm,
+  },
+  closeButtonText: {
+    color: colors.primary,
+    fontSize: typography.default,
+    fontWeight: "600",
   },
 });

@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
 import {
@@ -28,93 +27,20 @@ import {
 import ViewShot, {
   captureRef,
 } from "react-native-view-shot";
-import { z } from "zod";
 
 import { AppDropdown } from "@/components/ui/app-dropdown";
 import { AppText } from "@/components/ui/app-text";
 import { FormField } from "@/components/ui/form-field";
+import { useChildrenStorage } from "@/hooks/useChildrenStorage";
 import {
   sharedStyles,
   addChildStyles as styles,
 } from "@/styles";
-
-// ─── Validation Schema ────────────────────────────────────────────────────────
-const emergencyContactSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  relationship: z
-    .string()
-    .min(1, "Relationship is required"),
-  sex: z.string().optional(),
-  phone: z.string().min(1, "Phone is required"),
-  address: z.string().optional(),
-});
-
-// Helper for numeric coercion to prevent empty strings from defaulting to 0
-const numericField = (
-  minVal: number,
-  maxVal: number,
-  label: string,
-) =>
-  z
-    .string()
-    .transform((val) => {
-      const trimmed = val.trim();
-      if (trimmed === "") return undefined;
-      const num = Number(trimmed);
-      if (isNaN(num))
-        throw new Error(
-          `${label} must be a number`,
-        );
-      if (num < minVal)
-        throw new Error(`${label} seems too low`);
-      if (num > maxVal)
-        throw new Error(
-          `${label} seems too high`,
-        );
-      return num;
-    })
-    .optional()
-    .refine((val) => val !== undefined, {
-      message: `${label} is required`,
-    });
-
-const childSchema = z.object({
-  fullName: z
-    .string()
-    .min(2, "Name must be at least 2 characters"),
-  imageUri: z.string().optional(),
-  age: numericField(0, 18, "Age"),
-  height: numericField(30, 250, "Height"),
-  weight: numericField(2, 200, "Weight"),
-  gender: z.string().optional(),
-  medicalNotes: z
-    .string()
-    .max(300, "Notes too long")
-    .optional(),
-  hasBirthmarks: z.string().optional(),
-  birthmarksDescription: z.string().optional(),
-  hasScars: z.string().optional(),
-  scarsDescription: z.string().optional(),
-  hasIdentifyingFeatures: z.string().optional(),
-  identifyingFeaturesDescription: z
-    .string()
-    .optional(),
-  lastKnownLocation: z.string().optional(),
-  schoolDaycareType: z.string().optional(),
-  schoolDaycareName: z.string().optional(),
-  sportsTeams: z.string().optional(),
-  parent1Name: z.string().optional(),
-  parent1Address: z.string().optional(),
-  parent1Phone: z.string().optional(),
-  parent2Name: z.string().optional(),
-  parent2Address: z.string().optional(),
-  parent2Phone: z.string().optional(),
-  emergencyContacts: z
-    .array(emergencyContactSchema)
-    .min(1, "At least one contact required"),
-});
-
-type ChildFormData = z.infer<typeof childSchema>;
+import {
+  ChildFormData,
+  childSchema,
+  getDefaultChildFormData,
+} from "@/types/child";
 
 export default function AddChildScreen() {
   const router = useRouter();
@@ -123,6 +49,8 @@ export default function AddChildScreen() {
   }>();
   const isEditMode = !!id;
   const viewShotRef = useRef<ViewShot>(null);
+  const { loadChild, saveOrUpdateChild } =
+    useChildrenStorage();
 
   const {
     control,
@@ -133,21 +61,7 @@ export default function AddChildScreen() {
     setValue,
   } = useForm<ChildFormData>({
     resolver: zodResolver(childSchema as any),
-    defaultValues: {
-      fullName: "",
-      imageUri: "",
-      gender: "",
-      medicalNotes: "",
-      emergencyContacts: [
-        {
-          name: "",
-          relationship: "",
-          sex: "",
-          phone: "",
-          address: "",
-        },
-      ],
-    },
+    defaultValues: getDefaultChildFormData(),
   });
 
   const [captureData, setCaptureData] =
@@ -209,18 +123,8 @@ export default function AddChildScreen() {
     childId: string,
   ) => {
     try {
-      const childrenJson =
-        await AsyncStorage.getItem(
-          "children_list",
-        );
-      if (childrenJson) {
-        const childrenList =
-          JSON.parse(childrenJson);
-        const child = childrenList.find(
-          (c: any) => c.id === childId,
-        );
-        if (child) reset(child);
-      }
+      const child = await loadChild(childId);
+      if (child) reset(child);
     } catch (error) {
       console.error(
         "Error loading child:",
@@ -229,42 +133,37 @@ export default function AddChildScreen() {
     }
   };
 
-  const onInvalid = (errors: any) => {
-    console.log('Form validation errors:', errors);
-    Alert.alert("Validation Error", "Please check the form for errors.");
-  };
-      const childrenJson =
-        await AsyncStorage.getItem(
-          "children_list",
-        );
-      let childrenList = childrenJson
-        ? JSON.parse(childrenJson)
-        : [];
-
-      if (isEditMode && id) {
-        const index = childrenList.findIndex(
-          (c: any) => c.id === id,
-        );
-        if (index !== -1)
-          childrenList[index] = { ...data, id };
-      } else {
-        childrenList.push({
-          ...data,
-          id: Date.now().toString(),
-        });
-      }
-
-      await AsyncStorage.setItem(
-        "children_list",
-        JSON.stringify(childrenList),
+  const onValid = async (data: ChildFormData) => {
+    try {
+      const result = await saveOrUpdateChild(
+        data,
+        id,
       );
-      console.log('Profile saved successfully');
-      Alert.alert("Success", "Profile saved!");
-      router.back();
+      if (result) {
+        console.log("Profile saved successfully");
+        Alert.alert("Success", "Profile saved!");
+        router.back();
+      } else {
+        Alert.alert(
+          "Error",
+          "Failed to save data",
+        );
+      }
     } catch (e) {
-      console.log('Error saving profile:', e);
+      console.log("Error saving profile:", e);
       Alert.alert("Error", "Failed to save data");
     }
+  };
+
+  const onInvalid = (errors: any) => {
+    console.log(
+      "Form validation errors:",
+      errors,
+    );
+    Alert.alert(
+      "Validation Error",
+      "Please check the form for errors.",
+    );
   };
 
   const exportPdfAndImage = handleSubmit(
@@ -578,7 +477,10 @@ export default function AddChildScreen() {
 
         <TouchableOpacity
           style={sharedStyles.primaryButton}
-          onPress={handleSubmit(onSubmit as any, onInvalid)}
+          onPress={handleSubmit(
+            onValid,
+            onInvalid,
+          )}
         >
           <AppText
             style={sharedStyles.primaryButtonText}
@@ -638,11 +540,19 @@ export default function AddChildScreen() {
                 {captureData?.fullName}
               </AppText>
               <AppText style={{ fontSize: 16 }}>
-                Age: {captureData?.age}
+                Age:{" "}
+                {String(captureData?.age ?? "")}
               </AppText>
               <AppText style={{ fontSize: 16 }}>
-                H: {captureData?.height}cm | W:{" "}
-                {captureData?.weight}kg
+                H:{" "}
+                {String(
+                  captureData?.height ?? "",
+                )}
+                cm | W:{" "}
+                {String(
+                  captureData?.weight ?? "",
+                )}
+                kg
               </AppText>
               {captureData?.gender && (
                 <AppText style={{ fontSize: 16 }}>
