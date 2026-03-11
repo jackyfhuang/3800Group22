@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
   sharedStyles,
@@ -207,158 +208,147 @@ export default function HomeScreen() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <ScrollView
+    <SafeAreaView
       style={styles.container}
-      contentContainerStyle={
-        styles.contentContainer
-      }
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-        />
-      }
+      edges={["top", "left", "right"]}
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>
-          ChildGuard
-        </Text>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={
+          styles.contentContainer
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
+        }
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>
+            ChildGuard
+          </Text>
+        </View>
+
+        {/* Add Child Button - Above "Your Child Profiles" */}
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() =>
+            router.push("/add_child")
+          }
+          activeOpacity={0.8}
+        >
+          <View style={styles.addButtonCircle}>
+            <IconSymbol
+              name="plus"
+              size={28}
+              color="#007AFF"
+            />
+          </View>
+          <Text style={styles.addButtonText}>
+            Add New Child
+          </Text>
+        </TouchableOpacity>
+
+        {/* Subtitle */}
         <Text style={styles.subtitle}>
           Your Child Profiles
         </Text>
-      </View>
 
-      {/* Empty State */}
-      {children.length === 0 ? (
-        <View style={styles.emptyState}>
-          <View style={styles.emptyIconContainer}>
-            <IconSymbol
-              name="person.circle"
-              size={80}
-              color="#D0D0D0"
-            />
-          </View>
-          <Text style={styles.emptyText}>
-            No profiles yet
-          </Text>
-          <Text style={styles.emptySubtext}>
-            Create your first child profile to get
-            started
-          </Text>
-        </View>
-      ) : (
-        // Child Cards
-        <View style={styles.childrenList}>
-          {children.map((child) => (
-            <TouchableOpacity
-              key={child.id}
-              style={sharedStyles.card}
-              onPress={() =>
-                router.push({
-                  pathname: "/view_child",
-                  params: { id: child.id },
-                })
-              }
-              activeOpacity={0.7}
+        {/* Empty State */}
+        {children.length === 0 ? (
+          <View style={styles.emptyState}>
+            <View
+              style={styles.emptyIconContainer}
             >
-              <View
-                style={styles.childCardContent}
+              <IconSymbol
+                name="person.circle"
+                size={80}
+                color="#D0D0D0"
+              />
+            </View>
+            <Text style={styles.emptyText}>
+              No profiles yet
+            </Text>
+            <Text style={styles.emptySubtext}>
+              Create your first child profile to
+              get started
+            </Text>
+          </View>
+        ) : (
+          // Child Cards
+          <View style={styles.childrenList}>
+            {children.map((child) => (
+              <TouchableOpacity
+                key={child.id}
+                style={sharedStyles.card}
+                onPress={() =>
+                  router.push({
+                    pathname: "/view_child",
+                    params: { id: child.id },
+                  })
+                }
+                activeOpacity={0.7}
               >
-                {/* Avatar Circle */}
                 <View
-                  style={styles.avatarContainer}
+                  style={styles.childCardContent}
                 >
-                  {child.imageUri ? (
-                    <Image
-                      source={{
-                        uri: child.imageUri,
-                      }}
-                      style={styles.avatarCircle}
-                    />
-                  ) : (
-                    <View
-                      style={styles.avatarCircle}
-                    >
-                      <IconSymbol
-                        name="person.fill"
-                        size={32}
-                        color="#007AFF"
-                      />
-                    </View>
-                  )}
-                </View>
-
-                {/* Child Info */}
-                <View
-                  style={
-                    styles.childInfoContainer
-                  }
-                >
+                  {/* Avatar Circle */}
                   <View
-                    style={styles.childInfoRow}
+                    style={styles.avatarContainer}
                   >
-                    <Text
-                      style={styles.childName}
-                    >
-                      {child.fullName ||
-                        "Unnamed Child"}
-                    </Text>
-                    <IconSymbol
-                      name="chevron.right"
-                      size={20}
-                      color="#999"
-                    />
+                    {child.imageUri ? (
+                      <Image
+                        source={{
+                          uri: child.imageUri,
+                        }}
+                        style={
+                          styles.avatarCircle
+                        }
+                      />
+                    ) : (
+                      <View
+                        style={
+                          styles.avatarCircle
+                        }
+                      >
+                        <IconSymbol
+                          name="person.fill"
+                          size={32}
+                          color="#007AFF"
+                        />
+                      </View>
+                    )}
                   </View>
 
+                  {/* Child Info */}
                   <View
                     style={
-                      styles.childDetailsContainer
+                      styles.childInfoContainer
                     }
                   >
                     <View
-                      style={styles.detailItem}
+                      style={styles.childInfoRow}
                     >
                       <Text
-                        style={styles.detailLabel}
+                        style={styles.childName}
                       >
-                        Age
+                        {child.fullName ||
+                          "Unnamed Child"}
                       </Text>
-                      <Text
-                        style={styles.detailValue}
-                      >
-                        {child.age} yrs
-                      </Text>
+                      <IconSymbol
+                        name="chevron.right"
+                        size={20}
+                        color="#999"
+                      />
                     </View>
+
                     <View
-                      style={styles.detailItem}
+                      style={
+                        styles.childDetailsContainer
+                      }
                     >
-                      <Text
-                        style={styles.detailLabel}
-                      >
-                        Height
-                      </Text>
-                      <Text
-                        style={styles.detailValue}
-                      >
-                        {child.height} cm
-                      </Text>
-                    </View>
-                    <View
-                      style={styles.detailItem}
-                    >
-                      <Text
-                        style={styles.detailLabel}
-                      >
-                        Weight
-                      </Text>
-                      <Text
-                        style={styles.detailValue}
-                      >
-                        {child.weight} kg
-                      </Text>
-                    </View>
-                    {child.gender && (
                       <View
                         style={styles.detailItem}
                       >
@@ -367,110 +357,154 @@ export default function HomeScreen() {
                             styles.detailLabel
                           }
                         >
-                          Gender
+                          Age
                         </Text>
                         <Text
                           style={
                             styles.detailValue
                           }
                         >
-                          {child.gender}
+                          {child.age} yrs
+                        </Text>
+                      </View>
+                      <View
+                        style={styles.detailItem}
+                      >
+                        <Text
+                          style={
+                            styles.detailLabel
+                          }
+                        >
+                          Height
+                        </Text>
+                        <Text
+                          style={
+                            styles.detailValue
+                          }
+                        >
+                          {child.height} cm
+                        </Text>
+                      </View>
+                      <View
+                        style={styles.detailItem}
+                      >
+                        <Text
+                          style={
+                            styles.detailLabel
+                          }
+                        >
+                          Weight
+                        </Text>
+                        <Text
+                          style={
+                            styles.detailValue
+                          }
+                        >
+                          {child.weight} kg
+                        </Text>
+                      </View>
+                      {child.gender && (
+                        <View
+                          style={
+                            styles.detailItem
+                          }
+                        >
+                          <Text
+                            style={
+                              styles.detailLabel
+                            }
+                          >
+                            Gender
+                          </Text>
+                          <Text
+                            style={
+                              styles.detailValue
+                            }
+                          >
+                            {child.gender}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    {child.medicalNotes && (
+                      <View
+                        style={
+                          styles.notesContainer
+                        }
+                      >
+                        <Text
+                          style={
+                            styles.notesLabel
+                          }
+                        >
+                          Medical Notes
+                        </Text>
+                        <Text
+                          style={styles.notesText}
+                          numberOfLines={2}
+                        >
+                          {child.medicalNotes}
                         </Text>
                       </View>
                     )}
                   </View>
+                </View>
 
-                  {child.medicalNotes && (
-                    <View
+                {/* Action Buttons */}
+                <View style={styles.cardActions}>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/add_child",
+                        params: { id: child.id },
+                      })
+                    }
+                    activeOpacity={0.7}
+                  >
+                    <IconSymbol
+                      name="pencil"
+                      size={16}
+                      color="#007AFF"
+                    />
+                    <Text
                       style={
-                        styles.notesContainer
+                        styles.editButtonText
                       }
                     >
-                      <Text
-                        style={styles.notesLabel}
-                      >
-                        Medical Notes
-                      </Text>
-                      <Text
-                        style={styles.notesText}
-                        numberOfLines={2}
-                      >
-                        {child.medicalNotes}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-
-              {/* Action Buttons */}
-              <View style={styles.cardActions}>
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/add_child",
-                      params: { id: child.id },
-                    })
-                  }
-                  activeOpacity={0.7}
-                >
-                  <IconSymbol
-                    name="pencil"
-                    size={16}
-                    color="#007AFF"
-                  />
-                  <Text
-                    style={styles.editButtonText}
-                  >
-                    Edit
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() =>
-                    handleDeleteChild(
-                      child.id!,
-                      child.fullName,
-                    )
-                  }
-                  style={styles.deleteButton}
-                  activeOpacity={0.7}
-                >
-                  <IconSymbol
-                    name="trash"
-                    size={16}
-                    color="#FF4444"
-                  />
-                  <Text
-                    style={
-                      styles.deleteButtonText
+                      Edit
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() =>
+                      handleDeleteChild(
+                        child.id!,
+                        child.fullName,
+                      )
                     }
+                    style={styles.deleteButton}
+                    activeOpacity={0.7}
                   >
-                    Delete
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-
-      {/* Add Child Button */}
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => router.push("/add_child")}
-        activeOpacity={0.8}
-      >
-        <View style={styles.addButtonCircle}>
-          <IconSymbol
-            name="plus"
-            size={28}
-            color="#007AFF"
-          />
-        </View>
-        <Text style={styles.addButtonText}>
-          Add New Child
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+                    <IconSymbol
+                      name="trash"
+                      size={16}
+                      color="#FF4444"
+                    />
+                    <Text
+                      style={
+                        styles.deleteButtonText
+                      }
+                    >
+                      Delete
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }

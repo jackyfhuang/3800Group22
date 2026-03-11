@@ -18,6 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText } from "@/components/ui/app-text";
 import {
@@ -176,7 +177,10 @@ export default function ViewChildScreen() {
   if (!child) return null;
 
   return (
-    <View style={viewStyles.container}>
+    <SafeAreaView
+      style={viewStyles.container}
+      edges={["top", "left", "right"]}
+    >
       <ScrollView
         contentContainerStyle={
           viewStyles.contentContainer
@@ -369,7 +373,7 @@ export default function ViewChildScreen() {
           )}
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -7,11 +7,23 @@ const numericField = (
   label: string,
 ) =>
   z
-    .string()
+    .union([z.string(), z.number()])
     .transform((val) => {
-      const trimmed = val.trim();
-      if (trimmed === "") return undefined;
-      const num = Number(trimmed);
+      // Handle both string and number inputs
+      let strVal: string;
+      if (typeof val === "number") {
+        if (isNaN(val)) {
+          throw new Error(
+            `${label} must be a number`,
+          );
+        }
+        strVal = String(val);
+      } else {
+        strVal = val.trim();
+      }
+
+      if (strVal === "") return undefined;
+      const num = Number(strVal);
       if (isNaN(num))
         throw new Error(
           `${label} must be a number`,

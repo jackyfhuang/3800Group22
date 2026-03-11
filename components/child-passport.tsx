@@ -1,11 +1,18 @@
-import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
 import * as Sharing from "expo-sharing";
-import React, { useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  Dimensions,
   Image,
+  PanResponder,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -14,498 +21,1356 @@ import ViewShot from "react-native-view-shot";
 
 import { AppText } from "@/components/ui/app-text";
 import {
-  colors,
-  radius,
-  spacing,
-  typography,
+  colors
 } from "@/constants/theme";
 import { ChildProfile } from "@/types/child";
 
-interface ChildPassportProps {
+// ─── Design tokens ─────────────────────────────────────────────────────────────
+// All slides share this locked system — nothing deviates from it.
+
+const DS = {
+  // Palette
+  ink: "#111318", // primary text
+  inkMid: "#5A5F6E", // secondary text / labels
+  inkLight: "#9EA5B5", // tertiary / placeholders
+  surface: "#F7F8FA", // slide background
+  white: "#FFFFFF",
+  border: "#E4E7EE", // subtle dividers
+  accent: colors.primary, // interactive / accent (from app theme)
+
+  // Slide accent tints (one per slide — same saturation level)
+  tints: {
+    photo: { bg: "#111318", text: "#FFFFFF" }, // dark/photo
+    details: {
+      bg: "#F7F8FA",
+      pill: "#EEF2FF",
+      dot: "#4F6BED",
+    },
+    medical: {
+      bg: "#F7F8FA",
+      pill: "#FFF0F0",
+      dot: "#E05252",
+    },
+    contacts: {
+      bg: "#F7F8FA",
+      pill: "#EDFAF3",
+      dot: "#35B57B",
+    },
+  },
+
+  // Typography (numeric px)
+  size: {
+    hero: 28,
+    title: 17,
+    base: 14,
+    small: 12,
+    micro: 10,
+  },
+
+  // Spacing multiplier
+  sp: (n: number) => n * 4,
+
+  // Border radius
+  card: 20,
+  pill: 8,
+  chip: 6,
+};
+
+// ─── Dimensions ────────────────────────────────────────────────────────────────
+
+const { width: SW } = Dimensions.get("window");
+const CARD_W = SW - 40;
+const CARD_H = CARD_W * 1.38;
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
+
+type SlideKey =
+  | "photo"
+  | "details"
+  | "medical"
+  | "contacts";
+const SLIDE_KEYS: SlideKey[] = [
+  "photo",
+  "details",
+  "medical",
+  "contacts",
+];
+
+interface Props {
   child: ChildProfile;
   onCapture?: (uri: string) => void;
 }
 
-// ─── Passport Card Component ─────────────────────────────────────────────────────
+// ─── Component ─────────────────────────────────────────────────────────────────
+
 export function ChildPassportCard({
   child,
   onCapture,
-}: ChildPassportProps) {
-  const viewShotRef = useRef<ViewShot>(null);
-  const [isCapturing, setIsCapturing] =
+}: Props) {
+  const [idx, setIdx] = useState(0);
+  const [capturing, setCapturing] =
     useState(false);
 
-  // Capture the passport as a JPG image
-  const capturePassport = async (): Promise<
+  const opacity = useRef(
+    new Animated.Value(1),
+  ).current;
+  const translateX = useRef(
+    new Animated.Value(0),
+  ).current;
+  const exportRef = useRef<ViewShot>(null);
+
+  // Auto-advance
+  useEffect(() => {
+    const t = setInterval(
+      () =>
+        transition(
+          (idx + 1) % SLIDE_KEYS.length,
+          "left",
+        ),
+      5000,
+    );
+    return () => clearInterval(t);
+  }, [idx]);
+
+  const transition = useCallback(
+    (next: number, dir: "left" | "right") => {
+      const out = dir === "left" ? -24 : 24;
+      Animated.parallel([
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateX, {
+          toValue: out,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        translateX.setValue(-out);
+        setIdx(next);
+        Animated.parallel([
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(translateX, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
+    },
+    [opacity, translateX],
+  );
+
+  const pan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > Math.abs(g.dy) * 1.5 &&
+        Math.abs(g.dx) > 12,
+      onPanResponderRelease: (_, g) => {
+        if (
+          g.dx < -40 &&
+          idx < SLIDE_KEYS.length - 1
+        )
+          transition(idx + 1, "left");
+        else if (g.dx > 40 && idx > 0)
+          transition(idx - 1, "right");
+      },
+    }),
+  ).current;
+
+  // ── Shared slide shell ──────────────────────────────────────────────────────
+  // Every content slide (non-photo) uses this wrapper for identical padding/header
+
+  const InfoShell = ({
+    slideKey,
+    label,
+    children,
+  }: {
+    slideKey: Exclude<SlideKey, "photo">;
+    label: string;
+    children: React.ReactNode;
+  }) => {
+    const dot = DS.tints[slideKey].dot;
+    const pill = DS.tints[slideKey].pill;
+    return (
+      <View
+        style={[
+          shell.wrap,
+          {
+            backgroundColor:
+              DS.tints[slideKey].bg,
+          },
+        ]}
+      >
+        {/* Section label pill */}
+        <View
+          style={[
+            shell.pill,
+            { backgroundColor: pill },
+          ]}
+        >
+          <View
+            style={[
+              shell.pillDot,
+              { backgroundColor: dot },
+            ]}
+          />
+          <AppText
+            style={[
+              shell.pillText,
+              { color: dot },
+            ]}
+          >
+            {label}
+          </AppText>
+        </View>
+        {children}
+      </View>
+    );
+  };
+
+  const shell = StyleSheet.create({
+    wrap: {
+      flex: 1,
+      paddingTop: DS.sp(14), // 56 — clears the progress bar
+      paddingHorizontal: DS.sp(6),
+      paddingBottom: DS.sp(5),
+    },
+    pill: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-start",
+      borderRadius: 100,
+      paddingHorizontal: DS.sp(3),
+      paddingVertical: DS.sp(1.5),
+      marginBottom: DS.sp(5),
+      gap: DS.sp(1.5),
+    },
+    pillDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+    pillText: {
+      fontSize: DS.size.micro,
+      fontWeight: "700",
+      letterSpacing: 1.2,
+    },
+  });
+
+  // ── Row — reusable label+value row ──────────────────────────────────────────
+
+  const Row = ({
+    label,
+    value,
+    last,
+  }: {
+    label: string;
+    value?: string | number | null;
+    last?: boolean;
+  }) => {
+    if (!value) return null;
+    return (
+      <View
+        style={[
+          rowSt.row,
+          !last && rowSt.rowBorder,
+        ]}
+      >
+        <AppText style={rowSt.label}>
+          {label}
+        </AppText>
+        <AppText
+          style={rowSt.value}
+          numberOfLines={2}
+        >
+          {String(value)}
+        </AppText>
+      </View>
+    );
+  };
+
+  const rowSt = StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      paddingVertical: DS.sp(3),
+      gap: DS.sp(3),
+    },
+    rowBorder: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: DS.border,
+    },
+    label: {
+      fontSize: DS.size.micro,
+      color: DS.inkLight,
+      fontWeight: "600",
+      letterSpacing: 0.6,
+      width: 80,
+      paddingTop: 2,
+    },
+    value: {
+      fontSize: DS.size.base,
+      color: DS.ink,
+      fontWeight: "500",
+      flex: 1,
+      lineHeight: 20,
+    },
+  });
+
+  // ── Block — colored callout block ───────────────────────────────────────────
+
+  const Block = ({
+    icon,
+    title,
+    accentColor,
+    bgColor,
+    children,
+  }: {
+    icon: string;
+    title: string;
+    accentColor: string;
+    bgColor: string;
+    children: React.ReactNode;
+  }) => (
+    <View
+      style={[
+        blk.wrap,
+        {
+          backgroundColor: bgColor,
+          borderLeftColor: accentColor,
+        },
+      ]}
+    >
+      <View style={blk.titleRow}>
+        <AppText style={blk.icon}>{icon}</AppText>
+        <AppText
+          style={[
+            blk.title,
+            { color: accentColor },
+          ]}
+        >
+          {title}
+        </AppText>
+      </View>
+      {children}
+    </View>
+  );
+
+  const blk = StyleSheet.create({
+    wrap: {
+      borderLeftWidth: 3,
+      borderRadius: DS.pill,
+      padding: DS.sp(4),
+      marginBottom: DS.sp(3),
+    },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: DS.sp(2),
+      marginBottom: DS.sp(2),
+    },
+    icon: { fontSize: 16 },
+    title: {
+      fontSize: DS.size.small,
+      fontWeight: "700",
+      letterSpacing: 0.4,
+    },
+  });
+
+  // ── Slide: Photo ────────────────────────────────────────────────────────────
+
+  const SlidePhoto = () => (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: DS.tints.photo.bg,
+      }}
+    >
+      {child.imageUri ? (
+        <Image
+          source={{ uri: child.imageUri }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        />
+      ) : (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            ph.placeholder,
+          ]}
+        >
+          <AppText style={ph.icon}>📷</AppText>
+          <AppText style={ph.none}>
+            No Photo
+          </AppText>
+        </View>
+      )}
+      {/* scrim */}
+      <View style={ph.scrim} />
+      <View style={ph.meta}>
+        <AppText
+          style={ph.name}
+          numberOfLines={2}
+        >
+          {child.fullName || "—"}
+        </AppText>
+        {child.age ? (
+          <View style={ph.tagRow}>
+            <View style={ph.tag}>
+              <AppText style={ph.tagText}>
+                {child.age} yrs
+              </AppText>
+            </View>
+            {child.gender ? (
+              <View style={ph.tag}>
+                <AppText style={ph.tagText}>
+                  {child.gender}
+                </AppText>
+              </View>
+            ) : null}
+            {child.height ? (
+              <View style={ph.tag}>
+                <AppText style={ph.tagText}>
+                  {child.height} cm
+                </AppText>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+        <AppText style={ph.id}>
+          ID ·{" "}
+          {child.id?.substring(0, 8) || "N/A"}
+        </AppText>
+      </View>
+    </View>
+  );
+
+  const ph = StyleSheet.create({
+    placeholder: {
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    icon: { fontSize: 52 },
+    none: {
+      fontSize: DS.size.base,
+      color: "rgba(255,255,255,0.4)",
+      marginTop: DS.sp(2),
+    },
+    scrim: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: 220,
+      backgroundColor: "rgba(0,0,0,0.55)",
+    },
+    meta: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      padding: DS.sp(6),
+    },
+    name: {
+      fontSize: DS.size.hero,
+      fontWeight: "800",
+      color: DS.white,
+      lineHeight: 34,
+      marginBottom: DS.sp(3),
+    },
+    tagRow: {
+      flexDirection: "row",
+      gap: DS.sp(2),
+      marginBottom: DS.sp(3),
+      flexWrap: "wrap",
+    },
+    tag: {
+      backgroundColor: "rgba(255,255,255,0.18)",
+      borderRadius: 100,
+      paddingHorizontal: DS.sp(3),
+      paddingVertical: DS.sp(1),
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.25)",
+    },
+    tagText: {
+      fontSize: DS.size.small,
+      color: DS.white,
+      fontWeight: "600",
+    },
+    id: {
+      fontSize: DS.size.micro,
+      color: "rgba(255,255,255,0.38)",
+      letterSpacing: 1.5,
+    },
+  });
+
+  // ── Slide: Details ──────────────────────────────────────────────────────────
+
+  const SlideDetails = () => (
+    <InfoShell
+      slideKey="details"
+      label="PERSONAL DETAILS"
+    >
+      <Row
+        label="Full name"
+        value={child.fullName}
+      />
+      <Row
+        label="Age"
+        value={
+          child.age
+            ? `${child.age} years old`
+            : null
+        }
+      />
+      <Row label="Gender" value={child.gender} />
+      <Row
+        label="Height"
+        value={
+          child.height
+            ? `${child.height} cm`
+            : null
+        }
+      />
+      <Row
+        label="Weight"
+        value={
+          child.weight
+            ? `${child.weight} kg`
+            : null
+        }
+      />
+      <Row
+        label="School"
+        value={child.schoolDaycareName}
+      />
+      <Row
+        label="Activities"
+        value={child.sportsTeams}
+        last
+      />
+    </InfoShell>
+  );
+
+  // ── Slide: Medical ──────────────────────────────────────────────────────────
+
+  const SlideMedical = () => {
+    const hasAny =
+      child.medicalNotes ||
+      child.hasBirthmarks === "yes" ||
+      child.hasScars === "yes" ||
+      child.hasIdentifyingFeatures === "yes" ||
+      child.lastKnownLocation;
+
+    return (
+      <InfoShell
+        slideKey="medical"
+        label="MEDICAL & FEATURES"
+      >
+        {!hasAny ? (
+          <View style={empty.wrap}>
+            <AppText style={empty.icon}>
+              🩺
+            </AppText>
+            <AppText style={empty.text}>
+              No medical info on record
+            </AppText>
+          </View>
+        ) : null}
+
+        {child.medicalNotes ? (
+          <Block
+            icon="🏥"
+            title="Medical Notes"
+            accentColor="#E05252"
+            bgColor="#FFF0F0"
+          >
+            <AppText style={bodyText}>
+              {child.medicalNotes}
+            </AppText>
+          </Block>
+        ) : null}
+
+        {child.hasBirthmarks === "yes" ||
+        child.hasScars === "yes" ||
+        child.hasIdentifyingFeatures === "yes" ? (
+          <Block
+            icon="🔍"
+            title="Identifying Features"
+            accentColor="#35B57B"
+            bgColor="#EDFAF3"
+          >
+            {child.hasBirthmarks === "yes" &&
+            child.birthmarksDescription ? (
+              <AppText style={bodyText}>
+                <AppText style={boldText}>
+                  Birthmarks —{" "}
+                </AppText>
+                {child.birthmarksDescription}
+              </AppText>
+            ) : null}
+            {child.hasScars === "yes" &&
+            child.scarsDescription ? (
+              <AppText
+                style={[
+                  bodyText,
+                  { marginTop: DS.sp(1) },
+                ]}
+              >
+                <AppText style={boldText}>
+                  Scars —{" "}
+                </AppText>
+                {child.scarsDescription}
+              </AppText>
+            ) : null}
+            {child.hasIdentifyingFeatures ===
+              "yes" &&
+            child.identifyingFeaturesDescription ? (
+              <AppText
+                style={[
+                  bodyText,
+                  { marginTop: DS.sp(1) },
+                ]}
+              >
+                <AppText style={boldText}>
+                  Other —{" "}
+                </AppText>
+                {
+                  child.identifyingFeaturesDescription
+                }
+              </AppText>
+            ) : null}
+          </Block>
+        ) : null}
+
+        {child.lastKnownLocation ? (
+          <Block
+            icon="📍"
+            title="Last Known Location"
+            accentColor="#4F6BED"
+            bgColor="#EEF2FF"
+          >
+            <AppText style={bodyText}>
+              {child.lastKnownLocation}
+            </AppText>
+          </Block>
+        ) : null}
+      </InfoShell>
+    );
+  };
+
+  // ── Slide: Contacts ─────────────────────────────────────────────────────────
+
+  const SlideContacts = () => {
+    const hasContacts =
+      (child.emergencyContacts?.length ?? 0) > 0;
+    const hasParents = !!(
+      child.parent1Name || child.parent2Name
+    );
+
+    return (
+      <InfoShell
+        slideKey="contacts"
+        label="EMERGENCY CONTACTS"
+      >
+        {!hasContacts && !hasParents ? (
+          <View style={empty.wrap}>
+            <AppText style={empty.icon}>
+              📋
+            </AppText>
+            <AppText style={empty.text}>
+              No contacts on record
+            </AppText>
+          </View>
+        ) : null}
+
+        {child.emergencyContacts?.map((c, i) => (
+          <View
+            key={i}
+            style={[
+              ct.card,
+              {
+                borderLeftColor:
+                  DS.tints.contacts.dot,
+              },
+            ]}
+          >
+            <View style={ct.header}>
+              <View
+                style={[
+                  ct.badge,
+                  {
+                    backgroundColor:
+                      DS.tints.contacts.dot,
+                  },
+                ]}
+              >
+                <AppText style={ct.badgeText}>
+                  {i + 1}
+                </AppText>
+              </View>
+              <View style={{ flex: 1 }}>
+                <AppText style={ct.name}>
+                  {c.name}
+                </AppText>
+                {c.relationship ? (
+                  <AppText style={ct.rel}>
+                    {c.relationship}
+                  </AppText>
+                ) : null}
+              </View>
+            </View>
+            <AppText style={ct.phone}>
+              📞 {c.phone}
+            </AppText>
+            {c.address ? (
+              <AppText style={ct.addr}>
+                🏠 {c.address}
+              </AppText>
+            ) : null}
+          </View>
+        ))}
+
+        {hasParents ? (
+          <View
+            style={[
+              ct.card,
+              { borderLeftColor: DS.inkLight },
+            ]}
+          >
+            <AppText style={ct.parentLabel}>
+              Parents / Guardians
+            </AppText>
+            {child.parent1Name ? (
+              <View style={ct.parentRow}>
+                <AppText style={ct.parentName}>
+                  {child.parent1Name}
+                </AppText>
+                {child.parent1Phone ? (
+                  <AppText style={ct.phone}>
+                    📞 {child.parent1Phone}
+                  </AppText>
+                ) : null}
+              </View>
+            ) : null}
+            {child.parent2Name ? (
+              <View
+                style={[
+                  ct.parentRow,
+                  { marginTop: DS.sp(2) },
+                ]}
+              >
+                <AppText style={ct.parentName}>
+                  {child.parent2Name}
+                </AppText>
+                {child.parent2Phone ? (
+                  <AppText style={ct.phone}>
+                    📞 {child.parent2Phone}
+                  </AppText>
+                ) : null}
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+      </InfoShell>
+    );
+  };
+
+  const ct = StyleSheet.create({
+    card: {
+      backgroundColor: DS.white,
+      borderRadius: DS.chip,
+      borderLeftWidth: 3,
+      padding: DS.sp(4),
+      marginBottom: DS.sp(3),
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: DS.sp(3),
+      marginBottom: DS.sp(2),
+    },
+    badge: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    badgeText: {
+      color: DS.white,
+      fontSize: DS.size.small,
+      fontWeight: "700",
+    },
+    name: {
+      fontSize: DS.size.base,
+      fontWeight: "700",
+      color: DS.ink,
+    },
+    rel: {
+      fontSize: DS.size.small,
+      color: DS.inkMid,
+      marginTop: 1,
+    },
+    phone: {
+      fontSize: DS.size.small,
+      color: DS.ink,
+      marginTop: DS.sp(1),
+    },
+    addr: {
+      fontSize: DS.size.small,
+      color: DS.inkMid,
+      marginTop: DS.sp(1),
+    },
+    parentLabel: {
+      fontSize: DS.size.small,
+      fontWeight: "700",
+      color: DS.inkMid,
+      letterSpacing: 0.6,
+      marginBottom: DS.sp(2),
+    },
+    parentRow: { gap: 2 },
+    parentName: {
+      fontSize: DS.size.base,
+      fontWeight: "600",
+      color: DS.ink,
+    },
+  });
+
+  // ── Shared text styles ──────────────────────────────────────────────────────
+
+  const bodyText: any = {
+    fontSize: DS.size.small,
+    color: DS.ink,
+    lineHeight: 19,
+  };
+  const boldText: any = { fontWeight: "700" };
+
+  const empty = StyleSheet.create({
+    wrap: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: DS.sp(2),
+    },
+    icon: { fontSize: 36, opacity: 0.35 },
+    text: {
+      fontSize: DS.size.base,
+      color: DS.inkLight,
+      fontStyle: "italic",
+    },
+  });
+
+  // ── Slide renderer ──────────────────────────────────────────────────────────
+
+  const renderSlide = (key: SlideKey) => {
+    switch (key) {
+      case "photo":
+        return <SlidePhoto />;
+      case "details":
+        return <SlideDetails />;
+      case "medical":
+        return <SlideMedical />;
+      case "contacts":
+        return <SlideContacts />;
+    }
+  };
+
+  // ── Export: 2×2 grid ─────────────────────────────────────────────────────────
+
+  const HALF = CARD_W / 2;
+
+  const ExportGrid = () => (
+    <View
+      style={{
+        width: CARD_W,
+        height: CARD_W,
+        flexDirection: "row",
+        flexWrap: "wrap",
+      }}
+    >
+      {/* ① Photo tile */}
+      <View
+        style={{
+          width: HALF,
+          height: HALF,
+          overflow: "hidden",
+          backgroundColor: DS.ink,
+        }}
+      >
+        {child.imageUri ? (
+          <Image
+            source={{ uri: child.imageUri }}
+            style={{ width: HALF, height: HALF }}
+            resizeMode="cover"
+          />
+        ) : (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <AppText style={{ fontSize: 28 }}>
+              📷
+            </AppText>
+          </View>
+        )}
+        <View
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: "rgba(0,0,0,0.52)",
+            padding: 8,
+          }}
+        >
+          <AppText
+            style={{
+              color: DS.white,
+              fontSize: 10,
+              fontWeight: "700",
+            }}
+            numberOfLines={1}
+          >
+            {child.fullName || "—"}
+          </AppText>
+          {child.age ? (
+            <AppText
+              style={{
+                color: "rgba(255,255,255,0.7)",
+                fontSize: 8,
+              }}
+            >
+              {child.age} yrs ·{" "}
+              {child.gender || ""}
+            </AppText>
+          ) : null}
+        </View>
+      </View>
+
+      {/* ② Details tile */}
+      <ExportTile
+        bg="#F7F8FA"
+        label="DETAILS"
+        labelColor={DS.tints.details.dot}
+      >
+        {[
+          ["Name", child.fullName],
+          [
+            "Age",
+            child.age ? `${child.age} yrs` : null,
+          ],
+          [
+            "Height",
+            child.height
+              ? `${child.height} cm`
+              : null,
+          ],
+          [
+            "Weight",
+            child.weight
+              ? `${child.weight} kg`
+              : null,
+          ],
+          ["School", child.schoolDaycareName],
+        ]
+          .filter(([, v]) => v)
+          .map(([l, v]) => (
+            <ExportRow
+              key={l as string}
+              label={l as string}
+              value={v as string}
+            />
+          ))}
+      </ExportTile>
+
+      {/* ③ Medical tile */}
+      <ExportTile
+        bg="#FFF8F8"
+        label="MEDICAL"
+        labelColor={DS.tints.medical.dot}
+      >
+        {child.medicalNotes ? (
+          <AppText
+            style={{
+              fontSize: 8,
+              color: DS.ink,
+              marginBottom: 4,
+            }}
+            numberOfLines={3}
+          >
+            {child.medicalNotes}
+          </AppText>
+        ) : null}
+        {child.hasBirthmarks === "yes" &&
+        child.birthmarksDescription ? (
+          <ExportRow
+            label="Marks"
+            value={child.birthmarksDescription}
+          />
+        ) : null}
+        {child.hasScars === "yes" &&
+        child.scarsDescription ? (
+          <ExportRow
+            label="Scars"
+            value={child.scarsDescription}
+          />
+        ) : null}
+        {!child.medicalNotes &&
+        child.hasBirthmarks !== "yes" &&
+        child.hasScars !== "yes" ? (
+          <AppText
+            style={{
+              fontSize: 8,
+              color: DS.inkLight,
+              fontStyle: "italic",
+            }}
+          >
+            No medical info
+          </AppText>
+        ) : null}
+      </ExportTile>
+
+      {/* ④ Contacts tile */}
+      <ExportTile
+        bg="#F5FFF9"
+        label="CONTACTS"
+        labelColor={DS.tints.contacts.dot}
+      >
+        {child.emergencyContacts
+          ?.slice(0, 2)
+          .map((c, i) => (
+            <View
+              key={i}
+              style={{ marginBottom: 5 }}
+            >
+              <AppText
+                style={{
+                  fontSize: 8,
+                  fontWeight: "700",
+                  color: DS.ink,
+                }}
+                numberOfLines={1}
+              >
+                {c.name}
+              </AppText>
+              <AppText
+                style={{
+                  fontSize: 7,
+                  color: DS.inkMid,
+                }}
+              >
+                {c.phone}
+              </AppText>
+            </View>
+          ))}
+        {child.parent1Name ? (
+          <ExportRow
+            label="Parent"
+            value={
+              child.parent1Name +
+              (child.parent1Phone
+                ? ` · ${child.parent1Phone}`
+                : "")
+            }
+          />
+        ) : null}
+      </ExportTile>
+    </View>
+  );
+
+  const ExportTile = ({
+    bg,
+    label,
+    labelColor,
+    children,
+  }: {
+    bg: string;
+    label: string;
+    labelColor: string;
+    children: React.ReactNode;
+  }) => (
+    <View
+      style={{
+        width: HALF,
+        height: HALF,
+        backgroundColor: bg,
+        padding: 10,
+      }}
+    >
+      <AppText
+        style={{
+          fontSize: 8,
+          fontWeight: "800",
+          color: labelColor,
+          letterSpacing: 1.2,
+          marginBottom: 7,
+        }}
+      >
+        {label}
+      </AppText>
+      {children}
+    </View>
+  );
+
+  const ExportRow = ({
+    label,
+    value,
+  }: {
+    label: string;
+    value: string;
+  }) => (
+    <View
+      style={{
+        flexDirection: "row",
+        marginBottom: 3,
+      }}
+    >
+      <AppText
+        style={{
+          fontSize: 7,
+          color: DS.inkLight,
+          width: 40,
+        }}
+        numberOfLines={1}
+      >
+        {label}
+      </AppText>
+      <AppText
+        style={{
+          fontSize: 8,
+          fontWeight: "600",
+          color: DS.ink,
+          flex: 1,
+        }}
+        numberOfLines={1}
+      >
+        {value}
+      </AppText>
+    </View>
+  );
+
+  // ── Actions ─────────────────────────────────────────────────────────────────
+
+  const doCapture = async (): Promise<
     string | null
   > => {
-    if (!viewShotRef.current) return null;
-
     try {
-      setIsCapturing(true);
+      setCapturing(true);
       const uri =
-        await viewShotRef.current.capture?.();
-      if (uri && onCapture) {
-        onCapture(uri);
-      }
-      return uri || null;
-    } catch (error) {
-      console.error(
-        "Error capturing passport:",
-        error,
-      );
+        await exportRef.current?.capture?.();
+      if (!uri) throw new Error();
+      if (onCapture) onCapture(uri);
+      return uri;
+    } catch {
       Alert.alert(
         "Error",
         "Failed to capture passport image",
       );
       return null;
     } finally {
-      setIsCapturing(false);
+      setCapturing(false);
     }
   };
 
-  // Share the passport as JPG
-  const sharePassport = async () => {
-    try {
-      const isAvailable =
-        await Sharing.isAvailableAsync();
-      if (!isAvailable) {
-        Alert.alert(
-          "Sharing not available",
-          "Sharing is not available on this device",
-        );
-        return;
-      }
+  const share = async () => {
+    if (!(await Sharing.isAvailableAsync())) {
+      Alert.alert("Sharing not available");
+      return;
+    }
+    const uri = await doCapture();
+    if (uri)
+      await Sharing.shareAsync(uri, {
+        mimeType: "image/jpeg",
+        dialogTitle: `${child.fullName}'s Passport`,
+      });
+  };
 
-      const uri = await capturePassport();
-      if (uri) {
-        await Sharing.shareAsync(uri, {
-          mimeType: "image/jpeg",
-          dialogTitle: `Share ${child.fullName}'s Passport`,
-        });
-      }
-    } catch (error) {
-      console.error(
-        "Error sharing passport:",
-        error,
-      );
+  const save = async () => {
+    const { status } =
+      await MediaLibrary.requestPermissionsAsync();
+    if (status !== "granted") {
       Alert.alert(
-        "Error",
-        "Failed to share passport",
+        "Permission Required",
+        "Allow photo access to save",
       );
+      return;
     }
+    const uri = await doCapture();
+    if (!uri) return;
+    const asset =
+      await MediaLibrary.createAssetAsync(uri);
+    let album =
+      await MediaLibrary.getAlbumAsync(
+        "ChildGuard",
+      );
+    if (!album)
+      await MediaLibrary.createAlbumAsync(
+        "ChildGuard",
+        asset,
+        false,
+      );
+    else
+      await MediaLibrary.addAssetsToAlbumAsync(
+        [asset],
+        album,
+        false,
+      );
+    Alert.alert(
+      "Saved!",
+      "Saved to your ChildGuard album",
+    );
   };
 
-  // Save passport to device gallery as JPG
-  const saveToGallery = async () => {
-    try {
-      // Request permissions
-      const { status } =
-        await MediaLibrary.requestPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission Required",
-          "Please allow access to save photos to your gallery",
-        );
-        return;
-      }
-
-      const uri = await capturePassport();
-      if (uri) {
-        // Save directly to media library
-        const asset =
-          await MediaLibrary.createAssetAsync(
-            uri,
-          );
-
-        // Get or create album
-        let album =
-          await MediaLibrary.getAlbumAsync(
-            "ChildGuard",
-          );
-        if (!album) {
-          album =
-            await MediaLibrary.createAlbumAsync(
-              "ChildGuard",
-              asset,
-              false,
-            );
-        } else {
-          await MediaLibrary.addAssetsToAlbumAsync(
-            [asset],
-            album,
-            false,
-          );
-        }
-
-        Alert.alert(
-          "Saved!",
-          `Passport saved to your photo gallery in the ChildGuard album`,
-        );
-      }
-    } catch (error) {
-      console.error(
-        "Error saving passport:",
-        error,
-      );
-      Alert.alert(
-        "Error",
-        "Failed to save passport to gallery",
-      );
-    }
-  };
-
-  // Export as JPG file to device storage
-  const exportAsJpg = async () => {
-    try {
-      const uri = await capturePassport();
-      if (uri) {
-        // Copy to document directory with .jpg extension using new API
-        const fileName = `child_passport_${child.id}_${Date.now()}.jpg`;
-        const destinationDir =
-          FileSystem.Paths.document;
-        const destinationFile =
-          new FileSystem.File(
-            destinationDir,
-            fileName,
-          );
-
-        // Copy the captured file to the destination
-        await FileSystem.copyAsync({
-          from: uri,
-          to: destinationFile.uri,
-        });
-        Alert.alert(
-          "Exported!",
-          `Passport exported as JPG to:\n${fileName}\n\nYou can find this file in the app's documents folder.`,
-          [
-            { text: "OK" },
-            {
-              text: "Share Now",
-              onPress: () => sharePassport(),
-            },
-          ],
-        );
-      }
-    } catch (error) {
-      console.error(
-        "Error exporting passport:",
-        error,
-      );
-      Alert.alert(
-        "Error",
-        "Failed to export passport",
-      );
-    }
-  };
+  // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <View style={passportStyles.container}>
-      {/* Passport Header */}
-      <View style={passportStyles.header}>
-        <AppText
-          variant="heading"
-          style={passportStyles.headerTitle}
-        >
-          CHILD PASSPORT
-        </AppText>
-        <AppText
-          style={passportStyles.headerSubtitle}
-        >
-          ChildGuard Verification
-        </AppText>
-      </View>
-
-      {/* ViewShot for capturing the passport as JPG */}
+    <View style={s.container}>
+      {/* Hidden export */}
       <ViewShot
-        ref={viewShotRef}
-        options={{ format: "jpg", quality: 0.9 }}
-        style={passportStyles.passportCard}
+        ref={exportRef}
+        options={{ format: "jpg", quality: 0.95 }}
+        style={s.exportView}
       >
-        {/* Photo Section */}
-        <View style={passportStyles.photoSection}>
-          <View style={passportStyles.photoFrame}>
-            {child.imageUri ? (
-              <Image
-                source={{ uri: child.imageUri }}
-                style={passportStyles.photo}
-              />
-            ) : (
-              <View
-                style={
-                  passportStyles.photoPlaceholder
-                }
-              >
-                <AppText
-                  style={
-                    passportStyles.photoPlaceholderText
-                  }
-                >
-                  📷
-                </AppText>
-              </View>
-            )}
-          </View>
-          <View style={passportStyles.photoLabel}>
-            <AppText
-              style={
-                passportStyles.photoLabelText
-              }
-            >
-              PHOTO
-            </AppText>
-          </View>
-        </View>
-
-        {/* Personal Information */}
-        <View style={passportStyles.infoSection}>
-          <View style={passportStyles.nameRow}>
-            <AppText
-              style={passportStyles.nameLabel}
-            >
-              NAME
-            </AppText>
-            <AppText
-              style={passportStyles.nameValue}
-            >
-              {child.fullName || "N/A"}
-            </AppText>
-          </View>
-
-          <View
-            style={passportStyles.detailsGrid}
-          >
-            <View
-              style={passportStyles.detailItem}
-            >
-              <AppText
-                style={passportStyles.detailLabel}
-              >
-                AGE
-              </AppText>
-              <AppText
-                style={passportStyles.detailValue}
-              >
-                {child.age
-                  ? `${child.age} yrs`
-                  : "N/A"}
-              </AppText>
-            </View>
-            <View
-              style={passportStyles.detailItem}
-            >
-              <AppText
-                style={passportStyles.detailLabel}
-              >
-                HEIGHT
-              </AppText>
-              <AppText
-                style={passportStyles.detailValue}
-              >
-                {child.height
-                  ? `${child.height} cm`
-                  : "N/A"}
-              </AppText>
-            </View>
-            <View
-              style={passportStyles.detailItem}
-            >
-              <AppText
-                style={passportStyles.detailLabel}
-              >
-                WEIGHT
-              </AppText>
-              <AppText
-                style={passportStyles.detailValue}
-              >
-                {child.weight
-                  ? `${child.weight} kg`
-                  : "N/A"}
-              </AppText>
-            </View>
-            <View
-              style={passportStyles.detailItem}
-            >
-              <AppText
-                style={passportStyles.detailLabel}
-              >
-                GENDER
-              </AppText>
-              <AppText
-                style={passportStyles.detailValue}
-              >
-                {child.gender || "N/A"}
-              </AppText>
-            </View>
-          </View>
-
-          {/* Medical Notes */}
-          {child.medicalNotes && (
-            <View
-              style={
-                passportStyles.medicalSection
-              }
-            >
-              <AppText
-                style={
-                  passportStyles.medicalLabel
-                }
-              >
-                MEDICAL NOTES
-              </AppText>
-              <AppText
-                style={
-                  passportStyles.medicalValue
-                }
-                numberOfLines={2}
-              >
-                {child.medicalNotes}
-              </AppText>
-            </View>
-          )}
-
-          {/* Identifying Features */}
-          {(child.hasIdentifyingFeatures ===
-            "yes" ||
-            child.hasBirthmarks === "yes" ||
-            child.hasScars === "yes") && (
-            <View
-              style={
-                passportStyles.featuresSection
-              }
-            >
-              <AppText
-                style={
-                  passportStyles.featuresLabel
-                }
-              >
-                IDENTIFYING FEATURES
-              </AppText>
-              <AppText
-                style={
-                  passportStyles.featuresValue
-                }
-                numberOfLines={2}
-              >
-                {[
-                  child.hasBirthmarks === "yes" &&
-                    child.birthmarksDescription,
-                  child.hasScars === "yes" &&
-                    child.scarsDescription,
-                  child.hasIdentifyingFeatures ===
-                    "yes" &&
-                    child.identifyingFeaturesDescription,
-                ]
-                  .filter(Boolean)
-                  .join(" | ") || "None listed"}
-              </AppText>
-            </View>
-          )}
-
-          {/* Emergency Contact */}
-          {child.emergencyContacts &&
-            child.emergencyContacts.length >
-              0 && (
-              <View
-                style={
-                  passportStyles.emergencySection
-                }
-              >
-                <AppText
-                  style={
-                    passportStyles.emergencyLabel
-                  }
-                >
-                  EMERGENCY CONTACT
-                </AppText>
-                <AppText
-                  style={
-                    passportStyles.emergencyValue
-                  }
-                >
-                  {
-                    child.emergencyContacts[0]
-                      .name
-                  }{" "}
-                  -{" "}
-                  {
-                    child.emergencyContacts[0]
-                      .phone
-                  }
-                </AppText>
-                {child.emergencyContacts[0]
-                  .relationship && (
-                  <AppText
-                    style={
-                      passportStyles.emergencyRelation
-                    }
-                  >
-                    (
-                    {
-                      child.emergencyContacts[0]
-                        .relationship
-                    }
-                    )
-                  </AppText>
-                )}
-              </View>
-            )}
-        </View>
-
-        {/* Passport Footer */}
-        <View style={passportStyles.footer}>
-          <AppText
-            style={passportStyles.footerText}
-          >
-            ID: {child.id} | Generated:{" "}
-            {new Date().toLocaleDateString()}
-          </AppText>
-        </View>
+        <ExportGrid />
       </ViewShot>
 
-      {/* Action Buttons */}
-      <View style={passportStyles.actions}>
-        <TouchableOpacity
-          style={passportStyles.shareButton}
-          onPress={sharePassport}
-          disabled={isCapturing}
-        >
-          {isCapturing ? (
-            <ActivityIndicator
-              color={colors.white}
-            />
-          ) : (
-            <AppText
-              style={passportStyles.buttonText}
+      {/* Card */}
+      <View style={s.card} {...pan.panHandlers}>
+        {/* Progress bars */}
+        <View style={s.bars}>
+          {SLIDE_KEYS.map((_, i) => (
+            <TouchableOpacity
+              key={i}
+              style={s.barHit}
+              onPress={() =>
+                transition(
+                  i,
+                  i > idx ? "left" : "right",
+                )
+              }
+              activeOpacity={0.7}
             >
-              📤 Share Passport
+              <View
+                style={[
+                  s.bar,
+                  i <= idx && s.barFilled,
+                ]}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Animated content */}
+        <Animated.View
+          style={[
+            { flex: 1 },
+            {
+              opacity,
+              transform: [{ translateX }],
+            },
+          ]}
+        >
+          {renderSlide(SLIDE_KEYS[idx])}
+        </Animated.View>
+      </View>
+
+      {/* Dots + arrows */}
+      <View style={s.nav}>
+        <TouchableOpacity
+          style={[
+            s.arrow,
+            idx === 0 && s.arrowOff,
+          ]}
+          onPress={() =>
+            idx > 0 &&
+            transition(idx - 1, "right")
+          }
+          disabled={idx === 0}
+          activeOpacity={0.7}
+        >
+          <AppText style={s.arrowText}>‹</AppText>
+        </TouchableOpacity>
+
+        <View style={s.dots}>
+          {SLIDE_KEYS.map((_, i) => (
+            <TouchableOpacity
+              key={i}
+              hitSlop={{
+                top: 10,
+                bottom: 10,
+                left: 8,
+                right: 8,
+              }}
+              onPress={() =>
+                transition(
+                  i,
+                  i > idx ? "left" : "right",
+                )
+              }
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  s.dot,
+                  i === idx && s.dotOn,
+                ]}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <TouchableOpacity
+          style={[
+            s.arrow,
+            idx === SLIDE_KEYS.length - 1 &&
+              s.arrowOff,
+          ]}
+          onPress={() =>
+            idx < SLIDE_KEYS.length - 1 &&
+            transition(idx + 1, "left")
+          }
+          disabled={idx === SLIDE_KEYS.length - 1}
+          activeOpacity={0.7}
+        >
+          <AppText style={s.arrowText}>›</AppText>
+        </TouchableOpacity>
+      </View>
+
+      {/* Buttons */}
+      <View style={s.actions}>
+        <TouchableOpacity
+          style={s.btnPrimary}
+          onPress={share}
+          disabled={capturing}
+          activeOpacity={0.85}
+        >
+          {capturing ? (
+            <ActivityIndicator color={DS.white} />
+          ) : (
+            <AppText style={s.btnPrimaryText}>
+              Share Passport
             </AppText>
           )}
         </TouchableOpacity>
-
         <TouchableOpacity
-          style={passportStyles.saveButton}
-          onPress={saveToGallery}
-          disabled={isCapturing}
+          style={s.btnSecondary}
+          onPress={save}
+          disabled={capturing}
+          activeOpacity={0.85}
         >
-          <AppText
-            style={passportStyles.saveButtonText}
-          >
-            💾 Save to Gallery
-          </AppText>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={passportStyles.exportButton}
-          onPress={exportAsJpg}
-          disabled={isCapturing}
-        >
-          <AppText
-            style={
-              passportStyles.exportButtonText
-            }
-          >
-            📄 Export as JPG
+          <AppText style={s.btnSecondaryText}>
+            Save to Gallery
           </AppText>
         </TouchableOpacity>
       </View>
@@ -513,234 +1378,127 @@ export function ChildPassportCard({
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────────
-const passportStyles = StyleSheet.create({
+// ─── Root styles ────────────────────────────────────────────────────────────────
+
+const s = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    padding: spacing.lg,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    backgroundColor: colors.appBackground,
   },
-  header: {
-    alignItems: "center",
-    marginBottom: spacing.lg,
+  exportView: {
+    position: "absolute",
+    left: -9999,
+    top: 0,
   },
-  headerTitle: {
-    fontSize: typography.title,
-    fontWeight: "800",
-    color: colors.primary,
-    letterSpacing: 2,
-  },
-  headerSubtitle: {
-    fontSize: typography.small,
-    color: colors.textSubtle,
-    marginTop: spacing.xs,
-  },
-  passportCard: {
-    width: "100%",
-    backgroundColor: colors.white,
-    borderRadius: radius.lg,
-    borderWidth: 2,
-    borderColor: colors.primary,
+
+  // Card
+  card: {
+    width: CARD_W,
+    height: CARD_H,
+    borderRadius: DS.card,
     overflow: "hidden",
+    backgroundColor: DS.surface,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.13,
+    shadowRadius: 18,
+    elevation: 10,
   },
-  photoSection: {
+
+  // Progress bars
+  bars: {
+    position: "absolute",
+    top: 14,
+    left: 14,
+    right: 14,
     flexDirection: "row",
-    backgroundColor: colors.primaryLight,
-    padding: spacing.lg,
+    gap: 5,
+    zIndex: 10,
+  },
+  barHit: { flex: 1, paddingVertical: 6 },
+  bar: {
+    height: 2,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.3)",
+  },
+  barFilled: {
+    backgroundColor: "rgba(255,255,255,0.9)",
+  },
+
+  // Navigation
+  nav: {
+    flexDirection: "row",
     alignItems: "center",
+    marginTop: 18,
+    gap: 20,
   },
-  photoFrame: {
-    width: 80,
-    height: 80,
-    borderRadius: radius.md,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    overflow: "hidden",
-    backgroundColor: colors.white,
-  },
-  photo: {
-    width: "100%",
-    height: "100%",
-  },
-  photoPlaceholder: {
-    width: "100%",
-    height: "100%",
+  arrow: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: DS.accent,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.subtleBorder,
   },
-  photoPlaceholderText: {
-    fontSize: 32,
+  arrowOff: { backgroundColor: DS.border },
+  arrowText: {
+    color: DS.white,
+    fontSize: 26,
+    lineHeight: 30,
+    fontWeight: "300",
   },
-  photoLabel: {
-    marginLeft: spacing.lg,
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.sm,
-  },
-  photoLabelText: {
-    color: colors.white,
-    fontSize: typography.tiny,
-    fontWeight: "700",
-    letterSpacing: 1,
-  },
-  infoSection: {
-    padding: spacing.lg,
-  },
-  nameRow: {
-    marginBottom: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.subtleBorder,
-    paddingBottom: spacing.md,
-  },
-  nameLabel: {
-    fontSize: typography.tiny,
-    color: colors.textSubtle,
-    fontWeight: "600",
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-  },
-  nameValue: {
-    fontSize: typography.title,
-    fontWeight: "700",
-    color: colors.textPrimary,
-  },
-  detailsGrid: {
+  dots: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: spacing.lg,
-  },
-  detailItem: {
-    width: "50%",
-    marginBottom: spacing.md,
-  },
-  detailLabel: {
-    fontSize: typography.tiny,
-    color: colors.textSubtle,
-    fontWeight: "600",
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-  },
-  detailValue: {
-    fontSize: typography.default,
-    fontWeight: "600",
-    color: colors.textPrimary,
-  },
-  medicalSection: {
-    backgroundColor: colors.redBackground,
-    padding: spacing.md,
-    borderRadius: radius.sm,
-    marginBottom: spacing.md,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.danger,
-  },
-  medicalLabel: {
-    fontSize: typography.tiny,
-    color: colors.danger,
-    fontWeight: "700",
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-  },
-  medicalValue: {
-    fontSize: typography.small,
-    color: colors.textPrimary,
-  },
-  featuresSection: {
-    backgroundColor: colors.tealLight,
-    padding: spacing.md,
-    borderRadius: radius.sm,
-    marginBottom: spacing.md,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.secondary,
-  },
-  featuresLabel: {
-    fontSize: typography.tiny,
-    color: colors.secondary,
-    fontWeight: "700",
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-  },
-  featuresValue: {
-    fontSize: typography.small,
-    color: colors.textPrimary,
-  },
-  emergencySection: {
-    backgroundColor: colors.blueLight,
-    padding: spacing.md,
-    borderRadius: radius.sm,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.primary,
-  },
-  emergencyLabel: {
-    fontSize: typography.tiny,
-    color: colors.primary,
-    fontWeight: "700",
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-  },
-  emergencyValue: {
-    fontSize: typography.default,
-    fontWeight: "600",
-    color: colors.textPrimary,
-  },
-  emergencyRelation: {
-    fontSize: typography.small,
-    color: colors.textSubtle,
-    marginTop: spacing.xs,
-  },
-  footer: {
-    backgroundColor: colors.primary,
-    padding: spacing.md,
+    gap: 7,
     alignItems: "center",
   },
-  footerText: {
-    fontSize: typography.tiny,
-    color: colors.white,
-    opacity: 0.8,
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: DS.border,
   },
+  dotOn: {
+    width: 22,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: DS.accent,
+  },
+
+  // Buttons
   actions: {
     flexDirection: "row",
-    marginTop: spacing.lg,
-    gap: spacing.md,
+    marginTop: 16,
+    gap: 10,
+    width: "100%",
   },
-  shareButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xxl,
-    borderRadius: radius.lg,
-    alignItems: "center",
+  btnPrimary: {
     flex: 1,
-  },
-  saveButton: {
-    backgroundColor: colors.secondary,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xxl,
-    borderRadius: radius.lg,
+    backgroundColor: DS.accent,
+    paddingVertical: 15,
+    borderRadius: 14,
     alignItems: "center",
+  },
+  btnPrimaryText: {
+    color: DS.white,
+    fontSize: DS.size.base,
+    fontWeight: "700",
+  },
+  btnSecondary: {
     flex: 1,
-  },
-  buttonText: {
-    color: colors.white,
-    fontSize: typography.button,
-    fontWeight: "600",
-  },
-  saveButtonText: {
-    color: colors.white,
-    fontSize: typography.button,
-    fontWeight: "600",
-  },
-  exportButton: {
-    backgroundColor: colors.danger,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xxl,
-    borderRadius: radius.lg,
+    backgroundColor: DS.white,
+    paddingVertical: 15,
+    borderRadius: 14,
     alignItems: "center",
-    flex: 1,
+    borderWidth: 1.5,
+    borderColor: DS.border,
   },
-  exportButtonText: {
-    color: colors.white,
-    fontSize: typography.button,
+  btnSecondaryText: {
+    color: DS.ink,
+    fontSize: DS.size.base,
     fontWeight: "600",
   },
 });

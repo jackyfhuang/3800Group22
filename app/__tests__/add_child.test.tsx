@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react-native";
 import React from "react";
-import AddChildScreen from "../(tabs)/add_child";
+import AddChildScreen from "../add_child";
 
 // Mock dependencies
 jest.mock("expo-router", () => ({
