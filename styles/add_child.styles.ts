@@ -1,17 +1,21 @@
 import { StyleSheet } from 'react-native';
-import { colors, spacing, radius, typography } from './shared';
+import { colors, radius, spacing, typography } from './shared';
 
 export const addChildStyles = StyleSheet.create({
   // ─── Layout ───────────────────────────────────────────────────────────────
+  screen: {
+    flex: 1,
+    backgroundColor: colors.appBackground,
+  },
   container: {
     padding: spacing.xxl,
-    backgroundColor: colors.appBackground,
+    paddingBottom: spacing.xxxl * 3,
     flexGrow: 1,
   },
 
   // ─── Header ───────────────────────────────────────────────────────────────
   headerContainer: {
-    marginBottom: spacing.xxxl,
+    marginBottom: spacing.xxl,
     marginTop: spacing.xl,
   },
   headerTop: {
@@ -47,44 +51,107 @@ export const addChildStyles = StyleSheet.create({
     color: colors.textSubtle,
   },
 
-  // ─── Form Fields ──────────────────────────────────────────────────────────
-  inputGroup: {
-    marginBottom: spacing.xxl,
-  },
+  // ─── Form Row ─────────────────────────────────────────────────────────────
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: spacing.md,
   },
-  input: {
-    backgroundColor: colors.inputBackground,
+
+  // ─── Read-only Field ──────────────────────────────────────────────────────
+  readOnlyField: {
+    backgroundColor: colors.appBackground,
     borderWidth: 1.5,
     borderColor: colors.cardBorder,
     borderRadius: radius.md,
     padding: spacing.lg,
-    fontSize: typography.default,
-    color: colors.textOnLight,
     minHeight: 52,
-    shadowColor: colors.inputShadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    justifyContent: 'center',
   },
-  textArea: {
-    height: 120,
-    textAlignVertical: 'top',
-    paddingTop: spacing.lg,
+  readOnlyText: {
+    fontSize: typography.default,
+    color: colors.textSubtle,
   },
-  errorInput: {
-    borderColor: colors.danger,
-    backgroundColor: colors.dangerBackground,
-    borderWidth: 1.5,
+
+  // ─── Toggle Row (Glasses, Hearing Aids) ──────────────────────────────────
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.subtleBorder,
+    marginBottom: spacing.md,
   },
-  errorText: {
+  toggleLabel: {
+    fontSize: typography.default,
+    color: colors.textPrimary,
+    fontWeight: '500',
+    flex: 1,
+  },
+
+  // ─── Emergency Contact Card ───────────────────────────────────────────────
+  contactCard: {
+    backgroundColor: colors.appBackground,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  contactCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  contactCardTitle: {
+    fontSize: typography.default,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  removeContactText: {
+    fontSize: typography.body,
     color: colors.danger,
-    fontSize: typography.tiny,
-    marginTop: spacing.xs,
-    marginLeft: spacing.xs,
+    fontWeight: '600',
+  },
+
+  // ─── Navigation Buttons ───────────────────────────────────────────────────
+  navButtonRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.xl,
+  },
+  navButtonBack: {
+    flex: 1,
+    paddingVertical: 18,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.secondaryBorder,
+    backgroundColor: colors.cardBackground,
+  },
+  navButtonBackText: {
+    color: colors.secondary,
+    fontSize: typography.button,
+    fontWeight: '600',
+  },
+  navButtonNext: {
+    flex: 2,
+    paddingVertical: 18,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    backgroundColor: colors.secondary,
+    shadowColor: colors.secondary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  navButtonNextText: {
+    color: colors.white,
+    fontSize: typography.button,
+    fontWeight: '600',
   },
 
   // ─── Export Button ────────────────────────────────────────────────────────
