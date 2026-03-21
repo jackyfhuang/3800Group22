@@ -232,6 +232,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSubtle,
     marginLeft: spacing.sm,
+    transform: [{ rotate: '0deg' }],
   },
   overlay: {
     flex: 1,
