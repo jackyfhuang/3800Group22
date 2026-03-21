@@ -25,6 +25,11 @@ import {
   getDefaultChildFormData,
 } from "@/types/child";
 
+type FeatureImageFieldName =
+  | "birthmarkImageUris"
+  | "scarImageUris"
+  | "identifyingFeatureImageUris";
+
 export default function AddChildScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{
@@ -52,6 +57,9 @@ export default function AddChildScreen() {
     "hasIdentifyingFeatures",
     "schoolDaycareType",
     "imageUri",
+    "birthmarkImageUris",
+    "scarImageUris",
+    "identifyingFeatureImageUris",
   ]);
   const [
     hasBirthmarks,
@@ -59,7 +67,22 @@ export default function AddChildScreen() {
     hasIdentifyingFeatures,
     schoolDaycareType,
     imageUri,
+    birthmarkImageUrisRaw,
+    scarImageUrisRaw,
+    identifyingFeatureImageUrisRaw,
   ] = watchedFields;
+  const birthmarkImageUris = React.useMemo(
+    () => birthmarkImageUrisRaw || [],
+    [birthmarkImageUrisRaw],
+  );
+  const scarImageUris = React.useMemo(
+    () => scarImageUrisRaw || [],
+    [scarImageUrisRaw],
+  );
+  const identifyingFeatureImageUris = React.useMemo(
+    () => identifyingFeatureImageUrisRaw || [],
+    [identifyingFeatureImageUrisRaw],
+  );
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -82,6 +105,33 @@ export default function AddChildScreen() {
     if (isEditMode && id) loadChildForEdit(id);
   }, [id, isEditMode, loadChildForEdit]);
 
+  useEffect(() => {
+    if (hasBirthmarks !== "yes" && birthmarkImageUris.length > 0) {
+      setValue("birthmarkImageUris", [], {
+        shouldDirty: true,
+      });
+    }
+  }, [hasBirthmarks, birthmarkImageUris, setValue]);
+
+  useEffect(() => {
+    if (hasScars !== "yes" && scarImageUris.length > 0) {
+      setValue("scarImageUris", [], {
+        shouldDirty: true,
+      });
+    }
+  }, [hasScars, scarImageUris, setValue]);
+
+  useEffect(() => {
+    if (
+      hasIdentifyingFeatures !== "yes" &&
+      identifyingFeatureImageUris.length > 0
+    ) {
+      setValue("identifyingFeatureImageUris", [], {
+        shouldDirty: true,
+      });
+    }
+  }, [hasIdentifyingFeatures, identifyingFeatureImageUris, setValue]);
+
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -102,6 +152,89 @@ export default function AddChildScreen() {
         shouldDirty: true,
       });
   };
+
+  const pickFeatureImages = async (
+    fieldName: FeatureImageFieldName,
+    existing: string[],
+  ) => {
+    if (existing.length >= 3) {
+      Alert.alert("Limit reached", "You can upload up to 3 photos.");
+      return;
+    }
+
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Denied",
+        "We need access to your photos to upload identifying feature images.",
+      );
+      return;
+    }
+
+    const remaining = 3 - existing.length;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      selectionLimit: remaining,
+      quality: 0.6,
+    });
+
+    if (!result.canceled) {
+      const newUris = result.assets
+        .map((asset) => asset.uri)
+        .slice(0, remaining);
+
+      setValue(fieldName, [...existing, ...newUris], {
+        shouldDirty: true,
+      });
+    }
+  };
+
+  const removeFeatureImage = (
+    fieldName: FeatureImageFieldName,
+    existing: string[],
+    imageIndex: number,
+  ) => {
+    const nextImages = existing.filter((_, index) => index !== imageIndex);
+    setValue(fieldName, nextImages, {
+      shouldDirty: true,
+    });
+  };
+
+  const renderFeatureUploader = (
+    fieldName: FeatureImageFieldName,
+    images: string[],
+    label: string,
+  ) => (
+    <View style={styles.featurePhotosContainer}>
+      <AppText variant="fieldLabel">{label}</AppText>
+
+      <View style={styles.featurePhotosRow}>
+        {images.map((uri, index) => (
+          <View key={`${uri}-${index}`} style={styles.featurePhotoItem}>
+            <Image source={{ uri }} style={styles.featurePhotoThumb} />
+            <TouchableOpacity
+              onPress={() => removeFeatureImage(fieldName, images, index)}
+              style={styles.featurePhotoRemoveButton}
+              activeOpacity={0.8}
+            >
+              <AppText style={styles.featurePhotoRemoveText}>×</AppText>
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        {images.length < 3 && (
+          <TouchableOpacity
+            onPress={() => pickFeatureImages(fieldName, images)}
+            style={styles.featurePhotoAddButton}
+            activeOpacity={0.8}
+          >
+            <AppText style={styles.featurePhotoAddText}>+ Photo</AppText>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
 
   const onValid = async (data: ChildFormData) => {
     try {
@@ -242,12 +375,19 @@ export default function AddChildScreen() {
             )}
           />
           {hasBirthmarks === "yes" && (
-            <FormField
-              control={control}
-              name="birthmarksDescription"
-              label="Describe birthmarks"
-              multiline
-            />
+            <>
+              <FormField
+                control={control}
+                name="birthmarksDescription"
+                label="Describe birthmarks"
+                multiline
+              />
+              {renderFeatureUploader(
+                "birthmarkImageUris",
+                birthmarkImageUris,
+                "Birthmark Photos (Optional, up to 3)",
+              )}
+            </>
           )}
 
           <Controller
@@ -266,12 +406,19 @@ export default function AddChildScreen() {
             )}
           />
           {hasScars === "yes" && (
-            <FormField
-              control={control}
-              name="scarsDescription"
-              label="Describe scars"
-              multiline
-            />
+            <>
+              <FormField
+                control={control}
+                name="scarsDescription"
+                label="Describe scars"
+                multiline
+              />
+              {renderFeatureUploader(
+                "scarImageUris",
+                scarImageUris,
+                "Scar Photos (Optional, up to 3)",
+              )}
+            </>
           )}
 
           <Controller
@@ -290,12 +437,19 @@ export default function AddChildScreen() {
             )}
           />
           {hasIdentifyingFeatures === "yes" && (
-            <FormField
-              control={control}
-              name="identifyingFeaturesDescription"
-              label="Describe identifying features"
-              multiline
-            />
+            <>
+              <FormField
+                control={control}
+                name="identifyingFeaturesDescription"
+                label="Describe identifying features"
+                multiline
+              />
+              {renderFeatureUploader(
+                "identifyingFeatureImageUris",
+                identifyingFeatureImageUris,
+                "Additional Feature Photos (Optional, up to 3)",
+              )}
+            </>
           )}
 
           <FormField
