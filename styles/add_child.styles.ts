@@ -1,10 +1,5 @@
 import { StyleSheet } from "react-native";
-import {
-    colors,
-    radius,
-    spacing,
-    typography,
-} from "./shared";
+import { colors, radius, spacing, typography } from "./shared";
 
 export const addChildStyles = StyleSheet.create({
   // ─── Layout ───────────────────────────────────────────────────────────────
@@ -171,11 +166,36 @@ export const addChildStyles = StyleSheet.create({
     borderRadius: 50,
   },
   contactCard: {
-    backgroundColor: colors.cardBackground,
-    padding: spacing.lg,
-    borderRadius: radius.md,
+    backgroundColor: "transparent",
+    padding: 0,
+    borderRadius: 0,
     marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderWidth: 0,
+  },
+  contactCardWithSeparator: {
+    borderTopWidth: 1,
+    borderTopColor: colors.subtleBorder,
+    paddingTop: spacing.md,
+    marginTop: spacing.xs,
+  },
+  contactCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  removeContactButton: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  removeContactText: {
+    color: colors.danger,
+    fontWeight: "600",
+  },
+  addContactButton: {
+    marginBottom: spacing.md,
+  },
+  contactErrorText: {
+    marginBottom: spacing.md,
   },
 });

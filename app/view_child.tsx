@@ -1,14 +1,8 @@
 import { ChildPassportCard } from "@/components/child-passport";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  useLocalSearchParams,
-  useRouter,
-} from "expo-router";
-import React, {
-  useEffect,
-  useState,
-} from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -21,12 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText } from "@/components/ui/app-text";
-import {
-  colors,
-  radius,
-  spacing,
-  typography,
-} from "@/styles";
+import { colors, radius, spacing, typography } from "@/styles";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ChildProfile = {
@@ -53,13 +42,13 @@ type ChildProfile = {
   parent2Name?: string;
   parent2Address?: string;
   parent2Phone?: string;
-  emergencyContacts?: Array<{
+  emergencyContacts?: {
     name: string;
     relationship: string;
     sex?: string;
     phone: string;
     address?: string;
-  }>;
+  }[];
   id?: string;
 };
 
@@ -70,23 +59,13 @@ type InfoRowProps = {
 };
 
 function InfoRow({ label, value }: InfoRowProps) {
-  if (
-    value === undefined ||
-    value === "" ||
-    value === null
-  )
-    return null;
+  if (value === undefined || value === "" || value === null) return null;
   return (
     <View style={viewStyles.infoRow}>
-      <AppText
-        variant="fieldLabel"
-        style={viewStyles.infoLabel}
-      >
+      <AppText variant="fieldLabel" style={viewStyles.infoLabel}>
         {label}
       </AppText>
-      <AppText style={viewStyles.infoValue}>
-        {String(value)}
-      </AppText>
+      <AppText style={viewStyles.infoValue}>{String(value)}</AppText>
     </View>
   );
 }
@@ -96,16 +75,10 @@ type SectionProps = {
   children: React.ReactNode;
 };
 
-function Section({
-  title,
-  children,
-}: SectionProps) {
+function Section({ title, children }: SectionProps) {
   return (
     <View style={viewStyles.section}>
-      <AppText
-        variant="heading"
-        style={viewStyles.sectionTitle}
-      >
+      <AppText variant="heading" style={viewStyles.sectionTitle}>
         {title}
       </AppText>
       {children}
@@ -119,52 +92,38 @@ export default function ViewChildScreen() {
   const { id } = useLocalSearchParams<{
     id?: string;
   }>();
-  const [child, setChild] =
-    useState<ChildProfile | null>(null);
+  const [child, setChild] = useState<ChildProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showPassport, setShowPassport] =
-    useState(false);
+  const [showPassport, setShowPassport] = useState(false);
+
+  const loadChild = useCallback(
+    async (childId: string) => {
+      try {
+        const childrenJson = await AsyncStorage.getItem("children_list");
+        if (childrenJson) {
+          const childrenList = JSON.parse(childrenJson);
+          const foundChild = childrenList.find((c: any) => c.id === childId);
+          if (foundChild) {
+            setChild(foundChild);
+          } else {
+            Alert.alert("Error", "Child profile not found");
+            router.back();
+          }
+        }
+      } catch (error) {
+        console.error("Error loading child:", error);
+        Alert.alert("Error", "Failed to load child profile");
+        router.back();
+      } finally {
+        setLoading(false);
+      }
+    },
+    [router],
+  );
 
   useEffect(() => {
     if (id) loadChild(id);
-  }, [id]);
-
-  const loadChild = async (childId: string) => {
-    try {
-      const childrenJson =
-        await AsyncStorage.getItem(
-          "children_list",
-        );
-      if (childrenJson) {
-        const childrenList =
-          JSON.parse(childrenJson);
-        const foundChild = childrenList.find(
-          (c: any) => c.id === childId,
-        );
-        if (foundChild) {
-          setChild(foundChild);
-        } else {
-          Alert.alert(
-            "Error",
-            "Child profile not found",
-          );
-          router.back();
-        }
-      }
-    } catch (error) {
-      console.error(
-        "Error loading child:",
-        error,
-      );
-      Alert.alert(
-        "Error",
-        "Failed to load child profile",
-      );
-      router.back();
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [id, loadChild]);
 
   if (loading) {
     return (
@@ -176,32 +135,34 @@ export default function ViewChildScreen() {
 
   if (!child) return null;
 
+  const hasIdentifyingFeatures =
+    child.hasBirthmarks === "yes" ||
+    child.hasScars === "yes" ||
+    child.hasIdentifyingFeatures === "yes" ||
+    !!child.lastKnownLocation ||
+    (child.schoolDaycareType && child.schoolDaycareType !== "none") ||
+    !!child.sportsTeams;
+
+  const hasParentsInfo =
+    !!child.parent1Name ||
+    !!child.parent1Address ||
+    !!child.parent1Phone ||
+    !!child.parent2Name ||
+    !!child.parent2Address ||
+    !!child.parent2Phone;
+
   return (
-    <SafeAreaView
-      style={viewStyles.container}
-      edges={["top", "left", "right"]}
-    >
-      <ScrollView
-        contentContainerStyle={
-          viewStyles.contentContainer
-        }
-      >
+    <SafeAreaView style={viewStyles.container} edges={["top", "left", "right"]}>
+      <ScrollView contentContainerStyle={viewStyles.contentContainer}>
         {/* Header */}
         <View style={viewStyles.header}>
           <TouchableOpacity
             onPress={() => router.back()}
             style={viewStyles.backButton}
           >
-            <AppText
-              style={viewStyles.backButtonText}
-            >
-              ←
-            </AppText>
+            <AppText style={viewStyles.backButtonText}>←</AppText>
           </TouchableOpacity>
-          <AppText
-            variant="heading"
-            style={viewStyles.headerTitle}
-          >
+          <AppText variant="heading" style={viewStyles.headerTitle}>
             Child Profile
           </AppText>
         </View>
@@ -219,117 +180,150 @@ export default function ViewChildScreen() {
                 }}
               />
             ) : (
-              <IconSymbol
-                name="person.fill"
-                size={48}
-                color="#007AFF"
-              />
+              <IconSymbol name="person.fill" size={48} color="#007AFF" />
             )}
           </View>
-          <AppText
-            variant="heading"
-            style={viewStyles.childName}
-          >
+          <AppText variant="heading" style={viewStyles.childName}>
             {child.fullName || "Unnamed Child"}
           </AppText>
         </View>
 
         {/* Basic Info Section */}
         <Section title="Basic Information">
-          <InfoRow
-            label="Full Name"
-            value={child.fullName}
-          />
+          <InfoRow label="Full Name" value={child.fullName} />
           <InfoRow
             label="Age"
-            value={
-              child.age
-                ? `${child.age} years`
-                : undefined
-            }
+            value={child.age ? `${child.age} years` : undefined}
           />
           <InfoRow
             label="Height"
-            value={
-              child.height
-                ? `${child.height} cm`
-                : undefined
-            }
+            value={child.height ? `${child.height} cm` : undefined}
           />
           <InfoRow
             label="Weight"
-            value={
-              child.weight
-                ? `${child.weight} kg`
-                : undefined
-            }
+            value={child.weight ? `${child.weight} kg` : undefined}
           />
-          <InfoRow
-            label="Gender"
-            value={child.gender}
-          />
+          <InfoRow label="Gender" value={child.gender} />
         </Section>
 
         {/* Medical Info */}
         {child.medicalNotes && (
           <Section title="Medical Information">
-            <AppText
-              style={viewStyles.textBlockContent}
-            >
+            <AppText style={viewStyles.textBlockContent}>
               {child.medicalNotes}
             </AppText>
           </Section>
         )}
 
-        {/* Emergency Contacts */}
-        {child.emergencyContacts &&
-          child.emergencyContacts.length > 0 && (
-            <Section title="Emergency Contacts">
-              {child.emergencyContacts.map(
-                (contact, index) => (
-                  <View
-                    key={index}
-                    style={viewStyles.contactCard}
-                  >
-                    <AppText
-                      variant="fieldLabel"
-                      style={
-                        viewStyles.contactTitle
-                      }
-                    >
-                      Contact {index + 1}
-                    </AppText>
-                    <InfoRow
-                      label="Name"
-                      value={contact.name}
-                    />
-                    <InfoRow
-                      label="Relationship"
-                      value={contact.relationship}
-                    />
-                    <InfoRow
-                      label="Phone"
-                      value={contact.phone}
-                    />
-                  </View>
-                ),
+        {/* Identifying Features */}
+        {hasIdentifyingFeatures && (
+          <Section title="Identifying Features">
+            {child.hasBirthmarks === "yes" && child.birthmarksDescription && (
+              <View style={viewStyles.contactCard}>
+                <AppText variant="fieldLabel" style={viewStyles.contactTitle}>
+                  Birthmarks
+                </AppText>
+                <AppText style={viewStyles.textBlockContent}>
+                  {child.birthmarksDescription}
+                </AppText>
+              </View>
+            )}
+
+            {child.hasScars === "yes" && child.scarsDescription && (
+              <View style={viewStyles.contactCard}>
+                <AppText variant="fieldLabel" style={viewStyles.contactTitle}>
+                  Scars
+                </AppText>
+                <AppText style={viewStyles.textBlockContent}>
+                  {child.scarsDescription}
+                </AppText>
+              </View>
+            )}
+
+            {child.hasIdentifyingFeatures === "yes" &&
+              child.identifyingFeaturesDescription && (
+                <View style={viewStyles.contactCard}>
+                  <AppText variant="fieldLabel" style={viewStyles.contactTitle}>
+                    Other Identifying Features
+                  </AppText>
+                  <AppText style={viewStyles.textBlockContent}>
+                    {child.identifyingFeaturesDescription}
+                  </AppText>
+                </View>
               )}
-            </Section>
-          )}
+
+            <InfoRow
+              label="Last Known Location"
+              value={child.lastKnownLocation}
+            />
+            {child.schoolDaycareType && child.schoolDaycareType !== "none" && (
+              <InfoRow
+                label={
+                  child.schoolDaycareType === "school" ? "School" : "Daycare"
+                }
+                value={child.schoolDaycareName}
+              />
+            )}
+            <InfoRow label="Sports Teams" value={child.sportsTeams} />
+          </Section>
+        )}
+
+        {/* Parents Information */}
+        {hasParentsInfo && (
+          <Section title="Parents Information">
+            {(child.parent1Name ||
+              child.parent1Address ||
+              child.parent1Phone) && (
+              <View style={viewStyles.contactCard}>
+                <AppText variant="fieldLabel" style={viewStyles.contactTitle}>
+                  Parent 1
+                </AppText>
+                <InfoRow label="Name" value={child.parent1Name} />
+                <InfoRow label="Address" value={child.parent1Address} />
+                <InfoRow label="Phone" value={child.parent1Phone} />
+              </View>
+            )}
+
+            {(child.parent2Name ||
+              child.parent2Address ||
+              child.parent2Phone) && (
+              <View style={viewStyles.contactCard}>
+                <AppText variant="fieldLabel" style={viewStyles.contactTitle}>
+                  Parent 2
+                </AppText>
+                <InfoRow label="Name" value={child.parent2Name} />
+                <InfoRow label="Address" value={child.parent2Address} />
+                <InfoRow label="Phone" value={child.parent2Phone} />
+              </View>
+            )}
+          </Section>
+        )}
+
+        {/* Emergency Contacts */}
+        {child.emergencyContacts && child.emergencyContacts.length > 0 && (
+          <Section title="Emergency Contacts">
+            {child.emergencyContacts.map((contact, index) => (
+              <View key={index} style={viewStyles.contactCard}>
+                <AppText variant="fieldLabel" style={viewStyles.contactTitle}>
+                  Contact {index + 1}
+                </AppText>
+                <InfoRow label="Name" value={contact.name} />
+                <InfoRow label="Relationship" value={contact.relationship} />
+                <InfoRow label="Phone" value={contact.phone} />
+                <InfoRow label="Sex" value={contact.sex} />
+                <InfoRow label="Address" value={contact.address} />
+              </View>
+            ))}
+          </Section>
+        )}
 
         {/* Passport Button */}
         <TouchableOpacity
           style={viewStyles.passportButton}
           onPress={() => setShowPassport(true)}
         >
-          <IconSymbol
-            name="doc.text"
-            size={20}
-            color={colors.white}
-          />
-          <AppText
-            style={viewStyles.passportButtonText}
-          >
+          <IconSymbol name="doc.text" size={20} color={colors.white} />
+          <AppText style={viewStyles.passportButtonText}>
             Generate Passport
           </AppText>
         </TouchableOpacity>
@@ -342,23 +336,15 @@ export default function ViewChildScreen() {
         visible={showPassport}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() =>
-          setShowPassport(false)
-        }
+        onRequestClose={() => setShowPassport(false)}
       >
         <View style={viewStyles.modalContainer}>
           <View style={viewStyles.modalHeader}>
             <TouchableOpacity
-              onPress={() =>
-                setShowPassport(false)
-              }
+              onPress={() => setShowPassport(false)}
               style={viewStyles.closeButton}
             >
-              <AppText
-                style={viewStyles.closeButtonText}
-              >
-                ✕ Close
-              </AppText>
+              <AppText style={viewStyles.closeButtonText}>✕ Close</AppText>
             </TouchableOpacity>
           </View>
           {child && (

@@ -1,18 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
-import {
-  useLocalSearchParams,
-  useRouter,
-} from "expo-router";
-import React, {
-  useEffect,
-  useRef,
-} from "react";
-import {
-  Controller,
-  useFieldArray,
-  useForm,
-} from "react-hook-form";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useEffect } from "react";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import {
   Alert,
   Image,
@@ -23,16 +13,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ViewShot from "react-native-view-shot";
 
 import { AppDropdown } from "@/components/ui/app-dropdown";
 import { AppText } from "@/components/ui/app-text";
 import { FormField } from "@/components/ui/form-field";
 import { useChildrenStorage } from "@/hooks/useChildrenStorage";
-import {
-  sharedStyles,
-  addChildStyles as styles,
-} from "@/styles";
+import { sharedStyles, addChildStyles as styles } from "@/styles";
 import {
   ChildFormData,
   childSchema,
@@ -45,9 +31,7 @@ export default function AddChildScreen() {
     id?: string;
   }>();
   const isEditMode = !!id;
-  const viewShotRef = useRef<ViewShot>(null);
-  const { loadChild, saveOrUpdateChild } =
-    useChildrenStorage();
+  const { loadChild, saveOrUpdateChild } = useChildrenStorage();
 
   const {
     control,
@@ -77,19 +61,29 @@ export default function AddChildScreen() {
     imageUri,
   ] = watchedFields;
 
-  const { fields, append, remove } =
-    useFieldArray({
-      control,
-      name: "emergencyContacts",
-    });
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "emergencyContacts",
+  });
+
+  const loadChildForEdit = useCallback(
+    async (childId: string) => {
+      try {
+        const child = await loadChild(childId);
+        if (child) reset(child);
+      } catch (error) {
+        console.error("Error loading child:", error);
+      }
+    },
+    [loadChild, reset],
+  );
 
   useEffect(() => {
     if (isEditMode && id) loadChildForEdit(id);
-  }, [id, isEditMode]);
+  }, [id, isEditMode, loadChildForEdit]);
 
   const pickImage = async () => {
-    const { status } =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
         "Permission Denied",
@@ -97,49 +91,27 @@ export default function AddChildScreen() {
       );
       return;
     }
-    const result =
-      await ImagePicker.launchImageLibraryAsync({
-        mediaTypes:
-          ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.7,
-      });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
     if (!result.canceled)
       setValue("imageUri", result.assets[0].uri, {
         shouldDirty: true,
       });
   };
 
-  const loadChildForEdit = async (
-    childId: string,
-  ) => {
-    try {
-      const child = await loadChild(childId);
-      if (child) reset(child);
-    } catch (error) {
-      console.error(
-        "Error loading child:",
-        error,
-      );
-    }
-  };
-
   const onValid = async (data: ChildFormData) => {
     try {
-      const result = await saveOrUpdateChild(
-        data,
-        id,
-      );
+      const result = await saveOrUpdateChild(data, id);
       if (result) {
         console.log("Profile saved successfully");
         Alert.alert("Success", "Profile saved!");
         router.back();
       } else {
-        Alert.alert(
-          "Error",
-          "Failed to save data",
-        );
+        Alert.alert("Error", "Failed to save data");
       }
     } catch (e) {
       console.log("Error saving profile:", e);
@@ -148,37 +120,25 @@ export default function AddChildScreen() {
   };
 
   const onInvalid = (errors: any) => {
-    console.log(
-      "Form validation errors:",
-      errors,
-    );
-    Alert.alert(
-      "Validation Error",
-      "Please check the form for errors.",
-    );
+    console.log("Form validation errors:", errors);
+    Alert.alert("Validation Error", "Please check the form for errors.");
   };
 
   return (
-    <SafeAreaView
-      style={{ flex: 1 }}
-      edges={["top", "left", "right"]}
-    >
+    <SafeAreaView style={{ flex: 1 }} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
-        behavior={
-          Platform.OS === "ios"
-            ? "padding"
-            : "height"
-        }
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        <ScrollView
-          contentContainerStyle={styles.container}
-        >
+        <ScrollView contentContainerStyle={styles.container}>
           <View style={styles.headerContainer}>
             <AppText variant="heading">
+              {isEditMode ? "Edit Profile" : "Create Profile"}
+            </AppText>
+            <AppText variant="subtitle">
               {isEditMode
-                ? "Edit Profile"
-                : "Create Profile"}
+                ? "Update child information"
+                : "Add a new child profile"}
             </AppText>
           </View>
 
@@ -194,14 +154,9 @@ export default function AddChildScreen() {
               style={styles.photoUploadCircle}
             >
               {imageUri ? (
-                <Image
-                  source={{ uri: imageUri }}
-                  style={styles.photoPreview}
-                />
+                <Image source={{ uri: imageUri }} style={styles.photoPreview} />
               ) : (
-                <AppText
-                  style={{ textAlign: "center" }}
-                >
+                <AppText style={{ textAlign: "center" }}>
                   Tap to Add Photo
                 </AppText>
               )}
@@ -230,7 +185,7 @@ export default function AddChildScreen() {
             <FormField
               control={control}
               name="gender"
-              label="Gender"
+              label="Gender (Optional)"
               containerStyle={{ flex: 1 }}
             />
           </View>
@@ -267,21 +222,16 @@ export default function AddChildScreen() {
           />
 
           {/* Identifying Features */}
-          <AppText
-            variant="heading"
-            style={{ marginTop: 20 }}
-          >
+          <AppText variant="heading" style={{ marginTop: 20 }}>
             Identifying Features
           </AppText>
 
           <Controller
             control={control}
             name="hasBirthmarks"
-            render={({
-              field: { onChange, value },
-            }) => (
+            render={({ field: { onChange, value } }) => (
               <AppDropdown
-                label="Birthmarks?"
+                label="Does your child have any birthmarks?"
                 options={[
                   { label: "Yes", value: "yes" },
                   { label: "No", value: "no" },
@@ -295,7 +245,7 @@ export default function AddChildScreen() {
             <FormField
               control={control}
               name="birthmarksDescription"
-              label="Details"
+              label="Describe birthmarks"
               multiline
             />
           )}
@@ -303,11 +253,9 @@ export default function AddChildScreen() {
           <Controller
             control={control}
             name="hasScars"
-            render={({
-              field: { onChange, value },
-            }) => (
+            render={({ field: { onChange, value } }) => (
               <AppDropdown
-                label="Scars?"
+                label="Does your child have any scars?"
                 options={[
                   { label: "Yes", value: "yes" },
                   { label: "No", value: "no" },
@@ -321,19 +269,47 @@ export default function AddChildScreen() {
             <FormField
               control={control}
               name="scarsDescription"
-              label="Details"
+              label="Describe scars"
               multiline
             />
           )}
 
           <Controller
             control={control}
-            name="schoolDaycareType"
-            render={({
-              field: { onChange, value },
-            }) => (
+            name="hasIdentifyingFeatures"
+            render={({ field: { onChange, value } }) => (
               <AppDropdown
-                label="School/Daycare?"
+                label="Does your child have any other key identifying features?"
+                options={[
+                  { label: "Yes", value: "yes" },
+                  { label: "No", value: "no" },
+                ]}
+                value={value}
+                onValueChange={onChange}
+              />
+            )}
+          />
+          {hasIdentifyingFeatures === "yes" && (
+            <FormField
+              control={control}
+              name="identifyingFeaturesDescription"
+              label="Describe identifying features"
+              multiline
+            />
+          )}
+
+          <FormField
+            control={control}
+            name="lastKnownLocation"
+            label="Last Known Location (Optional)"
+          />
+
+          <Controller
+            control={control}
+            name="schoolDaycareType"
+            render={({ field: { onChange, value } }) => (
+              <AppDropdown
+                label="Is your child in school or daycare?"
                 options={[
                   {
                     label: "School",
@@ -358,58 +334,105 @@ export default function AddChildScreen() {
             <FormField
               control={control}
               name="schoolDaycareName"
-              label="Institution Name"
+              label={
+                schoolDaycareType === "school" ? "School Name" : "Daycare Name"
+              }
             />
           )}
 
+          <FormField
+            control={control}
+            name="sportsTeams"
+            label="Sports Teams (Optional)"
+          />
+
+          <AppText variant="heading" style={{ marginTop: 20 }}>
+            Parents Information
+          </AppText>
+
+          <FormField
+            control={control}
+            name="parent1Name"
+            label="Parent 1 - Full Name (Optional)"
+          />
+          <FormField
+            control={control}
+            name="parent1Address"
+            label="Parent 1 - Address (Optional)"
+          />
+          <FormField
+            control={control}
+            name="parent1Phone"
+            label="Parent 1 - Phone Number (Optional)"
+            keyboardType="phone-pad"
+          />
+
+          <FormField
+            control={control}
+            name="parent2Name"
+            label="Parent 2 - Full Name (Optional)"
+          />
+          <FormField
+            control={control}
+            name="parent2Address"
+            label="Parent 2 - Address (Optional)"
+          />
+          <FormField
+            control={control}
+            name="parent2Phone"
+            label="Parent 2 - Phone Number (Optional)"
+            keyboardType="phone-pad"
+          />
+
           {/* Emergency Contacts */}
-          <AppText
-            variant="heading"
-            style={{ marginTop: 20 }}
-          >
-            Emergency Contacts
+          <AppText variant="heading" style={{ marginTop: 20 }}>
+            Emergency Contacts (Minimum 1, Maximum 3)
           </AppText>
           {fields.map((field, index) => (
             <View
               key={field.id}
-              style={styles.contactCard}
+              style={[
+                styles.contactCard,
+                index > 0 && styles.contactCardWithSeparator,
+              ]}
             >
+              {fields.length > 1 && (
+                <View style={styles.contactCardHeader}>
+                  <AppText variant="fieldLabel">Contact {index + 1}</AppText>
+                  <TouchableOpacity
+                    onPress={() => remove(index)}
+                    style={styles.removeContactButton}
+                  >
+                    <AppText style={styles.removeContactText}>Remove</AppText>
+                  </TouchableOpacity>
+                </View>
+              )}
               <FormField
                 control={control}
-                name={
-                  `emergencyContacts.${index}.name` as any
-                }
+                name={`emergencyContacts.${index}.name` as any}
                 label="Name"
               />
               <FormField
                 control={control}
-                name={
-                  `emergencyContacts.${index}.relationship` as any
-                }
+                name={`emergencyContacts.${index}.relationship` as any}
                 label="Relationship"
               />
               <FormField
                 control={control}
-                name={
-                  `emergencyContacts.${index}.phone` as any
-                }
+                name={`emergencyContacts.${index}.phone` as any}
                 label="Phone"
                 keyboardType="phone-pad"
               />
-              {fields.length > 1 && (
-                <TouchableOpacity
-                  onPress={() => remove(index)}
-                >
-                  <AppText
-                    style={{
-                      color: "red",
-                      marginTop: 5,
-                    }}
-                  >
-                    Remove Contact
-                  </AppText>
-                </TouchableOpacity>
-              )}
+              <FormField
+                control={control}
+                name={`emergencyContacts.${index}.sex` as any}
+                label="Sex (Optional)"
+              />
+              <FormField
+                control={control}
+                name={`emergencyContacts.${index}.address` as any}
+                label="Address (Optional)"
+              />
             </View>
           ))}
 
@@ -419,27 +442,31 @@ export default function AddChildScreen() {
                 append({
                   name: "",
                   relationship: "",
+                  sex: "",
                   phone: "",
+                  address: "",
                 })
               }
-              style={sharedStyles.secondaryButton}
+              style={[sharedStyles.secondaryButton, styles.addContactButton]}
             >
-              <AppText>+ Add Contact</AppText>
+              <AppText variant="label" style={sharedStyles.secondaryButtonText}>
+                + Add Emergency Contact
+              </AppText>
             </TouchableOpacity>
+          )}
+
+          {errors.emergencyContacts && (
+            <AppText variant="error" style={styles.contactErrorText}>
+              {errors.emergencyContacts.message ||
+                "At least one emergency contact is required"}
+            </AppText>
           )}
 
           <TouchableOpacity
             style={sharedStyles.primaryButton}
-            onPress={handleSubmit(
-              onValid,
-              onInvalid,
-            )}
+            onPress={handleSubmit(onValid, onInvalid)}
           >
-            <AppText
-              style={
-                sharedStyles.primaryButtonText
-              }
-            >
+            <AppText style={sharedStyles.primaryButtonText}>
               Save Profile
             </AppText>
           </TouchableOpacity>

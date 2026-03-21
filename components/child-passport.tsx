@@ -1,11 +1,6 @@
 import * as MediaLibrary from "expo-media-library";
 import * as Sharing from "expo-sharing";
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -20,9 +15,7 @@ import {
 import ViewShot from "react-native-view-shot";
 
 import { AppText } from "@/components/ui/app-text";
-import {
-  colors
-} from "@/constants/theme";
+import { colors } from "@/constants/theme";
 import { ChildProfile } from "@/types/child";
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
@@ -84,17 +77,8 @@ const CARD_H = CARD_W * 1.38;
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type SlideKey =
-  | "photo"
-  | "details"
-  | "medical"
-  | "contacts";
-const SLIDE_KEYS: SlideKey[] = [
-  "photo",
-  "details",
-  "medical",
-  "contacts",
-];
+type SlideKey = "photo" | "details" | "medical" | "contacts";
+const SLIDE_KEYS: SlideKey[] = ["photo", "details", "medical", "contacts"];
 
 interface Props {
   child: ChildProfile;
@@ -103,34 +87,13 @@ interface Props {
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-export function ChildPassportCard({
-  child,
-  onCapture,
-}: Props) {
+export function ChildPassportCard({ child, onCapture }: Props) {
   const [idx, setIdx] = useState(0);
-  const [capturing, setCapturing] =
-    useState(false);
+  const [capturing, setCapturing] = useState(false);
 
-  const opacity = useRef(
-    new Animated.Value(1),
-  ).current;
-  const translateX = useRef(
-    new Animated.Value(0),
-  ).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
   const exportRef = useRef<ViewShot>(null);
-
-  // Auto-advance
-  useEffect(() => {
-    const t = setInterval(
-      () =>
-        transition(
-          (idx + 1) % SLIDE_KEYS.length,
-          "left",
-        ),
-      5000,
-    );
-    return () => clearInterval(t);
-  }, [idx]);
 
   const transition = useCallback(
     (next: number, dir: "left" | "right") => {
@@ -166,20 +129,24 @@ export function ChildPassportCard({
     [opacity, translateX],
   );
 
+  // Auto-advance
+  useEffect(() => {
+    const t = setInterval(
+      () => transition((idx + 1) % SLIDE_KEYS.length, "left"),
+      5000,
+    );
+    return () => clearInterval(t);
+  }, [idx, transition]);
+
   const pan = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, g) =>
-        Math.abs(g.dx) > Math.abs(g.dy) * 1.5 &&
-        Math.abs(g.dx) > 12,
+        Math.abs(g.dx) > Math.abs(g.dy) * 1.5 && Math.abs(g.dx) > 12,
       onPanResponderRelease: (_, g) => {
-        if (
-          g.dx < -40 &&
-          idx < SLIDE_KEYS.length - 1
-        )
+        if (g.dx < -40 && idx < SLIDE_KEYS.length - 1)
           transition(idx + 1, "left");
-        else if (g.dx > 40 && idx > 0)
-          transition(idx - 1, "right");
+        else if (g.dx > 40 && idx > 0) transition(idx - 1, "right");
       },
     }),
   ).current;
@@ -203,32 +170,14 @@ export function ChildPassportCard({
         style={[
           shell.wrap,
           {
-            backgroundColor:
-              DS.tints[slideKey].bg,
+            backgroundColor: DS.tints[slideKey].bg,
           },
         ]}
       >
         {/* Section label pill */}
-        <View
-          style={[
-            shell.pill,
-            { backgroundColor: pill },
-          ]}
-        >
-          <View
-            style={[
-              shell.pillDot,
-              { backgroundColor: dot },
-            ]}
-          />
-          <AppText
-            style={[
-              shell.pillText,
-              { color: dot },
-            ]}
-          >
-            {label}
-          </AppText>
+        <View style={[shell.pill, { backgroundColor: pill }]}>
+          <View style={[shell.pillDot, { backgroundColor: dot }]} />
+          <AppText style={[shell.pillText, { color: dot }]}>{label}</AppText>
         </View>
         {children}
       </View>
@@ -277,19 +226,9 @@ export function ChildPassportCard({
   }) => {
     if (!value) return null;
     return (
-      <View
-        style={[
-          rowSt.row,
-          !last && rowSt.rowBorder,
-        ]}
-      >
-        <AppText style={rowSt.label}>
-          {label}
-        </AppText>
-        <AppText
-          style={rowSt.value}
-          numberOfLines={2}
-        >
+      <View style={[rowSt.row, !last && rowSt.rowBorder]}>
+        <AppText style={rowSt.label}>{label}</AppText>
+        <AppText style={rowSt.value} numberOfLines={2}>
           {String(value)}
         </AppText>
       </View>
@@ -350,14 +289,7 @@ export function ChildPassportCard({
     >
       <View style={blk.titleRow}>
         <AppText style={blk.icon}>{icon}</AppText>
-        <AppText
-          style={[
-            blk.title,
-            { color: accentColor },
-          ]}
-        >
-          {title}
-        </AppText>
+        <AppText style={[blk.title, { color: accentColor }]}>{title}</AppText>
       </View>
       {children}
     </View>
@@ -400,53 +332,36 @@ export function ChildPassportCard({
           resizeMode="cover"
         />
       ) : (
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            ph.placeholder,
-          ]}
-        >
+        <View style={[StyleSheet.absoluteFill, ph.placeholder]}>
           <AppText style={ph.icon}>📷</AppText>
-          <AppText style={ph.none}>
-            No Photo
-          </AppText>
+          <AppText style={ph.none}>No Photo</AppText>
         </View>
       )}
       {/* scrim */}
       <View style={ph.scrim} />
       <View style={ph.meta}>
-        <AppText
-          style={ph.name}
-          numberOfLines={2}
-        >
+        <AppText style={ph.name} numberOfLines={2}>
           {child.fullName || "—"}
         </AppText>
         {child.age ? (
           <View style={ph.tagRow}>
             <View style={ph.tag}>
-              <AppText style={ph.tagText}>
-                {child.age} yrs
-              </AppText>
+              <AppText style={ph.tagText}>{child.age} yrs</AppText>
             </View>
             {child.gender ? (
               <View style={ph.tag}>
-                <AppText style={ph.tagText}>
-                  {child.gender}
-                </AppText>
+                <AppText style={ph.tagText}>{child.gender}</AppText>
               </View>
             ) : null}
             {child.height ? (
               <View style={ph.tag}>
-                <AppText style={ph.tagText}>
-                  {child.height} cm
-                </AppText>
+                <AppText style={ph.tagText}>{child.height} cm</AppText>
               </View>
             ) : null}
           </View>
         ) : null}
         <AppText style={ph.id}>
-          ID ·{" "}
-          {child.id?.substring(0, 8) || "N/A"}
+          ID · {child.id?.substring(0, 8) || "N/A"}
         </AppText>
       </View>
     </View>
@@ -514,48 +429,22 @@ export function ChildPassportCard({
   // ── Slide: Details ──────────────────────────────────────────────────────────
 
   const SlideDetails = () => (
-    <InfoShell
-      slideKey="details"
-      label="PERSONAL DETAILS"
-    >
-      <Row
-        label="Full name"
-        value={child.fullName}
-      />
-      <Row
-        label="Age"
-        value={
-          child.age
-            ? `${child.age} years old`
-            : null
-        }
-      />
+    <InfoShell slideKey="details" label="PERSONAL DETAILS">
+      <Row label="Full name" value={child.fullName} />
+      <Row label="Age" value={child.age ? `${child.age} years old` : null} />
       <Row label="Gender" value={child.gender} />
+      <Row label="Height" value={child.height ? `${child.height} cm` : null} />
+      <Row label="Weight" value={child.weight ? `${child.weight} kg` : null} />
       <Row
-        label="Height"
+        label={child.schoolDaycareType === "daycare" ? "Daycare" : "School"}
         value={
-          child.height
-            ? `${child.height} cm`
+          child.schoolDaycareType && child.schoolDaycareType !== "none"
+            ? child.schoolDaycareName
             : null
         }
       />
-      <Row
-        label="Weight"
-        value={
-          child.weight
-            ? `${child.weight} kg`
-            : null
-        }
-      />
-      <Row
-        label="School"
-        value={child.schoolDaycareName}
-      />
-      <Row
-        label="Activities"
-        value={child.sportsTeams}
-        last
-      />
+      <Row label="Sports" value={child.sportsTeams} />
+      <Row label="Last Seen" value={child.lastKnownLocation} last />
     </InfoShell>
   );
 
@@ -570,18 +459,11 @@ export function ChildPassportCard({
       child.lastKnownLocation;
 
     return (
-      <InfoShell
-        slideKey="medical"
-        label="MEDICAL & FEATURES"
-      >
+      <InfoShell slideKey="medical" label="MEDICAL & FEATURES">
         {!hasAny ? (
           <View style={empty.wrap}>
-            <AppText style={empty.icon}>
-              🩺
-            </AppText>
-            <AppText style={empty.text}>
-              No medical info on record
-            </AppText>
+            <AppText style={empty.icon}>🩺</AppText>
+            <AppText style={empty.text}>No medical info on record</AppText>
           </View>
         ) : null}
 
@@ -592,9 +474,7 @@ export function ChildPassportCard({
             accentColor="#E05252"
             bgColor="#FFF0F0"
           >
-            <AppText style={bodyText}>
-              {child.medicalNotes}
-            </AppText>
+            <AppText style={bodyText}>{child.medicalNotes}</AppText>
           </Block>
         ) : null}
 
@@ -607,44 +487,23 @@ export function ChildPassportCard({
             accentColor="#35B57B"
             bgColor="#EDFAF3"
           >
-            {child.hasBirthmarks === "yes" &&
-            child.birthmarksDescription ? (
+            {child.hasBirthmarks === "yes" && child.birthmarksDescription ? (
               <AppText style={bodyText}>
-                <AppText style={boldText}>
-                  Birthmarks —{" "}
-                </AppText>
+                <AppText style={boldText}>Birthmarks — </AppText>
                 {child.birthmarksDescription}
               </AppText>
             ) : null}
-            {child.hasScars === "yes" &&
-            child.scarsDescription ? (
-              <AppText
-                style={[
-                  bodyText,
-                  { marginTop: DS.sp(1) },
-                ]}
-              >
-                <AppText style={boldText}>
-                  Scars —{" "}
-                </AppText>
+            {child.hasScars === "yes" && child.scarsDescription ? (
+              <AppText style={[bodyText, { marginTop: DS.sp(1) }]}>
+                <AppText style={boldText}>Scars — </AppText>
                 {child.scarsDescription}
               </AppText>
             ) : null}
-            {child.hasIdentifyingFeatures ===
-              "yes" &&
+            {child.hasIdentifyingFeatures === "yes" &&
             child.identifyingFeaturesDescription ? (
-              <AppText
-                style={[
-                  bodyText,
-                  { marginTop: DS.sp(1) },
-                ]}
-              >
-                <AppText style={boldText}>
-                  Other —{" "}
-                </AppText>
-                {
-                  child.identifyingFeaturesDescription
-                }
+              <AppText style={[bodyText, { marginTop: DS.sp(1) }]}>
+                <AppText style={boldText}>Other — </AppText>
+                {child.identifyingFeaturesDescription}
               </AppText>
             ) : null}
           </Block>
@@ -657,9 +516,7 @@ export function ChildPassportCard({
             accentColor="#4F6BED"
             bgColor="#EEF2FF"
           >
-            <AppText style={bodyText}>
-              {child.lastKnownLocation}
-            </AppText>
+            <AppText style={bodyText}>{child.lastKnownLocation}</AppText>
           </Block>
         ) : null}
       </InfoShell>
@@ -669,25 +526,22 @@ export function ChildPassportCard({
   // ── Slide: Contacts ─────────────────────────────────────────────────────────
 
   const SlideContacts = () => {
-    const hasContacts =
-      (child.emergencyContacts?.length ?? 0) > 0;
+    const hasContacts = (child.emergencyContacts?.length ?? 0) > 0;
     const hasParents = !!(
-      child.parent1Name || child.parent2Name
+      child.parent1Name ||
+      child.parent1Phone ||
+      child.parent1Address ||
+      child.parent2Name ||
+      child.parent2Phone ||
+      child.parent2Address
     );
 
     return (
-      <InfoShell
-        slideKey="contacts"
-        label="EMERGENCY CONTACTS"
-      >
+      <InfoShell slideKey="contacts" label="EMERGENCY CONTACTS">
         {!hasContacts && !hasParents ? (
           <View style={empty.wrap}>
-            <AppText style={empty.icon}>
-              📋
-            </AppText>
-            <AppText style={empty.text}>
-              No contacts on record
-            </AppText>
+            <AppText style={empty.icon}>📋</AppText>
+            <AppText style={empty.text}>No contacts on record</AppText>
           </View>
         ) : null}
 
@@ -697,8 +551,7 @@ export function ChildPassportCard({
             style={[
               ct.card,
               {
-                borderLeftColor:
-                  DS.tints.contacts.dot,
+                borderLeftColor: DS.tints.contacts.dot,
               },
             ]}
           >
@@ -707,73 +560,53 @@ export function ChildPassportCard({
                 style={[
                   ct.badge,
                   {
-                    backgroundColor:
-                      DS.tints.contacts.dot,
+                    backgroundColor: DS.tints.contacts.dot,
                   },
                 ]}
               >
-                <AppText style={ct.badgeText}>
-                  {i + 1}
-                </AppText>
+                <AppText style={ct.badgeText}>{i + 1}</AppText>
               </View>
               <View style={{ flex: 1 }}>
-                <AppText style={ct.name}>
-                  {c.name}
-                </AppText>
+                <AppText style={ct.name}>{c.name}</AppText>
                 {c.relationship ? (
-                  <AppText style={ct.rel}>
-                    {c.relationship}
-                  </AppText>
+                  <AppText style={ct.rel}>{c.relationship}</AppText>
                 ) : null}
               </View>
             </View>
-            <AppText style={ct.phone}>
-              📞 {c.phone}
-            </AppText>
+            <AppText style={ct.phone}>📞 {c.phone}</AppText>
+            {c.sex ? <AppText style={ct.meta}>⚥ {c.sex}</AppText> : null}
             {c.address ? (
-              <AppText style={ct.addr}>
-                🏠 {c.address}
-              </AppText>
+              <AppText style={ct.addr}>🏠 {c.address}</AppText>
             ) : null}
           </View>
         ))}
 
         {hasParents ? (
-          <View
-            style={[
-              ct.card,
-              { borderLeftColor: DS.inkLight },
-            ]}
-          >
-            <AppText style={ct.parentLabel}>
-              Parents / Guardians
-            </AppText>
-            {child.parent1Name ? (
+          <View style={[ct.card, { borderLeftColor: DS.inkLight }]}>
+            <AppText style={ct.parentLabel}>Parents / Guardians</AppText>
+            {child.parent1Name || child.parent1Phone || child.parent1Address ? (
               <View style={ct.parentRow}>
                 <AppText style={ct.parentName}>
-                  {child.parent1Name}
+                  {child.parent1Name || "Parent 1"}
                 </AppText>
                 {child.parent1Phone ? (
-                  <AppText style={ct.phone}>
-                    📞 {child.parent1Phone}
-                  </AppText>
+                  <AppText style={ct.phone}>📞 {child.parent1Phone}</AppText>
+                ) : null}
+                {child.parent1Address ? (
+                  <AppText style={ct.addr}>🏠 {child.parent1Address}</AppText>
                 ) : null}
               </View>
             ) : null}
-            {child.parent2Name ? (
-              <View
-                style={[
-                  ct.parentRow,
-                  { marginTop: DS.sp(2) },
-                ]}
-              >
+            {child.parent2Name || child.parent2Phone || child.parent2Address ? (
+              <View style={[ct.parentRow, { marginTop: DS.sp(2) }]}>
                 <AppText style={ct.parentName}>
-                  {child.parent2Name}
+                  {child.parent2Name || "Parent 2"}
                 </AppText>
                 {child.parent2Phone ? (
-                  <AppText style={ct.phone}>
-                    📞 {child.parent2Phone}
-                  </AppText>
+                  <AppText style={ct.phone}>📞 {child.parent2Phone}</AppText>
+                ) : null}
+                {child.parent2Address ? (
+                  <AppText style={ct.addr}>🏠 {child.parent2Address}</AppText>
                 ) : null}
               </View>
             ) : null}
@@ -822,6 +655,11 @@ export function ChildPassportCard({
     phone: {
       fontSize: DS.size.small,
       color: DS.ink,
+      marginTop: DS.sp(1),
+    },
+    meta: {
+      fontSize: DS.size.small,
+      color: DS.inkMid,
       marginTop: DS.sp(1),
     },
     addr: {
@@ -919,9 +757,7 @@ export function ChildPassportCard({
               justifyContent: "center",
             }}
           >
-            <AppText style={{ fontSize: 28 }}>
-              📷
-            </AppText>
+            <AppText style={{ fontSize: 28 }}>📷</AppText>
           </View>
         )}
         <View
@@ -951,8 +787,7 @@ export function ChildPassportCard({
                 fontSize: 8,
               }}
             >
-              {child.age} yrs ·{" "}
-              {child.gender || ""}
+              {child.age} yrs · {child.gender || ""}
             </AppText>
           ) : null}
         </View>
@@ -966,23 +801,16 @@ export function ChildPassportCard({
       >
         {[
           ["Name", child.fullName],
+          ["Age", child.age ? `${child.age} yrs` : null],
+          ["Height", child.height ? `${child.height} cm` : null],
+          ["Weight", child.weight ? `${child.weight} kg` : null],
           [
-            "Age",
-            child.age ? `${child.age} yrs` : null,
-          ],
-          [
-            "Height",
-            child.height
-              ? `${child.height} cm`
+            child.schoolDaycareType === "daycare" ? "Daycare" : "School",
+            child.schoolDaycareType && child.schoolDaycareType !== "none"
+              ? child.schoolDaycareName
               : null,
           ],
-          [
-            "Weight",
-            child.weight
-              ? `${child.weight} kg`
-              : null,
-          ],
-          ["School", child.schoolDaycareName],
+          ["Sports", child.sportsTeams],
         ]
           .filter(([, v]) => v)
           .map(([l, v]) => (
@@ -1012,23 +840,27 @@ export function ChildPassportCard({
             {child.medicalNotes}
           </AppText>
         ) : null}
-        {child.hasBirthmarks === "yes" &&
-        child.birthmarksDescription ? (
+        {child.hasBirthmarks === "yes" && child.birthmarksDescription ? (
+          <ExportRow label="Marks" value={child.birthmarksDescription} />
+        ) : null}
+        {child.hasScars === "yes" && child.scarsDescription ? (
+          <ExportRow label="Scars" value={child.scarsDescription} />
+        ) : null}
+        {child.hasIdentifyingFeatures === "yes" &&
+        child.identifyingFeaturesDescription ? (
           <ExportRow
-            label="Marks"
-            value={child.birthmarksDescription}
+            label="Other"
+            value={child.identifyingFeaturesDescription}
           />
         ) : null}
-        {child.hasScars === "yes" &&
-        child.scarsDescription ? (
-          <ExportRow
-            label="Scars"
-            value={child.scarsDescription}
-          />
+        {child.lastKnownLocation ? (
+          <ExportRow label="Last Seen" value={child.lastKnownLocation} />
         ) : null}
         {!child.medicalNotes &&
         child.hasBirthmarks !== "yes" &&
-        child.hasScars !== "yes" ? (
+        child.hasScars !== "yes" &&
+        child.hasIdentifyingFeatures !== "yes" &&
+        !child.lastKnownLocation ? (
           <AppText
             style={{
               fontSize: 8,
@@ -1047,43 +879,64 @@ export function ChildPassportCard({
         label="CONTACTS"
         labelColor={DS.tints.contacts.dot}
       >
-        {child.emergencyContacts
-          ?.slice(0, 2)
-          .map((c, i) => (
-            <View
-              key={i}
-              style={{ marginBottom: 5 }}
+        {child.emergencyContacts?.slice(0, 2).map((c, i) => (
+          <View key={i} style={{ marginBottom: 5 }}>
+            <AppText
+              style={{
+                fontSize: 8,
+                fontWeight: "700",
+                color: DS.ink,
+              }}
+              numberOfLines={1}
             >
-              <AppText
-                style={{
-                  fontSize: 8,
-                  fontWeight: "700",
-                  color: DS.ink,
-                }}
-                numberOfLines={1}
-              >
-                {c.name}
-              </AppText>
+              {c.name}
+            </AppText>
+            <AppText
+              style={{
+                fontSize: 7,
+                color: DS.inkMid,
+              }}
+            >
+              {c.phone}
+              {c.relationship ? ` · ${c.relationship}` : ""}
+              {c.sex ? ` · ${c.sex}` : ""}
+            </AppText>
+            {c.address ? (
               <AppText
                 style={{
                   fontSize: 7,
-                  color: DS.inkMid,
+                  color: DS.inkLight,
                 }}
+                numberOfLines={1}
               >
-                {c.phone}
+                {c.address}
               </AppText>
-            </View>
-          ))}
+            ) : null}
+          </View>
+        ))}
         {child.parent1Name ? (
           <ExportRow
-            label="Parent"
+            label="Parent 1"
             value={
               child.parent1Name +
-              (child.parent1Phone
-                ? ` · ${child.parent1Phone}`
-                : "")
+              (child.parent1Phone ? ` · ${child.parent1Phone}` : "")
             }
           />
+        ) : null}
+        {child.parent1Address ? (
+          <ExportRow label="P1 Addr" value={child.parent1Address} />
+        ) : null}
+        {child.parent2Name ? (
+          <ExportRow
+            label="Parent 2"
+            value={
+              child.parent2Name +
+              (child.parent2Phone ? ` · ${child.parent2Phone}` : "")
+            }
+          />
+        ) : null}
+        {child.parent2Address ? (
+          <ExportRow label="P2 Addr" value={child.parent2Address} />
         ) : null}
       </ExportTile>
     </View>
@@ -1123,13 +976,7 @@ export function ChildPassportCard({
     </View>
   );
 
-  const ExportRow = ({
-    label,
-    value,
-  }: {
-    label: string;
-    value: string;
-  }) => (
+  const ExportRow = ({ label, value }: { label: string; value: string }) => (
     <View
       style={{
         flexDirection: "row",
@@ -1162,21 +1009,15 @@ export function ChildPassportCard({
 
   // ── Actions ─────────────────────────────────────────────────────────────────
 
-  const doCapture = async (): Promise<
-    string | null
-  > => {
+  const doCapture = async (): Promise<string | null> => {
     try {
       setCapturing(true);
-      const uri =
-        await exportRef.current?.capture?.();
+      const uri = await exportRef.current?.capture?.();
       if (!uri) throw new Error();
       if (onCapture) onCapture(uri);
       return uri;
     } catch {
-      Alert.alert(
-        "Error",
-        "Failed to capture passport image",
-      );
+      Alert.alert("Error", "Failed to capture passport image");
       return null;
     } finally {
       setCapturing(false);
@@ -1197,39 +1038,18 @@ export function ChildPassportCard({
   };
 
   const save = async () => {
-    const { status } =
-      await MediaLibrary.requestPermissionsAsync();
+    const { status } = await MediaLibrary.requestPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
-        "Permission Required",
-        "Allow photo access to save",
-      );
+      Alert.alert("Permission Required", "Allow photo access to save");
       return;
     }
     const uri = await doCapture();
     if (!uri) return;
-    const asset =
-      await MediaLibrary.createAssetAsync(uri);
-    let album =
-      await MediaLibrary.getAlbumAsync(
-        "ChildGuard",
-      );
-    if (!album)
-      await MediaLibrary.createAlbumAsync(
-        "ChildGuard",
-        asset,
-        false,
-      );
-    else
-      await MediaLibrary.addAssetsToAlbumAsync(
-        [asset],
-        album,
-        false,
-      );
-    Alert.alert(
-      "Saved!",
-      "Saved to your ChildGuard album",
-    );
+    const asset = await MediaLibrary.createAssetAsync(uri);
+    let album = await MediaLibrary.getAlbumAsync("ChildGuard");
+    if (!album) await MediaLibrary.createAlbumAsync("ChildGuard", asset, false);
+    else await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+    Alert.alert("Saved!", "Saved to your ChildGuard album");
   };
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -1253,20 +1073,10 @@ export function ChildPassportCard({
             <TouchableOpacity
               key={i}
               style={s.barHit}
-              onPress={() =>
-                transition(
-                  i,
-                  i > idx ? "left" : "right",
-                )
-              }
+              onPress={() => transition(i, i > idx ? "left" : "right")}
               activeOpacity={0.7}
             >
-              <View
-                style={[
-                  s.bar,
-                  i <= idx && s.barFilled,
-                ]}
-              />
+              <View style={[s.bar, i <= idx && s.barFilled]} />
             </TouchableOpacity>
           ))}
         </View>
@@ -1288,14 +1098,8 @@ export function ChildPassportCard({
       {/* Dots + arrows */}
       <View style={s.nav}>
         <TouchableOpacity
-          style={[
-            s.arrow,
-            idx === 0 && s.arrowOff,
-          ]}
-          onPress={() =>
-            idx > 0 &&
-            transition(idx - 1, "right")
-          }
+          style={[s.arrow, idx === 0 && s.arrowOff]}
+          onPress={() => idx > 0 && transition(idx - 1, "right")}
           disabled={idx === 0}
           activeOpacity={0.7}
         >
@@ -1312,33 +1116,18 @@ export function ChildPassportCard({
                 left: 8,
                 right: 8,
               }}
-              onPress={() =>
-                transition(
-                  i,
-                  i > idx ? "left" : "right",
-                )
-              }
+              onPress={() => transition(i, i > idx ? "left" : "right")}
               activeOpacity={0.7}
             >
-              <View
-                style={[
-                  s.dot,
-                  i === idx && s.dotOn,
-                ]}
-              />
+              <View style={[s.dot, i === idx && s.dotOn]} />
             </TouchableOpacity>
           ))}
         </View>
 
         <TouchableOpacity
-          style={[
-            s.arrow,
-            idx === SLIDE_KEYS.length - 1 &&
-              s.arrowOff,
-          ]}
+          style={[s.arrow, idx === SLIDE_KEYS.length - 1 && s.arrowOff]}
           onPress={() =>
-            idx < SLIDE_KEYS.length - 1 &&
-            transition(idx + 1, "left")
+            idx < SLIDE_KEYS.length - 1 && transition(idx + 1, "left")
           }
           disabled={idx === SLIDE_KEYS.length - 1}
           activeOpacity={0.7}
@@ -1358,9 +1147,7 @@ export function ChildPassportCard({
           {capturing ? (
             <ActivityIndicator color={DS.white} />
           ) : (
-            <AppText style={s.btnPrimaryText}>
-              Share Passport
-            </AppText>
+            <AppText style={s.btnPrimaryText}>Share Passport</AppText>
           )}
         </TouchableOpacity>
         <TouchableOpacity
@@ -1369,9 +1156,7 @@ export function ChildPassportCard({
           disabled={capturing}
           activeOpacity={0.85}
         >
-          <AppText style={s.btnSecondaryText}>
-            Save to Gallery
-          </AppText>
+          <AppText style={s.btnSecondaryText}>Save to Gallery</AppText>
         </TouchableOpacity>
       </View>
     </View>
