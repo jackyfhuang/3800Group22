@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
+  Dimensions,
   Image,
   Modal,
   ScrollView,
@@ -89,17 +90,28 @@ function Section({ title, children }: SectionProps) {
   );
 }
 
-function FeatureImageStrip({ images }: { images?: string[] }) {
+function FeatureImageStrip({
+  images,
+  onImagePress,
+}: {
+  images?: string[];
+  onImagePress: (images: string[], index: number) => void;
+}) {
   if (!images || images.length === 0) return null;
 
   return (
     <View style={viewStyles.featurePhotosRow}>
       {images.slice(0, 3).map((uri, index) => (
-        <Image
+        <TouchableOpacity
           key={`${uri}-${index}`}
-          source={{ uri }}
-          style={viewStyles.featurePhotoThumb}
-        />
+          onPress={() => onImagePress(images, index)}
+          activeOpacity={0.85}
+        >
+          <Image
+            source={{ uri }}
+            style={viewStyles.featurePhotoThumb}
+          />
+        </TouchableOpacity>
       ))}
     </View>
   );
@@ -114,6 +126,18 @@ export default function ViewChildScreen() {
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPassport, setShowPassport] = useState(false);
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerImages, setViewerImages] = useState<string[]>([]);
+  const [viewerIndex, setViewerIndex] = useState(0);
+
+  const screenWidth = Dimensions.get("window").width;
+
+  const openImageViewer = useCallback((images: string[], index: number) => {
+    if (!images.length) return;
+    setViewerImages(images);
+    setViewerIndex(index);
+    setViewerVisible(true);
+  }, []);
 
   const loadChild = useCallback(
     async (childId: string) => {
@@ -193,14 +217,19 @@ export default function ViewChildScreen() {
         <View style={viewStyles.avatarContainer}>
           <View style={viewStyles.avatarCircle}>
             {child.imageUri ? (
-              <Image
-                source={{ uri: child.imageUri }}
-                style={{
-                  width: 100,
-                  height: 100,
-                  borderRadius: 50,
-                }}
-              />
+              <TouchableOpacity
+                onPress={() => openImageViewer([child.imageUri!], 0)}
+                activeOpacity={0.85}
+              >
+                <Image
+                  source={{ uri: child.imageUri }}
+                  style={{
+                    width: 100,
+                    height: 100,
+                    borderRadius: 50,
+                  }}
+                />
+              </TouchableOpacity>
             ) : (
               <IconSymbol name="person.fill" size={48} color="#007AFF" />
             )}
@@ -252,7 +281,10 @@ export default function ViewChildScreen() {
                     {child.birthmarksDescription}
                   </AppText>
                 ) : null}
-                <FeatureImageStrip images={child.birthmarkImageUris} />
+                <FeatureImageStrip
+                  images={child.birthmarkImageUris}
+                  onImagePress={openImageViewer}
+                />
               </View>
               )}
 
@@ -267,7 +299,10 @@ export default function ViewChildScreen() {
                     {child.scarsDescription}
                   </AppText>
                 ) : null}
-                <FeatureImageStrip images={child.scarImageUris} />
+                <FeatureImageStrip
+                  images={child.scarImageUris}
+                  onImagePress={openImageViewer}
+                />
               </View>
               )}
 
@@ -283,7 +318,10 @@ export default function ViewChildScreen() {
                       {child.identifyingFeaturesDescription}
                     </AppText>
                   ) : null}
-                  <FeatureImageStrip images={child.identifyingFeatureImageUris} />
+                  <FeatureImageStrip
+                    images={child.identifyingFeatureImageUris}
+                    onImagePress={openImageViewer}
+                  />
                 </View>
               )}
 
@@ -391,6 +429,59 @@ export default function ViewChildScreen() {
                 } as any
               }
             />
+          )}
+        </View>
+      </Modal>
+
+      {/* Fullscreen Image Viewer */}
+      <Modal
+        visible={viewerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setViewerVisible(false)}
+      >
+        <View style={viewStyles.imageViewerOverlay}>
+          <View style={viewStyles.imageViewerHeader}>
+            <TouchableOpacity
+              onPress={() => setViewerVisible(false)}
+              style={viewStyles.imageViewerCloseButton}
+            >
+              <AppText style={viewStyles.imageViewerCloseText}>✕</AppText>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            contentOffset={{ x: viewerIndex * screenWidth, y: 0 }}
+            onMomentumScrollEnd={(event) => {
+              const x = event.nativeEvent.contentOffset.x;
+              const nextIndex = Math.round(x / screenWidth);
+              setViewerIndex(nextIndex);
+            }}
+            style={viewStyles.imageViewerScroll}
+          >
+            {viewerImages.map((uri, index) => (
+              <View
+                key={`${uri}-${index}`}
+                style={[viewStyles.imageViewerPage, { width: screenWidth }]}
+              >
+                <Image
+                  source={{ uri }}
+                  style={viewStyles.imageViewerImage}
+                  resizeMode="contain"
+                />
+              </View>
+            ))}
+          </ScrollView>
+
+          {viewerImages.length > 1 && (
+            <View style={viewStyles.imageViewerCounterWrap}>
+              <AppText style={viewStyles.imageViewerCounterText}>
+                {viewerIndex + 1} / {viewerImages.length}
+              </AppText>
+            </View>
           )}
         </View>
       </Modal>
@@ -509,6 +600,49 @@ const viewStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.cardBorder,
     backgroundColor: colors.inputBackground,
+  },
+  imageViewerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.96)",
+  },
+  imageViewerHeader: {
+    paddingTop: spacing.xxxl,
+    paddingHorizontal: spacing.lg,
+    alignItems: "flex-end",
+  },
+  imageViewerCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.18)",
+  },
+  imageViewerCloseText: {
+    color: colors.white,
+    fontSize: typography.default,
+    fontWeight: "700",
+  },
+  imageViewerScroll: {
+    flex: 1,
+  },
+  imageViewerPage: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  imageViewerImage: {
+    width: "100%",
+    height: "85%",
+  },
+  imageViewerCounterWrap: {
+    alignItems: "center",
+    paddingBottom: spacing.xl,
+  },
+  imageViewerCounterText: {
+    color: colors.white,
+    fontSize: typography.small,
+    fontWeight: "600",
   },
   passportButton: {
     backgroundColor: colors.primary,
