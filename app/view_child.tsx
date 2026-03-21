@@ -32,6 +32,9 @@ type ChildProfile = {
   scarsDescription?: string;
   hasIdentifyingFeatures?: string;
   identifyingFeaturesDescription?: string;
+  birthmarkImageUris?: string[];
+  scarImageUris?: string[];
+  identifyingFeatureImageUris?: string[];
   lastKnownLocation?: string;
   schoolDaycareType?: string;
   schoolDaycareName?: string;
@@ -82,6 +85,22 @@ function Section({ title, children }: SectionProps) {
         {title}
       </AppText>
       {children}
+    </View>
+  );
+}
+
+function FeatureImageStrip({ images }: { images?: string[] }) {
+  if (!images || images.length === 0) return null;
+
+  return (
+    <View style={viewStyles.featurePhotosRow}>
+      {images.slice(0, 3).map((uri, index) => (
+        <Image
+          key={`${uri}-${index}`}
+          source={{ uri }}
+          style={viewStyles.featurePhotoThumb}
+        />
+      ))}
     </View>
   );
 }
@@ -139,6 +158,9 @@ export default function ViewChildScreen() {
     child.hasBirthmarks === "yes" ||
     child.hasScars === "yes" ||
     child.hasIdentifyingFeatures === "yes" ||
+    !!child.birthmarkImageUris?.length ||
+    !!child.scarImageUris?.length ||
+    !!child.identifyingFeatureImageUris?.length ||
     !!child.lastKnownLocation ||
     (child.schoolDaycareType && child.schoolDaycareType !== "none") ||
     !!child.sportsTeams;
@@ -218,37 +240,50 @@ export default function ViewChildScreen() {
         {/* Identifying Features */}
         {hasIdentifyingFeatures && (
           <Section title="Identifying Features">
-            {child.hasBirthmarks === "yes" && child.birthmarksDescription && (
+            {child.hasBirthmarks === "yes" &&
+              (child.birthmarksDescription ||
+                child.birthmarkImageUris?.length) && (
               <View style={viewStyles.contactCard}>
                 <AppText variant="fieldLabel" style={viewStyles.contactTitle}>
                   Birthmarks
                 </AppText>
-                <AppText style={viewStyles.textBlockContent}>
-                  {child.birthmarksDescription}
-                </AppText>
+                {child.birthmarksDescription ? (
+                  <AppText style={viewStyles.textBlockContent}>
+                    {child.birthmarksDescription}
+                  </AppText>
+                ) : null}
+                <FeatureImageStrip images={child.birthmarkImageUris} />
               </View>
-            )}
+              )}
 
-            {child.hasScars === "yes" && child.scarsDescription && (
+            {child.hasScars === "yes" &&
+              (child.scarsDescription || child.scarImageUris?.length) && (
               <View style={viewStyles.contactCard}>
                 <AppText variant="fieldLabel" style={viewStyles.contactTitle}>
                   Scars
                 </AppText>
-                <AppText style={viewStyles.textBlockContent}>
-                  {child.scarsDescription}
-                </AppText>
+                {child.scarsDescription ? (
+                  <AppText style={viewStyles.textBlockContent}>
+                    {child.scarsDescription}
+                  </AppText>
+                ) : null}
+                <FeatureImageStrip images={child.scarImageUris} />
               </View>
-            )}
+              )}
 
             {child.hasIdentifyingFeatures === "yes" &&
-              child.identifyingFeaturesDescription && (
+              (child.identifyingFeaturesDescription ||
+                child.identifyingFeatureImageUris?.length) && (
                 <View style={viewStyles.contactCard}>
                   <AppText variant="fieldLabel" style={viewStyles.contactTitle}>
                     Other Identifying Features
                   </AppText>
-                  <AppText style={viewStyles.textBlockContent}>
-                    {child.identifyingFeaturesDescription}
-                  </AppText>
+                  {child.identifyingFeaturesDescription ? (
+                    <AppText style={viewStyles.textBlockContent}>
+                      {child.identifyingFeaturesDescription}
+                    </AppText>
+                  ) : null}
+                  <FeatureImageStrip images={child.identifyingFeatureImageUris} />
                 </View>
               )}
 
@@ -460,6 +495,20 @@ const viewStyles = StyleSheet.create({
     fontWeight: "600",
     color: colors.textPrimary,
     marginBottom: spacing.md,
+  },
+  featurePhotosRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    flexWrap: "wrap",
+  },
+  featurePhotoThumb: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    backgroundColor: colors.inputBackground,
   },
   passportButton: {
     backgroundColor: colors.primary,
