@@ -2,83 +2,87 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  View
-} from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/app-text';
 import { ScreenHeader } from '@/components/ui/screen-header';
+import { palette } from '@/constants/theme';
 import { colors, radius, spacing, typography } from '@/styles';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Type (mirrors ChildFormData + computed fields) ───────────────────────────
 type ChildProfile = {
-  fullName: string;
-  age: number;
-  height: number;
-  weight: number;
-  gender?: string;
-  medicalNotes?: string;
-  hasBirthmarks?: string;
-  birthmarksDescription?: string;
-  hasScars?: string;
-  scarsDescription?: string;
-  hasIdentifyingFeatures?: string;
-  identifyingFeaturesDescription?: string;
-  lastKnownLocation?: string;
-  schoolDaycareType?: string;
-  schoolDaycareName?: string;
-  sportsTeams?: string;
-  parent1Name?: string;
-  parent1Address?: string;
-  parent1Phone?: string;
-  parent2Name?: string;
-  parent2Address?: string;
-  parent2Phone?: string;
+  id?: string;
+  // computed
+  fullName?: string;
+  age?: number;
+  // step 1
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  sex?: string;
+  ethnicity?: string;
+  height?: number;
+  weight?: number;
+  // step 2
+  lifeThreatAllergies?: string;
+  emergencyMedications?: string;
+  communicationNeeds?: string;
+  languageSpoken?: string;
+  otherMedicalNotes?: string;
+  // step 3
+  guardian1?: { name?: string; phone?: string; address?: string };
+  guardian2?: { name?: string; phone?: string; address?: string };
   emergencyContacts?: Array<{
-    name: string;
-    relationship: string;
-    sex?: string;
-    phone: string;
+    name?: string;
+    relationship?: string;
+    phone?: string;
     address?: string;
   }>;
-  id?: string;
+  // step 4
+  eyeColor?: string;
+  eyeColorOther?: string;
+  hairColor?: string;
+  hairColorOther?: string;
+  hairStyle?: string;
+  hasHat?: boolean;
+  hatColor?: string;
+  hatStyle?: string;
+  topColor?: string;
+  pantsColor?: string;
+  shoesColor?: string;
+  shoesType?: string;
+  hasGlasses?: boolean;
+  hasHearingAids?: boolean;
+  otherSensoryNeeds?: string;
 };
 
-// ─── Helper Component ────────────────────────────────────────────────────────
-type InfoRowProps = {
-  label: string;
-  value: string | number | undefined;
-};
+// ─── Helper components ────────────────────────────────────────────────────────
 
-function InfoRow({ label, value }: InfoRowProps) {
-  if (value === undefined || value === '' || value === null) return null;
+// Label on left (bold), value on right
+function InfoRow({ label, value }: { label: string; value?: string | number | boolean }) {
+  if (value === undefined || value === null || value === '' || value === false) return null;
+  const display = typeof value === 'boolean' ? 'Yes' : String(value);
   return (
-    <View style={viewStyles.infoRow}>
-      <AppText variant="fieldLabel" style={viewStyles.infoLabel}>
-        {label}
-      </AppText>
-      <AppText style={viewStyles.infoValue}>{String(value)}</AppText>
+    <View style={styles.infoRow}>
+      <AppText style={styles.infoLabel}>{label}</AppText>
+      <AppText style={styles.infoValue}>{display}</AppText>
     </View>
   );
 }
 
-type SectionProps = {
-  title: string;
-  children: React.ReactNode;
-};
-
-function Section({ title, children }: SectionProps) {
+// Bold section heading with a full-width divider above it (except the first)
+function SectionHeading({ title, first }: { title: string; first?: boolean }) {
   return (
-    <View style={viewStyles.section}>
-      <AppText variant="heading" style={viewStyles.sectionTitle}>
-        {title}
-      </AppText>
-      {children}
-    </View>
+    <>
+      {!first && <View style={styles.divider} />}
+      <AppText style={styles.sectionTitle}>{title}</AppText>
+    </>
   );
+}
+
+// Subtle sub-group label
+function GroupLabel({ title }: { title: string }) {
+  return <AppText style={styles.groupLabel}>{title}</AppText>;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -94,19 +98,15 @@ export default function ViewChildScreen() {
 
   const loadChild = async (childId: string) => {
     try {
-      const childrenJson = await AsyncStorage.getItem('children_list');
-      if (childrenJson) {
-        const childrenList = JSON.parse(childrenJson);
-        const foundChild = childrenList.find((c: any) => c.id === childId);
-        if (foundChild) {
-          setChild(foundChild);
-        } else {
-          Alert.alert('Error', 'Child profile not found');
-          router.back();
-        }
+      const json = await AsyncStorage.getItem('children_list');
+      if (json) {
+        const list = JSON.parse(json);
+        const found = list.find((c: any) => c.id === childId);
+        if (found) { setChild(found); return; }
       }
-    } catch (error) {
-      console.error('Error loading child:', error);
+      Alert.alert('Error', 'Child profile not found');
+      router.back();
+    } catch {
       Alert.alert('Error', 'Failed to load child profile');
       router.back();
     } finally {
@@ -114,10 +114,9 @@ export default function ViewChildScreen() {
     }
   };
 
-
   if (loading) {
     return (
-      <View style={viewStyles.container}>
+      <View style={styles.container}>
         <AppText>Loading...</AppText>
       </View>
     );
@@ -125,256 +124,240 @@ export default function ViewChildScreen() {
 
   if (!child) {
     return (
-      <View style={viewStyles.container}>
+      <View style={styles.container}>
         <AppText>Child profile not found</AppText>
       </View>
     );
   }
 
-  // Check if any fields in a section have values
-  const hasBasicInfo =
-    child.fullName ||
-    child.age !== undefined ||
-    child.height !== undefined ||
-    child.weight !== undefined ||
-    child.gender;
-
-  const hasIdentifyingFeatures =
-    child.hasBirthmarks === 'yes' ||
-    child.hasScars === 'yes' ||
-    child.hasIdentifyingFeatures === 'yes' ||
-    child.lastKnownLocation ||
-    child.schoolDaycareType ||
-    child.sportsTeams;
-
-  const hasParentInfo = child.parent1Name || child.parent2Name;
-
-  const hasEmergencyContacts =
-    child.emergencyContacts && child.emergencyContacts.length > 0;
+  const displayName = child.fullName || `${child.firstName ?? ''} ${child.lastName ?? ''}`.trim() || 'Unnamed Child';
+  const eyeDisplay  = child.eyeColor === 'other' ? child.eyeColorOther : child.eyeColor;
+  const hairDisplay = child.hairColor === 'other' ? child.hairColorOther : child.hairColor;
 
   return (
-    <ScrollView style={viewStyles.container} contentContainerStyle={viewStyles.contentContainer}>
-      {/* Header */}
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+
       <ScreenHeader
         title="Child Profile"
         onLeftPress={() => router.back()}
         onRightPress={() => router.replace('/(tabs)')}
       />
 
-      {/* Avatar */}
-      <View style={viewStyles.avatarContainer}>
-        <View style={viewStyles.avatarCircle}>
-          <IconSymbol name="person.fill" size={48} color="#007AFF" />
-        </View>
-        <AppText variant="heading" style={viewStyles.childName}>
-          {child.fullName || 'Unnamed Child'}
-        </AppText>
-      </View>
+      {/* ── Single card containing everything ───────────────────────────────── */}
+      <View style={styles.card}>
 
-      {/* Basic Information */}
-      {hasBasicInfo && (
-        <Section title="Basic Information">
-          <InfoRow label="Full Name" value={child.fullName} />
-          <InfoRow label="Age" value={child.age ? `${child.age} years` : undefined} />
-          <InfoRow label="Height" value={child.height ? `${child.height} cm` : undefined} />
-          <InfoRow label="Weight" value={child.weight ? `${child.weight} kg` : undefined} />
-          <InfoRow label="Sex" value={child.gender} />
-        </Section>
-      )}
-
-      {/* Medical Notes */}
-      {child.medicalNotes && (
-        <Section title="Medical Information">
-          <View style={viewStyles.textBlock}>
-            <AppText style={viewStyles.textBlockContent}>{child.medicalNotes}</AppText>
+        {/* Avatar + name + age */}
+        <View style={styles.avatar}>
+          <View style={styles.avatarCircle}>
+            <IconSymbol name="person.fill" size={48} color={palette.blue} />
           </View>
-        </Section>
-      )}
+          <AppText style={styles.childName}>{displayName}</AppText>
+          {child.age !== undefined && (
+            <AppText style={styles.childAge}>{child.age} years old</AppText>
+          )}
+        </View>
+        <View style={styles.divider} />
 
-      {/* Identifying Features */}
-      {hasIdentifyingFeatures && (
-        <Section title="Identifying Features">
-          {child.hasBirthmarks === 'yes' && child.birthmarksDescription && (
-            <View style={viewStyles.textBlock}>
-              <AppText variant="fieldLabel" style={viewStyles.textBlockLabel}>
-                Birthmarks
-              </AppText>
-              <AppText style={viewStyles.textBlockContent}>
-                {child.birthmarksDescription}
-              </AppText>
-            </View>
-          )}
-          {child.hasScars === 'yes' && child.scarsDescription && (
-            <View style={viewStyles.textBlock}>
-              <AppText variant="fieldLabel" style={viewStyles.textBlockLabel}>
-                Scars
-              </AppText>
-              <AppText style={viewStyles.textBlockContent}>
-                {child.scarsDescription}
-              </AppText>
-            </View>
-          )}
-          {child.hasIdentifyingFeatures === 'yes' && child.identifyingFeaturesDescription && (
-            <View style={viewStyles.textBlock}>
-              <AppText variant="fieldLabel" style={viewStyles.textBlockLabel}>
-                Other Identifying Features
-              </AppText>
-              <AppText style={viewStyles.textBlockContent}>
-                {child.identifyingFeaturesDescription}
-              </AppText>
-            </View>
-          )}
-          <InfoRow label="Last Known Location" value={child.lastKnownLocation} />
-          {child.schoolDaycareType && child.schoolDaycareType !== 'none' && (
-            <InfoRow
-              label={child.schoolDaycareType === 'school' ? 'School' : 'Daycare'}
-              value={child.schoolDaycareName}
-            />
-          )}
-          <InfoRow label="Sports Teams" value={child.sportsTeams} />
-        </Section>
-      )}
+        {/* Essential ID */}
+        <SectionHeading title="Essential ID" first />
+        <InfoRow label="Date of Birth" value={child.dateOfBirth} />
+        <InfoRow label="Sex"           value={child.sex} />
+        <InfoRow label="Ethnicity"     value={child.ethnicity} />
+        <InfoRow label="Height"        value={child.height !== undefined ? `${child.height} cm` : undefined} />
+        <InfoRow label="Weight"        value={child.weight !== undefined ? `${child.weight} kg` : undefined} />
 
-      {/* Parents Information */}
-      {hasParentInfo && (
-        <Section title="Parents Information">
-          {child.parent1Name && (
-            <View style={viewStyles.subsection}>
-              <AppText variant="fieldLabel" style={viewStyles.subsectionTitle}>
-                Parent 1
-              </AppText>
-              <InfoRow label="Name" value={child.parent1Name} />
-              <InfoRow label="Address" value={child.parent1Address} />
-              <InfoRow label="Phone" value={child.parent1Phone} />
-            </View>
-          )}
-          {child.parent2Name && (
-            <View style={viewStyles.subsection}>
-              <AppText variant="fieldLabel" style={viewStyles.subsectionTitle}>
-                Parent 2
-              </AppText>
-              <InfoRow label="Name" value={child.parent2Name} />
-              <InfoRow label="Address" value={child.parent2Address} />
-              <InfoRow label="Phone" value={child.parent2Phone} />
-            </View>
-          )}
-        </Section>
-      )}
+        {/* Medical */}
+        {(child.lifeThreatAllergies || child.emergencyMedications ||
+          child.communicationNeeds  || child.otherMedicalNotes) && (
+          <>
+            <SectionHeading title="Medical" />
+            <InfoRow label="Life-Threatening Allergies" value={child.lifeThreatAllergies} />
+            <InfoRow label="Emergency Medications"      value={child.emergencyMedications} />
+            <InfoRow label="Communication Needs"        value={child.communicationNeeds} />
+            {child.communicationNeeds === 'language_barrier' && (
+              <InfoRow label="Language Spoken"          value={child.languageSpoken} />
+            )}
+            <InfoRow label="Other Medical Notes"        value={child.otherMedicalNotes} />
+          </>
+        )}
 
-      {/* Emergency Contacts */}
-      {hasEmergencyContacts && (
-        <Section title="Emergency Contacts">
-          {child.emergencyContacts?.map((contact, index) => (
-            <View key={index} style={viewStyles.contactCard}>
-              <AppText variant="fieldLabel" style={viewStyles.contactTitle}>
-                Contact {index + 1}
-              </AppText>
-              <InfoRow label="Name" value={contact.name} />
-              <InfoRow label="Relationship" value={contact.relationship} />
-              <InfoRow label="Sex" value={contact.sex} />
-              <InfoRow label="Phone" value={contact.phone} />
-              <InfoRow label="Address" value={contact.address} />
-            </View>
-          ))}
-        </Section>
-      )}
+        {/* Contacts */}
+        <SectionHeading title="Contacts" />
+        {child.guardian1?.name && (
+          <>
+            <GroupLabel title="Primary Guardian 1" />
+            <InfoRow label="Name"    value={child.guardian1.name} />
+            <InfoRow label="Phone"   value={child.guardian1.phone} />
+            <InfoRow label="Address" value={child.guardian1.address} />
+          </>
+        )}
+        {child.guardian2?.name && (
+          <>
+            <GroupLabel title="Primary Guardian 2" />
+            <InfoRow label="Name"    value={child.guardian2.name} />
+            <InfoRow label="Phone"   value={child.guardian2.phone} />
+            <InfoRow label="Address" value={child.guardian2.address} />
+          </>
+        )}
+        {child.emergencyContacts && child.emergencyContacts.length > 0 && (
+          <>
+            <GroupLabel title="Additional Emergency Contacts" />
+            {child.emergencyContacts.map((c, i) => (
+              <View key={i} style={i > 0 ? styles.contactSpacer : undefined}>
+                <AppText style={styles.contactIndex}>Contact {i + 1}</AppText>
+                <InfoRow label="Name"         value={c.name} />
+                <InfoRow label="Relationship" value={c.relationship} />
+                <InfoRow label="Phone"        value={c.phone} />
+                <InfoRow label="Address"      value={c.address} />
+              </View>
+            ))}
+          </>
+        )}
+
+        {/* Visual ID */}
+        <SectionHeading title="Visual ID" />
+        <GroupLabel title="Appearance" />
+        <InfoRow label="Eye Color"  value={eyeDisplay} />
+        <InfoRow label="Hair Color" value={hairDisplay} />
+        <InfoRow label="Hair Style" value={child.hairStyle} />
+
+        <GroupLabel title="Clothing" />
+        <InfoRow label="Top / Shirt"    value={child.topColor} />
+        <InfoRow label="Pants / Bottom" value={child.pantsColor} />
+        <InfoRow label="Shoes Color"    value={child.shoesColor} />
+        <InfoRow label="Shoes Type"     value={child.shoesType} />
+        {child.hasHat && (
+          <>
+            <InfoRow label="Hat Color" value={child.hatColor} />
+            <InfoRow label="Hat Style" value={child.hatStyle} />
+          </>
+        )}
+
+        {(child.hasGlasses || child.hasHearingAids || child.otherSensoryNeeds) && (
+          <>
+            <GroupLabel title="Sensory Needs" />
+            <InfoRow label="Wears Glasses"      value={child.hasGlasses} />
+            <InfoRow label="Wears Hearing Aids" value={child.hasHearingAids} />
+            <InfoRow label="Other"              value={child.otherSensoryNeeds} />
+          </>
+        )}
+
+      </View>
 
       <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
-// ─── Styles ────────────────────────────────────────────────────────────────────
-const viewStyles = StyleSheet.create({
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.appBackground,
   },
-  contentContainer: {
-    padding: spacing.xl,
+  content: {
+    padding: spacing.xxl,
   },
-  avatarContainer: {
+
+  // Avatar — inside the card
+  avatar: {
     alignItems: 'center',
-    marginBottom: spacing.xxxl,
+    paddingBottom: spacing.lg,
   },
   avatarCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.secondaryLight,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: colors.secondaryBorder,
-    marginBottom: spacing.lg,
+    borderWidth: 2,
+    borderColor: colors.primaryBorder,
+    marginBottom: spacing.sm,
   },
   childName: {
     fontSize: typography.title,
-    fontWeight: '600',
-    color: colors.textName,
+    fontWeight: '700',
+    color: palette.navy,
+    textAlign: 'center',
   },
-  section: {
-    marginBottom: spacing.xxxl,
+  childAge: {
+    fontSize: typography.small,
+    fontWeight: '500',
+    color: palette.navy,
+    marginTop: 2,
+  },
+
+  // Single card
+  card: {
     backgroundColor: colors.cardBackground,
-    padding: spacing.xl,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
     borderWidth: 1,
     borderColor: colors.cardBorder,
+    shadowColor: palette.amber,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+
+  // Section heading + divider
+  divider: {
+    height: 1,
+    backgroundColor: colors.cardBorder,
+    marginVertical: spacing.lg,
   },
   sectionTitle: {
-    fontSize: typography.subtitle,
+    fontSize: typography.default,
     fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.lg,
+    color: palette.navyLight,
+    letterSpacing: -0.1,
+    marginBottom: spacing.sm,
   },
+
+  // Group label
+  groupLabel: {
+    fontSize: typography.tiny,
+    fontWeight: '600',
+    color: palette.teal,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+
+  // Info row — label left (bold), value right
   infoRow: {
-    marginBottom: spacing.lg,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 5,
   },
   infoLabel: {
-    marginBottom: spacing.xs,
-    color: colors.textSubtle,
+    fontSize: typography.body,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    flex: 1,
   },
   infoValue: {
-    fontSize: typography.default,
-    color: colors.textPrimary,
-    fontWeight: '500',
+    fontSize: typography.body,
+    color: palette.navyLight,
+    fontWeight: '400',
+    flex: 1,
+    textAlign: 'right',
   },
-  textBlock: {
-    marginBottom: spacing.lg,
-  },
-  textBlockLabel: {
+
+  // Emergency contact spacing
+  contactIndex: {
+    fontSize: typography.small,
+    fontWeight: '600',
+    color: palette.navyLight,
     marginBottom: spacing.xs,
-    color: colors.textSubtle,
   },
-  textBlockContent: {
-    fontSize: typography.default,
-    color: colors.textPrimary,
-    lineHeight: 22,
-  },
-  subsection: {
-    marginBottom: spacing.xl,
-    paddingBottom: spacing.xl,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.subtleBorder,
-  },
-  subsectionTitle: {
-    fontSize: typography.default,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  contactCard: {
-    backgroundColor: colors.inputBackground,
-    padding: spacing.lg,
-    borderRadius: radius.md,
-    marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  contactTitle: {
-    fontSize: typography.default,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
+  contactSpacer: {
+    marginTop: spacing.sm,
   },
 });
