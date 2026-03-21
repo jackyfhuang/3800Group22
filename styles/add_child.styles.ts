@@ -14,57 +14,6 @@ export const addChildStyles = StyleSheet.create({
     flexGrow: 1,
   },
 
-  // ─── Header ───────────────────────────────────────────────────────────────
-  headerContainer: {
-    marginBottom: spacing.xxl,
-    marginTop: spacing.xl,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  // Circular indented button shared by back and home
-  headerButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.offWhite,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  headerButtonPressed: {
-    shadowColor: palette.amber,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 12,
-    elevation: 8,
-    borderColor: palette.amber,
-  },
-  headerTitleContainer: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: typography.large,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-    textAlign: 'center',
-  },
-  headerSubtext: {
-    fontSize: typography.body,
-    fontWeight: '500',
-    color: colors.textSubtle,
-    textAlign: 'center',
-    marginTop: 2,
-  },
 
   // ─── Form Row ─────────────────────────────────────────────────────────────
   row: {

@@ -10,7 +10,6 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   Switch,
   TouchableOpacity,
@@ -25,8 +24,8 @@ import { AppDropdown } from '@/components/ui/app-dropdown';
 import { AppText } from '@/components/ui/app-text';
 import { FormField } from '@/components/ui/form-field';
 import { FormSection } from '@/components/ui/form-section';
+import { ScreenHeader, confirmDiscard } from '@/components/ui/screen-header';
 import { StepProgressBar } from '@/components/ui/step-progress-bar';
-import { palette } from '@/constants/theme';
 import { colors, sharedStyles, addChildStyles as styles } from '@/styles';
 
 // ─── Validation Schema ────────────────────────────────────────────────────────
@@ -231,15 +230,7 @@ export default function AddChildScreen() {
       scrollRef.current?.scrollTo({ y: 0, animated: true });
       return;
     }
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm?.('Unsaved changes will be lost. Go back?') ?? true;
-      if (confirmed) router.back();
-    } else {
-      Alert.alert('Unsaved Changes', 'Your changes will not be saved.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Discard', style: 'destructive', onPress: () => router.back() },
-      ]);
-    }
+    confirmDiscard(() => router.back());
   };
 
   const handleNext = async () => {
@@ -640,47 +631,12 @@ export default function AddChildScreen() {
         ]}
       >
         {/* Header */}
-        <View style={styles.headerContainer}>
-          <View style={styles.headerTop}>
-
-            {/* Back button */}
-            <Pressable
-              onPress={handleBack}
-              style={({ pressed }) => [styles.headerButton, pressed && styles.headerButtonPressed]}
-            >
-              <MaterialIcons name="arrow-back-ios" size={18} color={palette.navy} style={{ marginLeft: 4 }} />
-            </Pressable>
-
-            {/* Centered title */}
-            <View style={styles.headerTitleContainer}>
-              <AppText variant="heading" style={styles.headerTitle}>
-                {isEditMode ? 'Edit Profile' : stepTitles[currentStep].title}
-              </AppText>
-              <AppText variant="subtitle" style={styles.headerSubtext}>
-                {isEditMode ? 'Update child information' : stepTitles[currentStep].subtitle}
-              </AppText>
-            </View>
-
-            {/* Home / security button */}
-            <Pressable
-              onPress={() => {
-                if (Platform.OS === 'web') {
-                  const confirmed = window.confirm?.('Unsaved changes will be lost. Go back?') ?? true;
-                  if (confirmed) router.replace('/(tabs)');
-                } else {
-                  Alert.alert('Unsaved Changes', 'Your changes will not be saved.', [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Discard', style: 'destructive', onPress: () => router.replace('/(tabs)') },
-                  ]);
-                }
-              }}
-              style={({ pressed }) => [styles.headerButton, pressed && styles.headerButtonPressed]}
-            >
-              <MaterialIcons name="security" size={20} color={palette.navy} />
-            </Pressable>
-
-          </View>
-        </View>
+        <ScreenHeader
+          title={isEditMode ? 'Edit Profile' : stepTitles[currentStep].title}
+          subtitle={isEditMode ? 'Update child information' : stepTitles[currentStep].subtitle}
+          onLeftPress={handleBack}
+          onRightPress={() => confirmDiscard(() => router.replace('/(tabs)'))}
+        />
 
         {/* Step Content */}
         {currentStep === 1 && renderStep1()}

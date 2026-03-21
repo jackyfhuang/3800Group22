@@ -6,11 +6,11 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   View
 } from 'react-native';
 
 import { AppText } from '@/components/ui/app-text';
+import { ScreenHeader } from '@/components/ui/screen-header';
 import { colors, radius, spacing, typography } from '@/styles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -155,20 +155,11 @@ export default function ViewChildScreen() {
   return (
     <ScrollView style={viewStyles.container} contentContainerStyle={viewStyles.contentContainer}>
       {/* Header */}
-      <View style={viewStyles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={viewStyles.backButton}
-          activeOpacity={0.7}
-        >
-          <AppText style={viewStyles.backButtonText}>←</AppText>
-        </TouchableOpacity>
-        <View style={viewStyles.headerTextContainer}>
-          <AppText variant="heading" style={viewStyles.headerTitle}>
-            Child Profile
-          </AppText>
-        </View>
-      </View>
+      <ScreenHeader
+        title="Child Profile"
+        onLeftPress={() => router.back()}
+        onRightPress={() => router.replace('/(tabs)')}
+      />
 
       {/* Avatar */}
       <View style={viewStyles.avatarContainer}>
@@ -301,33 +292,6 @@ const viewStyles = StyleSheet.create({
   },
   contentContainer: {
     padding: spacing.xl,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: spacing.xxxl,
-    marginTop: spacing.xl,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.xs,
-  },
-  backButtonText: {
-    fontSize: 28,
-    color: colors.secondary,
-    fontWeight: '600',
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: typography.large,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
   },
   avatarContainer: {
     alignItems: 'center',
