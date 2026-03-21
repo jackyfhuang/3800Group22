@@ -7,7 +7,6 @@ import {
 import React, {
   useEffect,
   useRef,
-  useState,
 } from "react";
 import {
   Controller,
@@ -61,9 +60,6 @@ export default function AddChildScreen() {
     resolver: zodResolver(childSchema as any),
     defaultValues: getDefaultChildFormData(),
   });
-
-  const [captureData, setCaptureData] =
-    useState<ChildFormData | null>(null);
 
   // Watch fields for conditional rendering
   const watchedFields = watch([
@@ -450,85 +446,6 @@ export default function AddChildScreen() {
 
           <View style={{ height: 40 }} />
         </ScrollView>
-
-        {/* HIDDEN CAPTURE CARD */}
-        <ViewShot
-          ref={viewShotRef}
-          style={styles.hiddenCapture}
-        >
-          <View style={styles.captureCard}>
-            <AppText style={styles.captureTitle}>
-              CHILD GUARD ID
-            </AppText>
-            <View
-              style={{
-                flexDirection: "row",
-                marginBottom: 20,
-              }}
-            >
-              {captureData?.imageUri && (
-                <Image
-                  source={{
-                    uri: captureData.imageUri,
-                  }}
-                  style={{
-                    width: 120,
-                    height: 120,
-                    borderRadius: 10,
-                    marginRight: 15,
-                  }}
-                />
-              )}
-              <View style={{ flex: 1 }}>
-                <AppText
-                  style={styles.captureName}
-                >
-                  {captureData?.fullName}
-                </AppText>
-                <AppText style={{ fontSize: 16 }}>
-                  Age:{" "}
-                  {String(captureData?.age ?? "")}
-                </AppText>
-                <AppText style={{ fontSize: 16 }}>
-                  H:{" "}
-                  {String(
-                    captureData?.height ?? "",
-                  )}
-                  cm | W:{" "}
-                  {String(
-                    captureData?.weight ?? "",
-                  )}
-                  kg
-                </AppText>
-                {captureData?.gender && (
-                  <AppText
-                    style={{ fontSize: 16 }}
-                  >
-                    Gender: {captureData.gender}
-                  </AppText>
-                )}
-              </View>
-            </View>
-            {captureData?.medicalNotes && (
-              <View
-                style={{
-                  borderTopWidth: 1,
-                  borderColor: "#eee",
-                  paddingTop: 10,
-                }}
-              >
-                <AppText
-                  style={{ fontWeight: "bold" }}
-                >
-                  Medical Notes:
-                </AppText>
-                <AppText numberOfLines={3}>
-                  {captureData.medicalNotes}
-                </AppText>
-              </View>
-            )}
-          </View>
-        </ViewShot>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
