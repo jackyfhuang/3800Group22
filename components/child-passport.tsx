@@ -456,6 +456,9 @@ export function ChildPassportCard({ child, onCapture }: Props) {
       child.hasBirthmarks === "yes" ||
       child.hasScars === "yes" ||
       child.hasIdentifyingFeatures === "yes" ||
+      !!child.birthmarkImageUris?.length ||
+      !!child.scarImageUris?.length ||
+      !!child.identifyingFeatureImageUris?.length ||
       child.lastKnownLocation;
 
     return (
@@ -480,7 +483,10 @@ export function ChildPassportCard({ child, onCapture }: Props) {
 
         {child.hasBirthmarks === "yes" ||
         child.hasScars === "yes" ||
-        child.hasIdentifyingFeatures === "yes" ? (
+        child.hasIdentifyingFeatures === "yes" ||
+        !!child.birthmarkImageUris?.length ||
+        !!child.scarImageUris?.length ||
+        !!child.identifyingFeatureImageUris?.length ? (
           <Block
             icon="🔍"
             title="Identifying Features"
@@ -505,6 +511,27 @@ export function ChildPassportCard({ child, onCapture }: Props) {
                 <AppText style={boldText}>Other — </AppText>
                 {child.identifyingFeaturesDescription}
               </AppText>
+            ) : null}
+
+            {child.birthmarkImageUris?.length ? (
+              <View style={featureThumbStyles.group}>
+                <AppText style={featureThumbStyles.label}>Birthmark Photos</AppText>
+                {renderFeatureThumbs(child.birthmarkImageUris)}
+              </View>
+            ) : null}
+
+            {child.scarImageUris?.length ? (
+              <View style={featureThumbStyles.group}>
+                <AppText style={featureThumbStyles.label}>Scar Photos</AppText>
+                {renderFeatureThumbs(child.scarImageUris)}
+              </View>
+            ) : null}
+
+            {child.identifyingFeatureImageUris?.length ? (
+              <View style={featureThumbStyles.group}>
+                <AppText style={featureThumbStyles.label}>Other Feature Photos</AppText>
+                {renderFeatureThumbs(child.identifyingFeatureImageUris)}
+              </View>
             ) : null}
           </Block>
         ) : null}
@@ -691,6 +718,48 @@ export function ChildPassportCard({ child, onCapture }: Props) {
   };
   const boldText: any = { fontWeight: "700" };
 
+  const featureThumbStyles = StyleSheet.create({
+    group: {
+      marginTop: DS.sp(2),
+    },
+    label: {
+      fontSize: DS.size.micro,
+      color: DS.inkLight,
+      fontWeight: "700",
+      letterSpacing: 0.5,
+      marginBottom: DS.sp(1),
+    },
+    row: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: DS.sp(1.5),
+    },
+    thumb: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: DS.border,
+      backgroundColor: DS.white,
+    },
+  });
+
+  const renderFeatureThumbs = (uris?: string[]) => {
+    if (!uris || uris.length === 0) return null;
+
+    return (
+      <View style={featureThumbStyles.row}>
+        {uris.slice(0, 3).map((uri, index) => (
+          <Image
+            key={`${uri}-${index}`}
+            source={{ uri }}
+            style={featureThumbStyles.thumb}
+          />
+        ))}
+      </View>
+    );
+  };
+
   const empty = StyleSheet.create({
     wrap: {
       flex: 1,
@@ -724,6 +793,51 @@ export function ChildPassportCard({ child, onCapture }: Props) {
   // ── Export: 2×2 grid ─────────────────────────────────────────────────────────
 
   const HALF = CARD_W / 2;
+
+  const exportFeaturePhotoStyles = StyleSheet.create({
+    group: {
+      marginBottom: 4,
+    },
+    label: {
+      fontSize: 7,
+      color: DS.inkLight,
+      marginBottom: 2,
+      fontWeight: "700",
+      letterSpacing: 0.3,
+    },
+    row: {
+      flexDirection: "row",
+      gap: 4,
+      flexWrap: "wrap",
+    },
+    thumb: {
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: DS.border,
+      backgroundColor: DS.white,
+    },
+  });
+
+  const renderExportFeaturePhotoGroup = (label: string, uris?: string[]) => {
+    if (!uris || uris.length === 0) return null;
+
+    return (
+      <View style={exportFeaturePhotoStyles.group}>
+        <AppText style={exportFeaturePhotoStyles.label}>{label}</AppText>
+        <View style={exportFeaturePhotoStyles.row}>
+          {uris.slice(0, 3).map((uri, index) => (
+            <Image
+              key={`${label}-${uri}-${index}`}
+              source={{ uri }}
+              style={exportFeaturePhotoStyles.thumb}
+            />
+          ))}
+        </View>
+      </View>
+    );
+  };
 
   const ExportGrid = () => (
     <View
@@ -853,6 +967,12 @@ export function ChildPassportCard({ child, onCapture }: Props) {
             value={child.identifyingFeaturesDescription}
           />
         ) : null}
+        {renderExportFeaturePhotoGroup("Marks Photos", child.birthmarkImageUris)}
+        {renderExportFeaturePhotoGroup("Scars Photos", child.scarImageUris)}
+        {renderExportFeaturePhotoGroup(
+          "Other Photos",
+          child.identifyingFeatureImageUris,
+        )}
         {child.lastKnownLocation ? (
           <ExportRow label="Last Seen" value={child.lastKnownLocation} />
         ) : null}
@@ -860,6 +980,9 @@ export function ChildPassportCard({ child, onCapture }: Props) {
         child.hasBirthmarks !== "yes" &&
         child.hasScars !== "yes" &&
         child.hasIdentifyingFeatures !== "yes" &&
+        !(child.birthmarkImageUris?.length ?? 0) &&
+        !(child.scarImageUris?.length ?? 0) &&
+        !(child.identifyingFeatureImageUris?.length ?? 0) &&
         !child.lastKnownLocation ? (
           <AppText
             style={{
