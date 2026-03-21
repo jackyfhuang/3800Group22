@@ -3,7 +3,7 @@
 import { colors, radius, spacing } from '@/styles';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { AppText } from './ui/app-text';
+import { AppText } from './app-text';
 
 type FormSectionProps = {
   title: string;

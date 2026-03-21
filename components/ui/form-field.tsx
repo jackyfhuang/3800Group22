@@ -1,30 +1,22 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import {
-  Controller,
-  Control,
-  FieldPath,
-  FieldValues,
-  RegisterOptions,
-} from 'react-hook-form';
-import { AppText } from './app-text';
-import { AppTextInput } from './app-text-input';
-import { spacing } from '@/styles';
-import { TextInputProps } from 'react-native';
-
 // Combines a field label, AppTextInput, and inline error message into a
 // single reusable form row. Wraps react-hook-form's Controller internally
 // so individual screens don't need to repeat that boilerplate per field.
+import { spacing } from '@/styles';
+import React from 'react';
+import { Control, Controller } from 'react-hook-form';
+import { StyleSheet, TextInputProps, View } from 'react-native';
+import { AppText } from './app-text';
+import { AppTextInput } from './app-text-input';
 
-type FormFieldProps<T extends FieldValues> = TextInputProps & {
-  control: Control<T>;
-  name: FieldPath<T>;
+type FormFieldProps = TextInputProps & {
+  control: Control<any>;
+  name: string;
   label: string;
   error?: string;
   containerStyle?: object;
 };
 
-export function FormField<T extends FieldValues>({
+export function FormField({
   control,
   name,
   label,
@@ -32,7 +24,7 @@ export function FormField<T extends FieldValues>({
   containerStyle,
   multiline,
   ...inputProps
-}: FormFieldProps<T>) {
+}: FormFieldProps) {
   return (
     <View style={[styles.container, containerStyle]}>
       <AppText variant="fieldLabel">{label}</AppText>
@@ -43,7 +35,7 @@ export function FormField<T extends FieldValues>({
           <AppTextInput
             onBlur={onBlur}
             onChangeText={onChange}
-            value={value?.toString()}
+            value={value?.toString() ?? ''}
             hasError={!!error}
             multiline={multiline}
             {...inputProps}

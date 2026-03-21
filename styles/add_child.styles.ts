@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { colors, radius, spacing, typography } from './shared';
+import { palette } from '@/constants/theme';
 
 export const addChildStyles = StyleSheet.create({
   // ─── Layout ───────────────────────────────────────────────────────────────
@@ -9,7 +10,7 @@ export const addChildStyles = StyleSheet.create({
   },
   container: {
     padding: spacing.xxl,
-    paddingBottom: spacing.xxxl * 3,
+    paddingBottom: 200, // clears progress bar + tab bar
     flexGrow: 1,
   },
 
@@ -20,35 +21,49 @@ export const addChildStyles = StyleSheet.create({
   },
   headerTop: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
+    alignItems: 'center',
   },
-  backButton: {
-    width: 44,
-    height: 44,
+  // Circular indented button shared by back and home
+  headerButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.xs,
+    backgroundColor: palette.offWhite,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  backButtonText: {
-    fontSize: 28,
-    color: colors.secondary,
-    fontWeight: '600',
+  headerButtonPressed: {
+    shadowColor: palette.amber,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 12,
+    elevation: 8,
+    borderColor: palette.amber,
   },
-  headerTextContainer: {
+  headerTitleContainer: {
     flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: typography.large,
-    fontWeight: 'bold',
-    marginBottom: spacing.sm,
+    fontWeight: '800',
     color: colors.textPrimary,
     letterSpacing: -0.5,
+    textAlign: 'center',
   },
   headerSubtext: {
-    fontSize: typography.subtitle,
-    fontWeight: '600',
+    fontSize: typography.body,
+    fontWeight: '500',
     color: colors.textSubtle,
+    textAlign: 'center',
+    marginTop: 2,
   },
 
   // ─── Form Row ─────────────────────────────────────────────────────────────
@@ -152,6 +167,51 @@ export const addChildStyles = StyleSheet.create({
     color: colors.white,
     fontSize: typography.button,
     fontWeight: '600',
+  },
+
+  // ─── Date Picker Button ───────────────────────────────────────────────────
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.inputBackground,
+    borderWidth: 1.5,
+    borderColor: colors.cardBorder,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    minHeight: 52,
+    shadowColor: colors.inputShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  datePickerButtonError: {
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerBackground,
+  },
+  datePickerText: {
+    fontSize: typography.default,
+    color: colors.textOnLight,
+    flex: 1,
+  },
+  datePickerPlaceholder: {
+    fontSize: typography.default,
+    color: colors.textSubtle,
+    flex: 1,
+  },
+  datePickerIcon: {
+    fontSize: 18,
+    marginLeft: spacing.sm,
+  },
+
+  // ─── Progress Bar Wrapper ─────────────────────────────────────────────────
+  progressBarWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
+    overflow: 'visible',
   },
 
   // ─── Export Button ────────────────────────────────────────────────────────

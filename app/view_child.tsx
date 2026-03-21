@@ -1,18 +1,17 @@
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  View,
-  ScrollView,
-  TouchableOpacity,
   Alert,
-  Platform,
+  ScrollView,
   StyleSheet,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 
 import { AppText } from '@/components/ui/app-text';
-import { colors, spacing, radius, typography } from '@/styles';
+import { colors, radius, spacing, typography } from '@/styles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ChildProfile = {
@@ -188,7 +187,7 @@ export default function ViewChildScreen() {
           <InfoRow label="Age" value={child.age ? `${child.age} years` : undefined} />
           <InfoRow label="Height" value={child.height ? `${child.height} cm` : undefined} />
           <InfoRow label="Weight" value={child.weight ? `${child.weight} kg` : undefined} />
-          <InfoRow label="Gender" value={child.gender} />
+          <InfoRow label="Sex" value={child.gender} />
         </Section>
       )}
 
