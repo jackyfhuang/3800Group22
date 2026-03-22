@@ -1,16 +1,16 @@
 import { AppText } from '@/components/ui/app-text';
-import { DisclaimerModal, hasAcceptedDisclaimer } from '@/components/ui/disclaimer-modal';
 import {
   EmergencyQuickViewCard,
   EmergencyQuickViewModal,
 } from '@/components/ui/emergency-quick-view';
+import { HelpModal } from '@/components/ui/help-modal';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { palette } from '@/constants/theme';
 import { colors, homeStyles as styles, radius, sharedStyles, spacing, typography } from '@/styles';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Alert,
   Platform,
@@ -64,15 +64,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
-
-  // Check disclaimer on first mount
-  useEffect(() => {
-    hasAcceptedDisclaimer().then((accepted) => {
-      if (!accepted) setShowDisclaimer(true);
-    });
-  }, []);
 
   // ─── Data Handlers ──────────────────────────────────────────────────────────
   const loadChildren = async () => {
@@ -154,7 +147,7 @@ export default function HomeScreen() {
             </AppText>
           </View>
           <Pressable
-            onPress={() => setShowDisclaimer(true)}
+            onPress={() => setShowHelp(true)}
             style={({ pressed }) => [localStyles.iconBtn, pressed && localStyles.iconBtnPressed]}
           >
             <MaterialIcons name="info-outline" size={22} color={palette.navy} />
@@ -268,10 +261,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* ── Modals ───────────────────────────────────────────────────────── */}
-      <DisclaimerModal
-        visible={showDisclaimer}
-        onAccept={() => setShowDisclaimer(false)}
-      />
+      <HelpModal visible={showHelp} onClose={() => setShowHelp(false)} />
       <EmergencyQuickViewModal
         visible={showEmergency}
         profiles={children}
