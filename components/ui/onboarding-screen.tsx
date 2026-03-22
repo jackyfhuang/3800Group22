@@ -114,10 +114,12 @@ function DisclaimerStep({ onNext }: { onNext: () => void }) {
       </ScrollView>
 
       {/* CTA */}
-      <TouchableOpacity style={styles.primaryBtn} onPress={onNext} activeOpacity={0.85}>
-        <AppText style={styles.primaryBtnText}>I Understand — Continue</AppText>
-        <MaterialIcons name="arrow-forward" size={18} color={palette.white} />
-      </TouchableOpacity>
+      <View style={styles.btnContainer}>
+        <TouchableOpacity style={styles.primaryBtn} onPress={onNext} activeOpacity={0.85}>
+          <AppText style={styles.primaryBtnText}>I Understand — Continue</AppText>
+          <MaterialIcons name="arrow-forward" size={18} color={palette.white} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -252,7 +254,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.lg,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.lg,
     gap: spacing.sm,
   },
   stepDot: {
@@ -275,7 +278,7 @@ const styles = StyleSheet.create({
   stepContainer: {
     flex: 1,
     paddingHorizontal: spacing.xxl,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.md,
   },
 
   // Header
@@ -399,10 +402,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
   },
+  btnContainer: {
+    backgroundColor: 'transparent',
+    paddingTop: spacing.md,
+  },
   btnRow: {
     flexDirection: 'row',
     gap: spacing.md,
-    marginTop: spacing.xl,
+    marginTop: spacing.md,
+    backgroundColor: 'transparent',
   },
   backBtn: {
     flexDirection: 'row',
