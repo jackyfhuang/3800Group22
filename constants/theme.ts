@@ -1,35 +1,35 @@
-import { Platform } from 'react-native';
+import { Platform } from "react-native";
 
 // ─── Color Palette ────────────────────────────────────────────────────────────
 // All raw color values live here. Nothing else in the app should have hex codes.
 export const palette = {
   // Brand
-  navy: '#182835',
-  navyLight: '#4A6FA5',
-  blue: '#007AFF',
-  teal: '#119DA4',
-  amber: '#f2c180',
-  offWhite: '#f4f4f4',
+  navy: "#182835",
+  navyLight: "#4A6FA5",
+  blue: "#007AFF",
+  teal: "#119DA4",
+  amber: "#f2c180",
+  offWhite: "#f4f4f4",
 
   // Danger
-  red: '#FF4444',
-  redLight: '#FFF0F0',
-  redBorder: '#FFE0E0',
-  redBackground: '#FFF5F5',
+  red: "#FF4444",
+  redLight: "#FFF0F0",
+  redBorder: "#FFE0E0",
+  redBackground: "#FFF5F5",
 
   // Neutrals
-  black: '#000000',
-  white: '#FFFFFF',
-  lightBorder: '#E8E8E8',
-  subtleBorder: '#F0F0F0',
+  black: "#000000",
+  white: "#FFFFFF",
+  lightBorder: "#E8E8E8",
+  subtleBorder: "#F0F0F0",
 
   // Teal tints
-  tealLight: '#EAF7F7',
-  tealBorder: '#B2E0E2',
+  tealLight: "#EAF7F7",
+  tealBorder: "#B2E0E2",
 
   // Blue tints
-  blueLight: '#F0F7FF',
-  blueBorder: '#E0F0FF',
+  blueLight: "#F0F7FF",
+  blueBorder: "#E0F0FF",
 } as const;
 
 // ─── Semantic Colors (Light Theme) ────────────────────────────────────────────
@@ -76,6 +76,11 @@ export const colors = {
   // Misc
   white: palette.white,
   black: palette.black,
+
+  // Additional colors for passport component
+  redBackground: palette.redBackground,
+  tealLight: palette.tealLight,
+  blueLight: palette.blueLight,
 } as const;
 
 // ─── Theme (Light / Dark) ─────────────────────────────────────────────────────
@@ -136,16 +141,16 @@ export const typography = {
 // ─── Fonts ────────────────────────────────────────────────────────────────────
 export const Fonts = Platform.select({
   ios: {
-    sans: 'system-ui',
-    serif: 'ui-serif',
-    rounded: 'ui-rounded',
-    mono: 'ui-monospace',
+    sans: "system-ui",
+    serif: "ui-serif",
+    rounded: "ui-rounded",
+    mono: "ui-monospace",
   },
   default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
+    sans: "normal",
+    serif: "serif",
+    rounded: "normal",
+    mono: "monospace",
   },
   web: {
     sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",

@@ -1,21 +1,28 @@
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText } from "@/components/ui/app-text";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { ScreenHeader } from "@/components/ui/screen-header";
+import { palette } from "@/constants/theme";
+import { colors, radius, spacing, typography } from "@/styles";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  Dimensions,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { ChildPassportCard } from "../components/child-passport";
 
-import { AppText } from '@/components/ui/app-text';
-import { ScreenHeader } from '@/components/ui/screen-header';
-import { palette } from '@/constants/theme';
-import { colors, radius, spacing, typography } from '@/styles';
-
-// ─── Type (mirrors ChildFormData + computed fields) ───────────────────────────
 type ChildProfile = {
   id?: string;
-  // computed
   fullName?: string;
+  imageUri?: string;
   age?: number;
-  // step 1
   firstName?: string;
   lastName?: string;
   dateOfBirth?: string;
@@ -23,22 +30,20 @@ type ChildProfile = {
   ethnicity?: string;
   height?: number;
   weight?: number;
-  // step 2
   lifeThreatAllergies?: string;
   emergencyMedications?: string;
   communicationNeeds?: string;
   languageSpoken?: string;
   otherMedicalNotes?: string;
-  // step 3
   guardian1?: { name?: string; phone?: string; address?: string };
   guardian2?: { name?: string; phone?: string; address?: string };
-  emergencyContacts?: Array<{
+  emergencyContacts?: {
     name?: string;
     relationship?: string;
     phone?: string;
     address?: string;
-  }>;
-  // step 4
+    sex?: string;
+  }[];
   eyeColor?: string;
   eyeColorOther?: string;
   hairColor?: string;
@@ -54,14 +59,31 @@ type ChildProfile = {
   hasGlasses?: boolean;
   hasHearingAids?: boolean;
   otherSensoryNeeds?: string;
+  hasBirthmarks?: string;
+  birthmarksDescription?: string;
+  hasScars?: string;
+  scarsDescription?: string;
+  hasIdentifyingFeatures?: string;
+  identifyingFeaturesDescription?: string;
+  birthmarkImageUris?: string[];
+  scarImageUris?: string[];
+  identifyingFeatureImageUris?: string[];
+  lastKnownLocation?: string;
+  schoolDaycareType?: string;
+  schoolDaycareName?: string;
+  sportsTeams?: string;
 };
 
-// ─── Helper components ────────────────────────────────────────────────────────
-
-// Label on left (bold), value on right
-function InfoRow({ label, value }: { label: string; value?: string | number | boolean }) {
-  if (value === undefined || value === null || value === '' || value === false) return null;
-  const display = typeof value === 'boolean' ? 'Yes' : String(value);
+function InfoRow({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | number | boolean;
+}) {
+  if (value === undefined || value === null || value === "" || value === false)
+    return null;
+  const display = typeof value === "boolean" ? "Yes" : String(value);
   return (
     <View style={styles.infoRow}>
       <AppText style={styles.infoLabel}>{label}</AppText>
@@ -70,7 +92,6 @@ function InfoRow({ label, value }: { label: string; value?: string | number | bo
   );
 }
 
-// Bold section heading with a full-width divider above it (except the first)
 function SectionHeading({ title, first }: { title: string; first?: boolean }) {
   return (
     <>
@@ -80,38 +101,81 @@ function SectionHeading({ title, first }: { title: string; first?: boolean }) {
   );
 }
 
-// Subtle sub-group label
 function GroupLabel({ title }: { title: string }) {
   return <AppText style={styles.groupLabel}>{title}</AppText>;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+function FeatureImageStrip({
+  title,
+  images,
+  onImagePress,
+}: {
+  title: string;
+  images?: string[];
+  onImagePress: (images: string[], index: number) => void;
+}) {
+  if (!images?.length) return null;
+  return (
+    <>
+      <GroupLabel title={title} />
+      <View style={styles.featurePhotosRow}>
+        {images.slice(0, 3).map((uri, index) => (
+          <TouchableOpacity
+            key={`${uri}-${index}`}
+            onPress={() => onImagePress(images, index)}
+            activeOpacity={0.85}
+          >
+            <Image source={{ uri }} style={styles.featurePhotoThumb} />
+          </TouchableOpacity>
+        ))}
+      </View>
+    </>
+  );
+}
+
 export default function ViewChildScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showPassport, setShowPassport] = useState(false);
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerImages, setViewerImages] = useState<string[]>([]);
+  const [viewerIndex, setViewerIndex] = useState(0);
+
+  const screenWidth = Dimensions.get("window").width;
 
   useEffect(() => {
-    if (id) loadChild(id);
-  }, [id]);
-
-  const loadChild = async (childId: string) => {
-    try {
-      const json = await AsyncStorage.getItem('children_list');
-      if (json) {
-        const list = JSON.parse(json);
-        const found = list.find((c: any) => c.id === childId);
-        if (found) { setChild(found); return; }
+    const loadChild = async () => {
+      if (!id) return;
+      try {
+        const json = await AsyncStorage.getItem("children_list");
+        if (json) {
+          const list = JSON.parse(json);
+          const found = list.find((c: any) => c.id === id);
+          if (found) {
+            setChild(found);
+            return;
+          }
+        }
+        Alert.alert("Error", "Child profile not found");
+        router.back();
+      } catch {
+        Alert.alert("Error", "Failed to load child profile");
+        router.back();
+      } finally {
+        setLoading(false);
       }
-      Alert.alert('Error', 'Child profile not found');
-      router.back();
-    } catch {
-      Alert.alert('Error', 'Failed to load child profile');
-      router.back();
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    loadChild();
+  }, [id, router]);
+
+  const openImageViewer = (images: string[], index: number) => {
+    if (!images.length) return;
+    setViewerImages(images);
+    setViewerIndex(index);
+    setViewerVisible(true);
   };
 
   if (loading) {
@@ -130,126 +194,380 @@ export default function ViewChildScreen() {
     );
   }
 
-  const displayName = child.fullName || `${child.firstName ?? ''} ${child.lastName ?? ''}`.trim() || 'Unnamed Child';
-  const eyeDisplay  = child.eyeColor === 'other' ? child.eyeColorOther : child.eyeColor;
-  const hairDisplay = child.hairColor === 'other' ? child.hairColorOther : child.hairColor;
+  const displayName =
+    child.fullName ||
+    `${child.firstName ?? ""} ${child.lastName ?? ""}`.trim() ||
+    "Unnamed Child";
+  const eyeDisplay =
+    child.eyeColor === "other" ? child.eyeColorOther : child.eyeColor;
+  const hairDisplay =
+    child.hairColor === "other" ? child.hairColorOther : child.hairColor;
+
+  const hasLegacyFeatures =
+    child.hasBirthmarks === "yes" ||
+    child.hasScars === "yes" ||
+    child.hasIdentifyingFeatures === "yes" ||
+    child.hasBirthmarks === "no" ||
+    child.hasScars === "no" ||
+    child.hasIdentifyingFeatures === "no" ||
+    !!child.birthmarkImageUris?.length ||
+    !!child.scarImageUris?.length ||
+    !!child.identifyingFeatureImageUris?.length ||
+    !!child.lastKnownLocation ||
+    !!child.sportsTeams ||
+    !!child.schoolDaycareName ||
+    (!!child.schoolDaycareType && child.schoolDaycareType !== "none");
 
   return (
     <View style={styles.container}>
       <ScreenHeader
         title="Child Profile"
         onLeftPress={() => router.back()}
-        onRightPress={() => router.replace('/(tabs)')}
+        onRightPress={() => router.replace("/(tabs)")}
       />
-    <ScrollView contentContainerStyle={styles.content}>
-      {/* ── Single card containing everything ───────────────────────────────── */}
-      <View style={styles.card}>
 
-        {/* Avatar + name + age */}
-        <View style={styles.avatar}>
-          <View style={styles.avatarCircle}>
-            <IconSymbol name="person.fill" size={48} color={palette.blue} />
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.card}>
+          <View style={styles.avatar}>
+            <View style={styles.avatarCircle}>
+              {child.imageUri ? (
+                <TouchableOpacity
+                  onPress={() => openImageViewer([child.imageUri!], 0)}
+                  activeOpacity={0.85}
+                >
+                  <Image
+                    source={{ uri: child.imageUri }}
+                    style={styles.profileImage}
+                  />
+                </TouchableOpacity>
+              ) : (
+                <IconSymbol name="person.fill" size={48} color={palette.blue} />
+              )}
+            </View>
+            <AppText style={styles.childName}>{displayName}</AppText>
+            {child.age !== undefined && (
+              <AppText style={styles.childAge}>{child.age} years old</AppText>
+            )}
           </View>
-          <AppText style={styles.childName}>{displayName}</AppText>
-          {child.age !== undefined && (
-            <AppText style={styles.childAge}>{child.age} years old</AppText>
+
+          <View style={styles.divider} />
+
+          <SectionHeading title="Essential ID" first />
+          <InfoRow label="Date of Birth" value={child.dateOfBirth} />
+          <InfoRow label="Sex" value={child.sex} />
+          <InfoRow label="Ethnicity" value={child.ethnicity} />
+          <InfoRow
+            label="Height"
+            value={
+              child.height !== undefined ? `${child.height} cm` : undefined
+            }
+          />
+          <InfoRow
+            label="Weight"
+            value={
+              child.weight !== undefined ? `${child.weight} kg` : undefined
+            }
+          />
+
+          {(child.lifeThreatAllergies ||
+            child.emergencyMedications ||
+            child.communicationNeeds ||
+            child.otherMedicalNotes) && (
+            <>
+              <SectionHeading title="Medical" />
+              <InfoRow
+                label="Life-Threatening Allergies"
+                value={child.lifeThreatAllergies}
+              />
+              <InfoRow
+                label="Emergency Medications"
+                value={child.emergencyMedications}
+              />
+              <InfoRow
+                label="Communication Needs"
+                value={child.communicationNeeds}
+              />
+              {child.communicationNeeds === "language_barrier" && (
+                <InfoRow label="Language Spoken" value={child.languageSpoken} />
+              )}
+              <InfoRow
+                label="Other Medical Notes"
+                value={child.otherMedicalNotes}
+              />
+            </>
+          )}
+
+          <SectionHeading title="Contacts" />
+          {child.guardian1?.name && (
+            <>
+              <GroupLabel title="Primary Guardian 1" />
+              <InfoRow label="Name" value={child.guardian1.name} />
+              <InfoRow label="Phone" value={child.guardian1.phone} />
+              <InfoRow label="Address" value={child.guardian1.address} />
+            </>
+          )}
+          {child.guardian2?.name && (
+            <>
+              <GroupLabel title="Primary Guardian 2" />
+              <InfoRow label="Name" value={child.guardian2.name} />
+              <InfoRow label="Phone" value={child.guardian2.phone} />
+              <InfoRow label="Address" value={child.guardian2.address} />
+            </>
+          )}
+          {child.emergencyContacts?.length ? (
+            <>
+              <GroupLabel title="Additional Emergency Contacts" />
+              {child.emergencyContacts.map((contact, index) => (
+                <View
+                  key={index}
+                  style={index > 0 ? styles.contactSpacer : undefined}
+                >
+                  <AppText style={styles.contactIndex}>
+                    Contact {index + 1}
+                  </AppText>
+                  <InfoRow label="Name" value={contact.name} />
+                  <InfoRow label="Relationship" value={contact.relationship} />
+                  <InfoRow label="Phone" value={contact.phone} />
+                  <InfoRow label="Address" value={contact.address} />
+                  <InfoRow label="Sex" value={contact.sex} />
+                </View>
+              ))}
+            </>
+          ) : null}
+
+          <SectionHeading title="Visual ID" />
+          <GroupLabel title="Appearance" />
+          <InfoRow label="Eye Color" value={eyeDisplay} />
+          <InfoRow label="Hair Color" value={hairDisplay} />
+          <InfoRow label="Hair Style" value={child.hairStyle} />
+
+          <GroupLabel title="Clothing" />
+          <InfoRow label="Top / Shirt" value={child.topColor} />
+          <InfoRow label="Pants / Bottom" value={child.pantsColor} />
+          <InfoRow label="Shoes Color" value={child.shoesColor} />
+          <InfoRow label="Shoes Type" value={child.shoesType} />
+          {child.hasHat && (
+            <>
+              <InfoRow label="Hat Color" value={child.hatColor} />
+              <InfoRow label="Hat Style" value={child.hatStyle} />
+            </>
+          )}
+
+          {(child.hasGlasses ||
+            child.hasHearingAids ||
+            child.otherSensoryNeeds) && (
+            <>
+              <GroupLabel title="Sensory Needs" />
+              <InfoRow label="Wears Glasses" value={child.hasGlasses} />
+              <InfoRow
+                label="Wears Hearing Aids"
+                value={child.hasHearingAids}
+              />
+              <InfoRow label="Other" value={child.otherSensoryNeeds} />
+            </>
+          )}
+
+          {hasLegacyFeatures && (
+            <>
+              <SectionHeading title="Additional Identifying Features" />
+
+              <InfoRow
+                label="Has Birthmarks"
+                value={
+                  child.hasBirthmarks
+                    ? child.hasBirthmarks === "yes"
+                      ? "Yes"
+                      : "No"
+                    : undefined
+                }
+              />
+
+              {child.hasBirthmarks === "yes" || child.birthmarksDescription ? (
+                <>
+                  <GroupLabel title="Birthmarks" />
+                  <InfoRow
+                    label="Description"
+                    value={child.birthmarksDescription}
+                  />
+                </>
+              ) : null}
+              <FeatureImageStrip
+                title="Birthmark Photos"
+                images={child.birthmarkImageUris}
+                onImagePress={openImageViewer}
+              />
+
+              <InfoRow
+                label="Has Scars"
+                value={
+                  child.hasScars
+                    ? child.hasScars === "yes"
+                      ? "Yes"
+                      : "No"
+                    : undefined
+                }
+              />
+
+              {child.hasScars === "yes" || child.scarsDescription ? (
+                <>
+                  <GroupLabel title="Scars" />
+                  <InfoRow label="Description" value={child.scarsDescription} />
+                </>
+              ) : null}
+              <FeatureImageStrip
+                title="Scar Photos"
+                images={child.scarImageUris}
+                onImagePress={openImageViewer}
+              />
+
+              <InfoRow
+                label="Has Other Features"
+                value={
+                  child.hasIdentifyingFeatures
+                    ? child.hasIdentifyingFeatures === "yes"
+                      ? "Yes"
+                      : "No"
+                    : undefined
+                }
+              />
+
+              {child.hasIdentifyingFeatures === "yes" ||
+              child.identifyingFeaturesDescription ? (
+                <>
+                  <GroupLabel title="Other Features" />
+                  <InfoRow
+                    label="Description"
+                    value={child.identifyingFeaturesDescription}
+                  />
+                </>
+              ) : null}
+              <FeatureImageStrip
+                title="Other Feature Photos"
+                images={child.identifyingFeatureImageUris}
+                onImagePress={openImageViewer}
+              />
+
+              <InfoRow
+                label="Last Known Location"
+                value={child.lastKnownLocation}
+              />
+              {child.schoolDaycareType && child.schoolDaycareType !== "none" ? (
+                <>
+                  <InfoRow
+                    label="School / Daycare Type"
+                    value={
+                      child.schoolDaycareType === "school"
+                        ? "School"
+                        : "Daycare"
+                    }
+                  />
+                  <InfoRow
+                    label={
+                      child.schoolDaycareType === "school"
+                        ? "School Name"
+                        : "Daycare Name"
+                    }
+                    value={child.schoolDaycareName}
+                  />
+                </>
+              ) : null}
+              <InfoRow label="Sports Teams" value={child.sportsTeams} />
+            </>
           )}
         </View>
-        <View style={styles.divider} />
 
-        {/* Essential ID */}
-        <SectionHeading title="Essential ID" first />
-        <InfoRow label="Date of Birth" value={child.dateOfBirth} />
-        <InfoRow label="Sex"           value={child.sex} />
-        <InfoRow label="Ethnicity"     value={child.ethnicity} />
-        <InfoRow label="Height"        value={child.height !== undefined ? `${child.height} cm` : undefined} />
-        <InfoRow label="Weight"        value={child.weight !== undefined ? `${child.weight} kg` : undefined} />
+        <TouchableOpacity
+          style={styles.passportButton}
+          onPress={() => setShowPassport(true)}
+        >
+          <IconSymbol name="doc.text" size={20} color={colors.white} />
+          <AppText style={styles.passportButtonText}>Generate Passport</AppText>
+        </TouchableOpacity>
 
-        {/* Medical */}
-        {(child.lifeThreatAllergies || child.emergencyMedications ||
-          child.communicationNeeds  || child.otherMedicalNotes) && (
-          <>
-            <SectionHeading title="Medical" />
-            <InfoRow label="Life-Threatening Allergies" value={child.lifeThreatAllergies} />
-            <InfoRow label="Emergency Medications"      value={child.emergencyMedications} />
-            <InfoRow label="Communication Needs"        value={child.communicationNeeds} />
-            {child.communicationNeeds === 'language_barrier' && (
-              <InfoRow label="Language Spoken"          value={child.languageSpoken} />
-            )}
-            <InfoRow label="Other Medical Notes"        value={child.otherMedicalNotes} />
-          </>
-        )}
+        <View style={{ height: 40 }} />
+      </ScrollView>
 
-        {/* Contacts */}
-        <SectionHeading title="Contacts" />
-        {child.guardian1?.name && (
-          <>
-            <GroupLabel title="Primary Guardian 1" />
-            <InfoRow label="Name"    value={child.guardian1.name} />
-            <InfoRow label="Phone"   value={child.guardian1.phone} />
-            <InfoRow label="Address" value={child.guardian1.address} />
-          </>
-        )}
-        {child.guardian2?.name && (
-          <>
-            <GroupLabel title="Primary Guardian 2" />
-            <InfoRow label="Name"    value={child.guardian2.name} />
-            <InfoRow label="Phone"   value={child.guardian2.phone} />
-            <InfoRow label="Address" value={child.guardian2.address} />
-          </>
-        )}
-        {child.emergencyContacts && child.emergencyContacts.length > 0 && (
-          <>
-            <GroupLabel title="Additional Emergency Contacts" />
-            {child.emergencyContacts.map((c, i) => (
-              <View key={i} style={i > 0 ? styles.contactSpacer : undefined}>
-                <AppText style={styles.contactIndex}>Contact {i + 1}</AppText>
-                <InfoRow label="Name"         value={c.name} />
-                <InfoRow label="Relationship" value={c.relationship} />
-                <InfoRow label="Phone"        value={c.phone} />
-                <InfoRow label="Address"      value={c.address} />
+      <Modal
+        visible={showPassport}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowPassport(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => setShowPassport(false)}
+              style={styles.closeButton}
+            >
+              <AppText style={styles.closeButtonText}>✕ Close</AppText>
+            </TouchableOpacity>
+          </View>
+          <ChildPassportCard
+            child={
+              {
+                ...child,
+                id: child.id || id || "unknown",
+              } as any
+            }
+          />
+        </View>
+      </Modal>
+
+      <Modal
+        visible={viewerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setViewerVisible(false)}
+      >
+        <View style={styles.imageViewerOverlay}>
+          <View style={styles.imageViewerHeader}>
+            <TouchableOpacity
+              onPress={() => setViewerVisible(false)}
+              style={styles.imageViewerCloseButton}
+            >
+              <AppText style={styles.imageViewerCloseText}>✕</AppText>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            contentOffset={{ x: viewerIndex * screenWidth, y: 0 }}
+            onMomentumScrollEnd={(event) => {
+              const x = event.nativeEvent.contentOffset.x;
+              const nextIndex = Math.round(x / screenWidth);
+              setViewerIndex(nextIndex);
+            }}
+            style={styles.imageViewerScroll}
+          >
+            {viewerImages.map((uri, index) => (
+              <View
+                key={`${uri}-${index}`}
+                style={[styles.imageViewerPage, { width: screenWidth }]}
+              >
+                <Image
+                  source={{ uri }}
+                  style={styles.imageViewerImage}
+                  resizeMode="contain"
+                />
               </View>
             ))}
-          </>
-        )}
+          </ScrollView>
 
-        {/* Visual ID */}
-        <SectionHeading title="Visual ID" />
-        <GroupLabel title="Appearance" />
-        <InfoRow label="Eye Color"  value={eyeDisplay} />
-        <InfoRow label="Hair Color" value={hairDisplay} />
-        <InfoRow label="Hair Style" value={child.hairStyle} />
-
-        <GroupLabel title="Clothing" />
-        <InfoRow label="Top / Shirt"    value={child.topColor} />
-        <InfoRow label="Pants / Bottom" value={child.pantsColor} />
-        <InfoRow label="Shoes Color"    value={child.shoesColor} />
-        <InfoRow label="Shoes Type"     value={child.shoesType} />
-        {child.hasHat && (
-          <>
-            <InfoRow label="Hat Color" value={child.hatColor} />
-            <InfoRow label="Hat Style" value={child.hatStyle} />
-          </>
-        )}
-
-        {(child.hasGlasses || child.hasHearingAids || child.otherSensoryNeeds) && (
-          <>
-            <GroupLabel title="Sensory Needs" />
-            <InfoRow label="Wears Glasses"      value={child.hasGlasses} />
-            <InfoRow label="Wears Hearing Aids" value={child.hasHearingAids} />
-            <InfoRow label="Other"              value={child.otherSensoryNeeds} />
-          </>
-        )}
-
-      </View>
-
-      <View style={{ height: 40 }} />
-    </ScrollView>
+          {viewerImages.length > 1 && (
+            <View style={styles.imageViewerCounterWrap}>
+              <AppText style={styles.imageViewerCounterText}>
+                {viewerIndex + 1} / {viewerImages.length}
+              </AppText>
+            </View>
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -258,10 +576,8 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.xxl,
   },
-
-  // Avatar — inside the card
   avatar: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingBottom: spacing.lg,
   },
   avatarCircle: {
@@ -269,26 +585,30 @@ const styles = StyleSheet.create({
     height: 88,
     borderRadius: 44,
     backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
     borderColor: colors.primaryBorder,
     marginBottom: spacing.sm,
+    overflow: "hidden",
+  },
+  profileImage: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
   },
   childName: {
     fontSize: typography.title,
-    fontWeight: '700',
+    fontWeight: "700",
     color: palette.navy,
-    textAlign: 'center',
+    textAlign: "center",
   },
   childAge: {
     fontSize: typography.small,
-    fontWeight: '500',
+    fontWeight: "500",
     color: palette.navy,
     marginTop: 2,
   },
-
-  // Single card
   card: {
     backgroundColor: colors.cardBackground,
     borderRadius: radius.xl,
@@ -303,8 +623,6 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
   },
-
-  // Section heading + divider
   divider: {
     height: 1,
     backgroundColor: colors.cardBorder,
@@ -312,52 +630,139 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: typography.default,
-    fontWeight: '700',
+    fontWeight: "700",
     color: palette.navyLight,
     letterSpacing: -0.1,
     marginBottom: spacing.sm,
   },
-
-  // Group label
   groupLabel: {
     fontSize: typography.tiny,
-    fontWeight: '600',
+    fontWeight: "600",
     color: palette.teal,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.8,
     marginTop: spacing.md,
     marginBottom: spacing.xs,
   },
-
-  // Info row — label left (bold), value right
   infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 5,
   },
   infoLabel: {
     fontSize: typography.body,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.textPrimary,
     flex: 1,
   },
   infoValue: {
     fontSize: typography.body,
     color: palette.navyLight,
-    fontWeight: '400',
+    fontWeight: "400",
     flex: 1,
-    textAlign: 'right',
+    textAlign: "right",
   },
-
-  // Emergency contact spacing
   contactIndex: {
     fontSize: typography.small,
-    fontWeight: '600',
+    fontWeight: "600",
     color: palette.navyLight,
     marginBottom: spacing.xs,
   },
   contactSpacer: {
     marginTop: spacing.sm,
+  },
+  featurePhotosRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+    flexWrap: "wrap",
+  },
+  featurePhotoThumb: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    backgroundColor: colors.inputBackground,
+  },
+  passportButton: {
+    backgroundColor: colors.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xl,
+    gap: spacing.sm,
+  },
+  passportButtonText: {
+    color: colors.white,
+    fontSize: typography.button,
+    fontWeight: "600",
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.appBackground,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    padding: spacing.lg,
+    backgroundColor: colors.cardBackground,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.cardBorder,
+  },
+  closeButton: {
+    padding: spacing.sm,
+  },
+  closeButtonText: {
+    color: colors.primary,
+    fontSize: typography.default,
+    fontWeight: "600",
+  },
+  imageViewerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.96)",
+  },
+  imageViewerHeader: {
+    paddingTop: spacing.xxxl,
+    paddingHorizontal: spacing.lg,
+    alignItems: "flex-end",
+  },
+  imageViewerCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.18)",
+  },
+  imageViewerCloseText: {
+    color: colors.white,
+    fontSize: typography.default,
+    fontWeight: "700",
+  },
+  imageViewerScroll: {
+    flex: 1,
+  },
+  imageViewerPage: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  imageViewerImage: {
+    width: "100%",
+    height: "85%",
+  },
+  imageViewerCounterWrap: {
+    alignItems: "center",
+    paddingBottom: spacing.xl,
+  },
+  imageViewerCounterText: {
+    color: colors.white,
+    fontSize: typography.small,
+    fontWeight: "600",
   },
 });

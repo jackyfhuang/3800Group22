@@ -1,18 +1,26 @@
-import { AppText } from '@/components/ui/app-text';
+import { AppText } from "@/components/ui/app-text";
 import {
   EmergencyQuickViewCard,
   EmergencyQuickViewModal,
-} from '@/components/ui/emergency-quick-view';
-import { HelpModal } from '@/components/ui/help-modal';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { palette } from '@/constants/theme';
-import { colors, radius, sharedStyles, spacing, homeStyles as styles, typography } from '@/styles';
-import { MaterialIcons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+} from "@/components/ui/emergency-quick-view";
+import { HelpModal } from "@/components/ui/help-modal";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { palette } from "@/constants/theme";
+import {
+  colors,
+  radius,
+  sharedStyles,
+  spacing,
+  homeStyles as styles,
+  typography,
+} from "@/styles";
+import { MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
   Alert,
+  Image,
   Platform,
   Pressable,
   RefreshControl,
@@ -20,11 +28,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ChildProfile = {
   id?: string;
+  imageUri?: string;
   fullName?: string;
   age?: number;
   firstName?: string;
@@ -41,12 +50,12 @@ type ChildProfile = {
   otherMedicalNotes?: string;
   guardian1?: { name?: string; phone?: string; address?: string };
   guardian2?: { name?: string; phone?: string; address?: string };
-  emergencyContacts?: Array<{
+  emergencyContacts?: {
     name?: string;
     relationship?: string;
     phone?: string;
     address?: string;
-  }>;
+  }[];
   eyeColor?: string;
   eyeColorOther?: string;
   hairColor?: string;
@@ -71,18 +80,18 @@ export default function HomeScreen() {
   // ─── Data Handlers ──────────────────────────────────────────────────────────
   const loadChildren = async () => {
     try {
-      const childrenJson = await AsyncStorage.getItem('children_list');
+      const childrenJson = await AsyncStorage.getItem("children_list");
       if (childrenJson) {
         setChildren(JSON.parse(childrenJson));
         return;
       }
       // Migrate old single-child format
-      const oldChildJson = await AsyncStorage.getItem('child_profile');
+      const oldChildJson = await AsyncStorage.getItem("child_profile");
       if (oldChildJson) {
         const oldChild = JSON.parse(oldChildJson);
         const migrated = { ...oldChild, id: Date.now().toString() };
-        await AsyncStorage.setItem('children_list', JSON.stringify([migrated]));
-        await AsyncStorage.removeItem('child_profile');
+        await AsyncStorage.setItem("children_list", JSON.stringify([migrated]));
+        await AsyncStorage.removeItem("child_profile");
         setChildren([migrated]);
       } else {
         setChildren([]);
@@ -95,7 +104,7 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       loadChildren();
-    }, [])
+    }, []),
   );
 
   const onRefresh = async () => {
@@ -107,25 +116,33 @@ export default function HomeScreen() {
   const performDelete = async (id: string) => {
     try {
       const updated = children.filter((c) => c.id !== id);
-      await AsyncStorage.setItem('children_list', JSON.stringify(updated));
+      await AsyncStorage.setItem("children_list", JSON.stringify(updated));
       setChildren(updated);
     } catch {
-      Alert.alert('Error', 'Failed to delete child profile');
+      Alert.alert("Error", "Failed to delete child profile");
     }
   };
 
   const handleDeleteChild = (id: string, name: string) => {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === "web") {
       const ok =
-        typeof window !== 'undefined' && window.confirm
+        typeof window !== "undefined" && window.confirm
           ? window.confirm(`Delete ${name}'s profile?`)
           : true;
       if (ok) performDelete(id);
     } else {
-      Alert.alert('Delete Profile', `Remove ${name}'s profile? This cannot be undone.`, [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => performDelete(id) },
-      ]);
+      Alert.alert(
+        "Delete Profile",
+        `Remove ${name}'s profile? This cannot be undone.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () => performDelete(id),
+          },
+        ],
+      );
     }
   };
 
@@ -138,13 +155,16 @@ export default function HomeScreen() {
           <AppText style={localStyles.appTitle}>ChildGuard</AppText>
           <AppText style={localStyles.appSubtitle}>
             {children.length === 0
-              ? 'Keep your family safe'
-              : `${children.length} profile${children.length > 1 ? 's' : ''} saved`}
+              ? "Keep your family safe"
+              : `${children.length} profile${children.length > 1 ? "s" : ""} saved`}
           </AppText>
         </View>
         <Pressable
           onPress={() => setShowHelp(true)}
-          style={({ pressed }) => [localStyles.iconBtn, pressed && localStyles.iconBtnPressed]}
+          style={({ pressed }) => [
+            localStyles.iconBtn,
+            pressed && localStyles.iconBtnPressed,
+          ]}
         >
           <MaterialIcons name="info-outline" size={22} color={palette.navy} />
         </Pressable>
@@ -152,8 +172,13 @@ export default function HomeScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={[styles.contentContainer, { paddingBottom: 100 }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingBottom: 100 },
+        ]}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {/* ── Emergency Quick-View Card ─────────────────────────────────── */}
         {children.length > 0 && (
@@ -168,7 +193,7 @@ export default function HomeScreen() {
             </View>
             <AppText style={localStyles.emptyTitle}>No profiles yet</AppText>
             <AppText style={localStyles.emptySubtitle}>
-              Add your first child profile so you're always prepared
+              Add your first child profile so you&apos;re always prepared
             </AppText>
           </View>
         ) : (
@@ -176,14 +201,17 @@ export default function HomeScreen() {
             {children.map((child) => {
               const name =
                 child.fullName ||
-                `${child.firstName ?? ''} ${child.lastName ?? ''}`.trim() ||
-                'Unnamed Child';
+                `${child.firstName ?? ""} ${child.lastName ?? ""}`.trim() ||
+                "Unnamed Child";
               return (
                 <TouchableOpacity
                   key={child.id}
                   style={sharedStyles.card}
                   onPress={() =>
-                    router.push({ pathname: '/view_child', params: { id: child.id } })
+                    router.push({
+                      pathname: "/view_child",
+                      params: { id: child.id },
+                    })
                   }
                   activeOpacity={0.7}
                 >
@@ -191,7 +219,18 @@ export default function HomeScreen() {
                     {/* Avatar */}
                     <View style={styles.avatarContainer}>
                       <View style={styles.avatarCircle}>
-                        <IconSymbol name="person.fill" size={32} color={palette.blue} />
+                        {child.imageUri ? (
+                          <Image
+                            source={{ uri: child.imageUri }}
+                            style={{ width: 64, height: 64, borderRadius: 32 }}
+                          />
+                        ) : (
+                          <IconSymbol
+                            name="person.fill"
+                            size={32}
+                            color={palette.blue}
+                          />
+                        )}
                       </View>
                     </View>
 
@@ -202,7 +241,9 @@ export default function HomeScreen() {
                         {child.age !== undefined && (
                           <View style={styles.detailItem}>
                             <AppText style={styles.detailLabel}>Age</AppText>
-                            <AppText style={styles.detailValue}>{child.age} yrs</AppText>
+                            <AppText style={styles.detailValue}>
+                              {child.age} yrs
+                            </AppText>
                           </View>
                         )}
                         <LastUpdatedPill lastUpdated={child.lastUpdated} />
@@ -215,11 +256,18 @@ export default function HomeScreen() {
                     <TouchableOpacity
                       style={styles.editButton}
                       onPress={() =>
-                        router.push({ pathname: '/add_child', params: { id: child.id } })
+                        router.push({
+                          pathname: "/(tabs)/add_child",
+                          params: { id: child.id },
+                        })
                       }
                       activeOpacity={0.7}
                     >
-                      <MaterialIcons name="edit" size={16} color={palette.teal} />
+                      <MaterialIcons
+                        name="edit"
+                        size={16}
+                        color={palette.teal}
+                      />
                       <AppText style={styles.editButtonText}>Edit</AppText>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -227,7 +275,11 @@ export default function HomeScreen() {
                       onPress={() => handleDeleteChild(child.id!, name)}
                       activeOpacity={0.7}
                     >
-                      <MaterialIcons name="delete-outline" size={16} color={palette.red} />
+                      <MaterialIcons
+                        name="delete-outline"
+                        size={16}
+                        color={palette.red}
+                      />
                       <AppText style={styles.deleteButtonText}>Delete</AppText>
                     </TouchableOpacity>
                   </View>
@@ -240,7 +292,7 @@ export default function HomeScreen() {
         {/* ── Add Child Button ──────────────────────────────────────────── */}
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => router.push('/add_child')}
+          onPress={() => router.push("/(tabs)/add_child")}
           activeOpacity={0.8}
         >
           <View style={styles.addButtonCircle}>
@@ -253,7 +305,7 @@ export default function HomeScreen() {
       {/* ── Add FAB ──────────────────────────────────────────────────────── */}
       <TouchableOpacity
         style={localStyles.fab}
-        onPress={() => router.push('/add_child')}
+        onPress={() => router.push("/(tabs)/add_child")}
         activeOpacity={0.85}
       >
         <MaterialIcons name="add" size={30} color={palette.white} />
@@ -286,30 +338,39 @@ function LastUpdatedPill({ lastUpdated }: { lastUpdated?: string }) {
   let value: string;
   let bg: string;
   let textColor: string;
-  let icon: React.ComponentProps<typeof MaterialIcons>['name'];
+  let icon: React.ComponentProps<typeof MaterialIcons>["name"];
 
   if (!lastUpdated) {
-    value = 'Never';
+    value = "Never";
     bg = colors.cardBorder;
     textColor = colors.textSubtle;
-    icon = 'warning';
+    icon = "warning";
   } else {
-    const days = Math.floor((Date.now() - new Date(lastUpdated).getTime()) / 86_400_000);
+    const days = Math.floor(
+      (Date.now() - new Date(lastUpdated).getTime()) / 86_400_000,
+    );
     const months = Math.floor(days / 30);
-    value = days === 0 ? 'Today' : days < 30 ? `${days}d ago` : months < 12 ? `${months}mo ago` : `${Math.floor(months / 12)}yr ago`;
+    value =
+      days === 0
+        ? "Today"
+        : days < 30
+          ? `${days}d ago`
+          : months < 12
+            ? `${months}mo ago`
+            : `${Math.floor(months / 12)}yr ago`;
 
     if (days < 90) {
-      bg = '#E6F7F0';
-      textColor = '#1A7A4A';
-      icon = 'check-circle';
+      bg = "#E6F7F0";
+      textColor = "#1A7A4A";
+      icon = "check-circle";
     } else if (days < 180) {
-      bg = '#FFF8E6';
-      textColor = '#A06000';
-      icon = 'add-alert';
+      bg = "#FFF8E6";
+      textColor = "#A06000";
+      icon = "add-alert";
     } else {
-      bg = '#FFF8E6';
-      textColor = '#A06000';
-      icon = 'warning';
+      bg = "#FFF8E6";
+      textColor = "#A06000";
+      icon = "warning";
     }
   }
 
@@ -318,7 +379,9 @@ function LastUpdatedPill({ lastUpdated }: { lastUpdated?: string }) {
       <AppText style={styles.detailLabel}>Updated</AppText>
       <View style={[pillStyles.pill, { backgroundColor: bg }]}>
         <MaterialIcons name={icon} size={12} color={textColor} />
-        <AppText style={[styles.detailValue, { color: textColor }]}>{value}</AppText>
+        <AppText style={[styles.detailValue, { color: textColor }]}>
+          {value}
+        </AppText>
       </View>
     </View>
   );
@@ -329,9 +392,9 @@ const pillStyles = StyleSheet.create({
     minWidth: 80,
   },
   pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
     gap: 4,
     paddingVertical: 2,
     paddingHorizontal: spacing.sm,
@@ -342,8 +405,8 @@ const pillStyles = StyleSheet.create({
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const localStyles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xxxl,
     paddingBottom: spacing.lg,
@@ -351,13 +414,13 @@ const localStyles = StyleSheet.create({
   },
   appTitle: {
     fontSize: typography.hero,
-    fontWeight: '800',
+    fontWeight: "800",
     color: palette.navy,
     letterSpacing: -1,
   },
   appSubtitle: {
     fontSize: typography.body,
-    fontWeight: '500',
+    fontWeight: "500",
     color: colors.textSubtle,
     marginTop: spacing.xs,
   },
@@ -367,10 +430,10 @@ const localStyles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: palette.offWhite,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.07)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
+    borderColor: "rgba(0,0,0,0.07)",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 1, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -384,7 +447,7 @@ const localStyles = StyleSheet.create({
     elevation: 6,
   },
   emptyState: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 60,
     paddingHorizontal: spacing.xxl,
   },
@@ -393,34 +456,34 @@ const localStyles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     backgroundColor: colors.secondaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing.xxl,
     borderWidth: 2,
     borderColor: colors.secondaryBorder,
   },
   emptyTitle: {
     fontSize: typography.heading,
-    fontWeight: '700',
+    fontWeight: "700",
     color: palette.navy,
     marginBottom: spacing.sm,
   },
   emptySubtitle: {
     fontSize: typography.default,
     color: colors.textSubtle,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 24,
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 56,
     right: 24,
     width: 62,
     height: 62,
     borderRadius: 31,
     backgroundColor: palette.teal,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     shadowColor: palette.teal,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
@@ -428,15 +491,15 @@ const localStyles = StyleSheet.create({
     elevation: 8,
   },
   emergencyFab: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 130,
     right: 24,
     width: 62,
     height: 62,
     borderRadius: 31,
     backgroundColor: palette.red,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     shadowColor: palette.red,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
