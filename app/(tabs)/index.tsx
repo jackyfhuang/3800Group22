@@ -10,7 +10,7 @@ import { colors, homeStyles as styles, radius, sharedStyles, spacing, typography
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   Alert,
   Platform,
@@ -66,6 +66,8 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
+  const [showFab, setShowFab] = useState(false);
+  const addBtnLayout = useRef({ y: 0, height: 0 });
 
   // ─── Data Handlers ──────────────────────────────────────────────────────────
   const loadChildren = async () => {
@@ -128,32 +130,42 @@ export default function HomeScreen() {
     }
   };
 
+  const handleScroll = (e: any) => {
+    const scrollY = e.nativeEvent.contentOffset.y;
+    const viewportH = e.nativeEvent.layoutMeasurement.height;
+    const { y, height } = addBtnLayout.current;
+    const isVisible = y < scrollY + viewportH && y + height > scrollY;
+    setShowFab(!isVisible);
+  };
+
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
-    <>
+    <View style={{ flex: 1 }}>
+      {/* ── Frozen Header ────────────────────────────────────────────────── */}
+      <View style={localStyles.header}>
+        <View style={{ flex: 1 }}>
+          <AppText style={localStyles.appTitle}>ChildGuard</AppText>
+          <AppText style={localStyles.appSubtitle}>
+            {children.length === 0
+              ? 'Keep your family safe'
+              : `${children.length} profile${children.length > 1 ? 's' : ''} saved`}
+          </AppText>
+        </View>
+        <Pressable
+          onPress={() => setShowHelp(true)}
+          style={({ pressed }) => [localStyles.iconBtn, pressed && localStyles.iconBtnPressed]}
+        >
+          <MaterialIcons name="info-outline" size={22} color={palette.navy} />
+        </Pressable>
+      </View>
+
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[styles.contentContainer, { paddingBottom: 100 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
-        {/* ── Header ─────────────────────────────────────────────────────── */}
-        <View style={localStyles.header}>
-          <View style={{ flex: 1 }}>
-            <AppText style={localStyles.appTitle}>ChildGuard</AppText>
-            <AppText style={localStyles.appSubtitle}>
-              {children.length === 0
-                ? 'Keep your family safe'
-                : `${children.length} profile${children.length > 1 ? 's' : ''} saved`}
-            </AppText>
-          </View>
-          <Pressable
-            onPress={() => setShowHelp(true)}
-            style={({ pressed }) => [localStyles.iconBtn, pressed && localStyles.iconBtnPressed]}
-          >
-            <MaterialIcons name="info-outline" size={22} color={palette.navy} />
-          </Pressable>
-        </View>
-
         {/* ── Emergency Quick-View Card ─────────────────────────────────── */}
         {children.length > 0 && (
           <EmergencyQuickViewCard onPress={() => setShowEmergency(true)} />
@@ -248,17 +260,37 @@ export default function HomeScreen() {
         )}
 
         {/* ── Add Child Button ──────────────────────────────────────────── */}
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push('/add_child')}
-          activeOpacity={0.8}
+        <View
+          onLayout={(e) => {
+            addBtnLayout.current = {
+              y: e.nativeEvent.layout.y,
+              height: e.nativeEvent.layout.height,
+            };
+          }}
         >
-          <View style={styles.addButtonCircle}>
-            <MaterialIcons name="add" size={28} color={palette.teal} />
-          </View>
-          <AppText style={styles.addButtonText}>Add New Child</AppText>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => router.push('/add_child')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.addButtonCircle}>
+              <MaterialIcons name="add" size={28} color={palette.teal} />
+            </View>
+            <AppText style={styles.addButtonText}>Add New Child</AppText>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
+
+      {/* ── FAB — visible only when inline button is off-screen ──────────── */}
+      {showFab && (
+        <TouchableOpacity
+          style={localStyles.fab}
+          onPress={() => router.push('/add_child')}
+          activeOpacity={0.85}
+        >
+          <MaterialIcons name="add" size={30} color={palette.white} />
+        </TouchableOpacity>
+      )}
 
       {/* ── Modals ───────────────────────────────────────────────────────── */}
       <HelpModal visible={showHelp} onClose={() => setShowHelp(false)} />
@@ -267,7 +299,7 @@ export default function HomeScreen() {
         profiles={children}
         onClose={() => setShowEmergency(false)}
       />
-    </>
+    </View>
   );
 }
 
@@ -276,8 +308,10 @@ const localStyles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.xl,
-    marginBottom: spacing.xxl,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+    backgroundColor: colors.appBackground,
   },
   appTitle: {
     fontSize: typography.hero,
@@ -340,5 +374,21 @@ const localStyles = StyleSheet.create({
     color: colors.textSubtle,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 32,
+    right: 24,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: palette.teal,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: palette.teal,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 8,
   },
 });
