@@ -1,8 +1,8 @@
+import { colors, radius, spacing, typography } from '@/constants/theme';
 import { StyleSheet } from 'react-native';
-import { colors, spacing, radius, typography } from '@/constants/theme';
 
 // Re-export tokens so the rest of the styles layer only needs to import from @/styles
-export { colors, spacing, radius, typography };
+export { colors, radius, spacing, typography };
 
 // ─── Shared Component Styles ──────────────────────────────────────────────────
 export const sharedStyles = StyleSheet.create({

@@ -1,17 +1,17 @@
-﻿// Themed dropdown component. Supports two modes:
+// Themed dropdown component. Supports two modes:
 // - Form mode: pass control + name for react-hook-form integration
 // - Standalone mode: pass value + onValueChange for uncontrolled use
 import { colors, radius, spacing, typography } from '@/styles';
 import React, { useState } from 'react';
 import { Control, Controller } from 'react-hook-form';
 import {
-  FlatList,
-  Modal,
-  StyleSheet,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Modal,
+    StyleSheet,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { AppText } from './app-text';
+import { AppText } from './ui/app-text';
 
 export type DropdownOption = {
   label: string;
@@ -145,6 +145,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.cardBorder,
     borderRadius: radius.md,
+    padding: spacing.lg,
     minHeight: 52,
     shadowColor: colors.inputShadow,
     shadowOffset: { width: 0, height: 2 },
@@ -212,8 +213,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: typography.default,
-    color: colors.textPrimary,
-    flex: 1,
+    color: colors.textOnLight,
   },
   selectedOptionText: {
     color: colors.secondary,

@@ -515,7 +515,9 @@ export function ChildPassportCard({ child, onCapture }: Props) {
 
             {child.birthmarkImageUris?.length ? (
               <View style={featureThumbStyles.group}>
-                <AppText style={featureThumbStyles.label}>Birthmark Photos</AppText>
+                <AppText style={featureThumbStyles.label}>
+                  Birthmark Photos
+                </AppText>
                 {renderFeatureThumbs(child.birthmarkImageUris)}
               </View>
             ) : null}
@@ -529,7 +531,9 @@ export function ChildPassportCard({ child, onCapture }: Props) {
 
             {child.identifyingFeatureImageUris?.length ? (
               <View style={featureThumbStyles.group}>
-                <AppText style={featureThumbStyles.label}>Other Feature Photos</AppText>
+                <AppText style={featureThumbStyles.label}>
+                  Other Feature Photos
+                </AppText>
                 {renderFeatureThumbs(child.identifyingFeatureImageUris)}
               </View>
             ) : null}
@@ -967,7 +971,10 @@ export function ChildPassportCard({ child, onCapture }: Props) {
             value={child.identifyingFeaturesDescription}
           />
         ) : null}
-        {renderExportFeaturePhotoGroup("Marks Photos", child.birthmarkImageUris)}
+        {renderExportFeaturePhotoGroup(
+          "Marks Photos",
+          child.birthmarkImageUris,
+        )}
         {renderExportFeaturePhotoGroup("Scars Photos", child.scarImageUris)}
         {renderExportFeaturePhotoGroup(
           "Other Photos",

@@ -1,90 +1,166 @@
-import { StyleSheet } from "react-native";
-import { colors, radius, spacing, typography } from "./shared";
+import { StyleSheet } from 'react-native';
+import { colors, radius, spacing, typography } from './shared';
+import { palette } from '@/constants/theme';
 
 export const addChildStyles = StyleSheet.create({
   // ─── Layout ───────────────────────────────────────────────────────────────
+  screen: {
+    flex: 1,
+    backgroundColor: colors.appBackground,
+  },
   container: {
     padding: spacing.xxl,
-    backgroundColor: colors.appBackground,
+    paddingBottom: 200, // clears progress bar + tab bar
     flexGrow: 1,
   },
 
-  // ─── Header ───────────────────────────────────────────────────────────────
-  headerContainer: {
-    marginBottom: spacing.xxxl,
-    marginTop: spacing.xl,
-  },
-  headerTop: {
-    flexDirection: "row",
-    alignItems: "flex-start",
+
+  // ─── Form Row ─────────────────────────────────────────────────────────────
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: spacing.md,
   },
-  backButton: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: spacing.xs,
+
+  // ─── Read-only Field ──────────────────────────────────────────────────────
+  readOnlyField: {
+    backgroundColor: colors.appBackground,
+    borderWidth: 1.5,
+    borderColor: colors.cardBorder,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    minHeight: 52,
+    justifyContent: 'center',
   },
-  backButtonText: {
-    fontSize: 28,
-    color: colors.secondary,
-    fontWeight: "600",
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: typography.large,
-    fontWeight: "bold",
-    marginBottom: spacing.sm,
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  headerSubtext: {
-    fontSize: typography.subtitle,
-    fontWeight: "600",
+  readOnlyText: {
+    fontSize: typography.default,
     color: colors.textSubtle,
   },
 
-  // ─── Form Fields ──────────────────────────────────────────────────────────
-  inputGroup: {
-    marginBottom: spacing.xxl,
+  // ─── Toggle Row (Glasses, Hearing Aids) ──────────────────────────────────
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.subtleBorder,
+    marginBottom: spacing.md,
   },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  toggleLabel: {
+    fontSize: typography.default,
+    color: colors.textPrimary,
+    fontWeight: '500',
+    flex: 1,
   },
-  input: {
+
+  // ─── Emergency Contact Card ───────────────────────────────────────────────
+  contactCard: {
+    backgroundColor: colors.appBackground,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  contactCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  contactCardTitle: {
+    fontSize: typography.default,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  removeContactText: {
+    fontSize: typography.body,
+    color: colors.danger,
+    fontWeight: '600',
+  },
+
+  // ─── Navigation Buttons ───────────────────────────────────────────────────
+  navButtonRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.xl,
+  },
+  navButtonBack: {
+    flex: 1,
+    paddingVertical: 18,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.secondaryBorder,
+    backgroundColor: colors.cardBackground,
+  },
+  navButtonBackText: {
+    color: colors.secondary,
+    fontSize: typography.button,
+    fontWeight: '600',
+  },
+  navButtonNext: {
+    flex: 2,
+    paddingVertical: 18,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    backgroundColor: colors.secondary,
+    shadowColor: colors.secondary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  navButtonNextText: {
+    color: colors.white,
+    fontSize: typography.button,
+    fontWeight: '600',
+  },
+
+  // ─── Date Picker Button ───────────────────────────────────────────────────
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: colors.inputBackground,
     borderWidth: 1.5,
     borderColor: colors.cardBorder,
     borderRadius: radius.md,
     padding: spacing.lg,
-    fontSize: typography.default,
-    color: colors.textOnLight,
     minHeight: 52,
     shadowColor: colors.inputShadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 2,
   },
-  textArea: {
-    height: 120,
-    textAlignVertical: "top",
-    paddingTop: spacing.lg,
-  },
-  errorInput: {
+  datePickerButtonError: {
     borderColor: colors.danger,
     backgroundColor: colors.dangerBackground,
-    borderWidth: 1.5,
   },
-  errorText: {
-    color: colors.danger,
-    fontSize: typography.tiny,
-    marginTop: spacing.xs,
-    marginLeft: spacing.xs,
+  datePickerText: {
+    fontSize: typography.default,
+    color: colors.textOnLight,
+    flex: 1,
+  },
+  datePickerPlaceholder: {
+    fontSize: typography.default,
+    color: colors.textSubtle,
+    flex: 1,
+  },
+  datePickerIcon: {
+    fontSize: 18,
+    marginLeft: spacing.sm,
+  },
+
+  // ─── Progress Bar Wrapper ─────────────────────────────────────────────────
+  progressBarWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
+    overflow: 'visible',
   },
 
   // ─── Export Button ────────────────────────────────────────────────────────
@@ -148,109 +224,5 @@ export const addChildStyles = StyleSheet.create({
   captureNotes: {
     color: colors.textOnLight,
     lineHeight: 20,
-  },
-  photoUploadCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.inputBackground,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: colors.cardBorder,
-    borderStyle: "dashed",
-  },
-  photoPreview: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  contactCard: {
-    backgroundColor: "transparent",
-    padding: 0,
-    borderRadius: 0,
-    marginBottom: spacing.md,
-    borderWidth: 0,
-  },
-  contactCardWithSeparator: {
-    borderTopWidth: 1,
-    borderTopColor: colors.subtleBorder,
-    paddingTop: spacing.md,
-    marginTop: spacing.xs,
-  },
-  contactCardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  removeContactButton: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  removeContactText: {
-    color: colors.danger,
-    fontWeight: "600",
-  },
-  addContactButton: {
-    marginBottom: spacing.md,
-  },
-  contactErrorText: {
-    marginBottom: spacing.md,
-  },
-  featurePhotosContainer: {
-    marginBottom: spacing.xxl,
-  },
-  featurePhotosRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  featurePhotoItem: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    backgroundColor: colors.inputBackground,
-    position: "relative",
-  },
-  featurePhotoThumb: {
-    width: "100%",
-    height: "100%",
-  },
-  featurePhotoRemoveButton: {
-    position: "absolute",
-    top: 2,
-    right: 2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  featurePhotoRemoveText: {
-    color: colors.white,
-    fontSize: typography.small,
-    fontWeight: "700",
-    lineHeight: typography.small,
-  },
-  featurePhotoAddButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 1.5,
-    borderStyle: "dashed",
-    borderColor: colors.cardBorder,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.inputBackground,
-  },
-  featurePhotoAddText: {
-    color: colors.textSubtle,
-    fontSize: typography.tiny,
-    fontWeight: "600",
   },
 });
