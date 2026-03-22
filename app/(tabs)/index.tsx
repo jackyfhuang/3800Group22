@@ -345,7 +345,7 @@ const localStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
+    paddingTop: spacing.xxxl,
     paddingBottom: spacing.lg,
     backgroundColor: colors.appBackground,
   },
