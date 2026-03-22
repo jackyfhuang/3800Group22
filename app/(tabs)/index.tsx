@@ -20,6 +20,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   Alert,
+  Image,
   Platform,
   Pressable,
   RefreshControl,
@@ -32,6 +33,7 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ChildProfile = {
   id?: string;
+  imageUri?: string;
   fullName?: string;
   age?: number;
   firstName?: string;
@@ -217,11 +219,18 @@ export default function HomeScreen() {
                     {/* Avatar */}
                     <View style={styles.avatarContainer}>
                       <View style={styles.avatarCircle}>
-                        <IconSymbol
-                          name="person.fill"
-                          size={32}
-                          color={palette.blue}
-                        />
+                        {child.imageUri ? (
+                          <Image
+                            source={{ uri: child.imageUri }}
+                            style={{ width: 64, height: 64, borderRadius: 32 }}
+                          />
+                        ) : (
+                          <IconSymbol
+                            name="person.fill"
+                            size={32}
+                            color={palette.blue}
+                          />
+                        )}
                       </View>
                     </View>
 
