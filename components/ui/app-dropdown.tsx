@@ -1,17 +1,17 @@
 ﻿// Themed dropdown component. Supports two modes:
 // - Form mode: pass control + name for react-hook-form integration
 // - Standalone mode: pass value + onValueChange for uncontrolled use
-import { colors, radius, spacing, typography } from '@/styles';
-import React, { useState } from 'react';
-import { Control, Controller } from 'react-hook-form';
+import { colors, radius, spacing, typography } from "@/styles";
+import React, { useState } from "react";
+import { Control, Controller } from "react-hook-form";
 import {
   FlatList,
   Modal,
   StyleSheet,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { AppText } from './app-text';
+} from "react-native";
+import { AppText } from "./app-text";
 
 export type DropdownOption = {
   label: string;
@@ -45,7 +45,7 @@ type AppDropdownProps = FormModeProps | StandaloneModeProps;
 export function AppDropdown({
   label,
   options,
-  placeholder = 'Select',
+  placeholder = "Select",
   error,
   containerStyle,
   control,
@@ -55,8 +55,11 @@ export function AppDropdown({
 }: AppDropdownProps) {
   const [open, setOpen] = useState(false);
 
-  const renderDropdown = (value: string | undefined, onChange: (v: string) => void) => {
-    const selected = options.find(o => o.value === value);
+  const renderDropdown = (
+    value: string | undefined,
+    onChange: (v: string) => void,
+  ) => {
+    const selected = options.find((o) => o.value === value);
 
     return (
       <View style={[styles.container, containerStyle]}>
@@ -67,7 +70,9 @@ export function AppDropdown({
           onPress={() => setOpen(true)}
           activeOpacity={0.7}
         >
-          <AppText style={selected ? styles.selectedText : styles.placeholderText}>
+          <AppText
+            style={selected ? styles.selectedText : styles.placeholderText}
+          >
             {selected ? selected.label : placeholder}
           </AppText>
           <AppText style={styles.chevron}>▾</AppText>
@@ -82,10 +87,12 @@ export function AppDropdown({
             onPress={() => setOpen(false)}
           >
             <View style={styles.sheet}>
-              <AppText variant="heading" style={styles.sheetTitle}>{label}</AppText>
+              <AppText variant="heading" style={styles.sheetTitle}>
+                {label}
+              </AppText>
               <FlatList
                 data={options}
-                keyExtractor={item => item.value}
+                keyExtractor={(item) => item.value}
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     style={[
@@ -97,10 +104,12 @@ export function AppDropdown({
                       setOpen(false);
                     }}
                   >
-                    <AppText style={[
-                      styles.optionText,
-                      item.value === value && styles.selectedOptionText,
-                    ]}>
+                    <AppText
+                      style={[
+                        styles.optionText,
+                        item.value === value && styles.selectedOptionText,
+                      ]}
+                    >
                       {item.label}
                     </AppText>
                     {item.value === value && (
@@ -138,14 +147,15 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxl,
   },
   trigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: colors.inputBackground,
     borderWidth: 1.5,
     borderColor: colors.cardBorder,
     borderRadius: radius.md,
     minHeight: 52,
+    paddingHorizontal: spacing.lg,
     shadowColor: colors.inputShadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -175,8 +185,8 @@ const styles = StyleSheet.create({
   // ── Modal Sheet ────────────────────────────────────────────────────────────
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "flex-end",
   },
   sheet: {
     backgroundColor: colors.cardBackground,
@@ -185,7 +195,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xxxl,
-    maxHeight: '60%',
+    maxHeight: "60%",
     shadowColor: colors.cardShadow,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,
@@ -198,9 +208,9 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
     borderBottomWidth: 1,
@@ -217,11 +227,11 @@ const styles = StyleSheet.create({
   },
   selectedOptionText: {
     color: colors.secondary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   checkmark: {
     color: colors.secondary,
     fontSize: typography.default,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });
