@@ -10,7 +10,7 @@ import { colors, homeStyles as styles, radius, sharedStyles, spacing, typography
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Alert,
   Platform,
@@ -66,8 +66,6 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
-  const [showFab, setShowFab] = useState(false);
-  const addBtnLayout = useRef({ y: 0, height: 0 });
 
   // ─── Data Handlers ──────────────────────────────────────────────────────────
   const loadChildren = async () => {
@@ -130,14 +128,6 @@ export default function HomeScreen() {
     }
   };
 
-  const handleScroll = (e: any) => {
-    const scrollY = e.nativeEvent.contentOffset.y;
-    const viewportH = e.nativeEvent.layoutMeasurement.height;
-    const { y, height } = addBtnLayout.current;
-    const isVisible = y < scrollY + viewportH && y + height > scrollY;
-    setShowFab(!isVisible);
-  };
-
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
     <View style={{ flex: 1 }}>
@@ -163,8 +153,6 @@ export default function HomeScreen() {
         style={styles.container}
         contentContainerStyle={[styles.contentContainer, { paddingBottom: 100 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
       >
         {/* ── Emergency Quick-View Card ─────────────────────────────────── */}
         {children.length > 0 && (
@@ -260,35 +248,35 @@ export default function HomeScreen() {
         )}
 
         {/* ── Add Child Button ──────────────────────────────────────────── */}
-        <View
-          onLayout={(e) => {
-            addBtnLayout.current = {
-              y: e.nativeEvent.layout.y,
-              height: e.nativeEvent.layout.height,
-            };
-          }}
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => router.push('/add_child')}
+          activeOpacity={0.8}
         >
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => router.push('/add_child')}
-            activeOpacity={0.8}
-          >
-            <View style={styles.addButtonCircle}>
-              <MaterialIcons name="add" size={28} color={palette.teal} />
-            </View>
-            <AppText style={styles.addButtonText}>Add New Child</AppText>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.addButtonCircle}>
+            <MaterialIcons name="add" size={28} color={palette.teal} />
+          </View>
+          <AppText style={styles.addButtonText}>Add New Child</AppText>
+        </TouchableOpacity>
       </ScrollView>
 
-      {/* ── FAB — visible only when inline button is off-screen ──────────── */}
-      {showFab && (
+      {/* ── Add FAB ──────────────────────────────────────────────────────── */}
+      <TouchableOpacity
+        style={localStyles.fab}
+        onPress={() => router.push('/add_child')}
+        activeOpacity={0.85}
+      >
+        <MaterialIcons name="add" size={30} color={palette.white} />
+      </TouchableOpacity>
+
+      {/* ── Emergency Quick View FAB ─────────────────────────────────────── */}
+      {children.length > 0 && (
         <TouchableOpacity
-          style={localStyles.fab}
-          onPress={() => router.push('/add_child')}
+          style={localStyles.emergencyFab}
+          onPress={() => setShowEmergency(true)}
           activeOpacity={0.85}
         >
-          <MaterialIcons name="add" size={30} color={palette.white} />
+          <MaterialIcons name="local-police" size={26} color={palette.white} />
         </TouchableOpacity>
       )}
 
@@ -377,7 +365,7 @@ const localStyles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 32,
+    bottom: 56,
     right: 24,
     width: 62,
     height: 62,
@@ -386,6 +374,22 @@ const localStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: palette.teal,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  emergencyFab: {
+    position: 'absolute',
+    bottom: 130,
+    right: 24,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: palette.red,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: palette.red,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 10,

@@ -102,7 +102,7 @@ export function EmergencyQuickViewModal({
                 eye || hair || child.sex;
 
               const hasContacts =
-                child.dateOfBirth || child.guardian1?.phone || child.guardian2?.phone;
+                child.guardian1?.phone || child.guardian2?.phone;
 
               return (
                 <View key={child.id ?? i} style={modalStyles.card}>
@@ -137,21 +137,12 @@ export function EmergencyQuickViewModal({
                     <View style={modalStyles.section}>
                       <SectionHeader label="Contacts" icon="phone" />
                       <View style={modalStyles.contactList}>
-                        {child.dateOfBirth && (
-                          <IconCardRow
-                            icon="cake"
-                            iconColor={palette.blue}
-                            iconBg={colors.primaryLight}
-                            label="Date of Birth"
-                            value={child.dateOfBirth}
-                          />
-                        )}
                         {child.guardian1?.phone && (
                           <IconCardRow
                             icon="phone"
                             iconColor={palette.teal}
                             iconBg={colors.secondaryLight}
-                            label="Guardian 1"
+                            label={child.guardian1.name || 'Guardian 1'}
                             value={child.guardian1.phone.replace(/\D/g, '').replace(/^(\d{3})(\d{3})(\d{4})$/, '($1) $2-$3') || child.guardian1.phone}
                           />
                         )}
@@ -160,7 +151,7 @@ export function EmergencyQuickViewModal({
                             icon="phone"
                             iconColor={palette.teal}
                             iconBg={colors.secondaryLight}
-                            label="Guardian 2"
+                            label={child.guardian2.name || 'Guardian 2'}
                             value={child.guardian2.phone.replace(/\D/g, '').replace(/^(\d{3})(\d{3})(\d{4})$/, '($1) $2-$3') || child.guardian2.phone}
                           />
                         )}
