@@ -95,6 +95,100 @@ export function ChildPassportCard({ child, onCapture }: Props) {
   const translateX = useRef(new Animated.Value(0)).current;
   const exportRef = useRef<ViewShot>(null);
 
+  const profile = child as ChildProfile & {
+    firstName?: string;
+    lastName?: string;
+    dateOfBirth?: string;
+    sex?: string;
+    ethnicity?: string;
+    lifeThreatAllergies?: string;
+    emergencyMedications?: string;
+    communicationNeeds?: string;
+    languageSpoken?: string;
+    otherMedicalNotes?: string;
+    schoolDaycareType?: string;
+    schoolDaycareName?: string;
+    sportsTeams?: string;
+    eyeColor?: string;
+    eyeColorOther?: string;
+    hairColor?: string;
+    hairColorOther?: string;
+    hairStyle?: string;
+    hasHat?: boolean;
+    hatColor?: string;
+    hatStyle?: string;
+    topColor?: string;
+    pantsColor?: string;
+    shoesColor?: string;
+    shoesType?: string;
+    hasGlasses?: boolean;
+    hasHearingAids?: boolean;
+    otherSensoryNeeds?: string;
+    guardian1?: { name?: string; phone?: string; address?: string };
+    guardian2?: { name?: string; phone?: string; address?: string };
+  };
+
+  const formatChoice = (value?: string | null) =>
+    value
+      ? value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+      : null;
+
+  const normalizeDate = (value?: string | null) => {
+    if (!value) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toISOString().split("T")[0];
+  };
+
+  const computeAge = (dob?: string | null) => {
+    if (!dob) return null;
+    const date = new Date(dob);
+    if (Number.isNaN(date.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - date.getFullYear();
+    const monthDiff = today.getMonth() - date.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate()))
+      age--;
+    return age >= 0 ? age : null;
+  };
+
+  const boolToYesNo = (value?: boolean) => {
+    if (value === undefined || value === null) return null;
+    return value ? "Yes" : "No";
+  };
+
+  const displayName =
+    child.fullName ||
+    `${profile.firstName ?? ""} ${profile.lastName ?? ""}`.trim() ||
+    "—";
+  const displaySex = profile.sex || child.gender || null;
+  const displayDob = normalizeDate(profile.dateOfBirth);
+  const displayAge = child.age ?? computeAge(profile.dateOfBirth);
+  const displayMedicalNotes =
+    profile.otherMedicalNotes || child.medicalNotes || null;
+  const displayEyeColor =
+    profile.eyeColor === "other" ? profile.eyeColorOther : profile.eyeColor;
+  const displayHairColor =
+    profile.hairColor === "other" ? profile.hairColorOther : profile.hairColor;
+  const displaySchoolLabel =
+    profile.schoolDaycareType === "daycare"
+      ? "Daycare"
+      : profile.schoolDaycareType === "school"
+        ? "School"
+        : null;
+
+  const guardian1 = profile.guardian1 ?? {
+    name: child.parent1Name,
+    phone: child.parent1Phone,
+    address: child.parent1Address,
+  };
+  const guardian2 = profile.guardian2 ?? {
+    name: child.parent2Name,
+    phone: child.parent2Phone,
+    address: child.parent2Address,
+  };
+
   const transition = useCallback(
     (next: number, dir: "left" | "right") => {
       const out = dir === "left" ? -24 : 24;
@@ -341,16 +435,16 @@ export function ChildPassportCard({ child, onCapture }: Props) {
       <View style={ph.scrim} />
       <View style={ph.meta}>
         <AppText style={ph.name} numberOfLines={2}>
-          {child.fullName || "—"}
+          {displayName}
         </AppText>
-        {child.age ? (
+        {displayAge !== null && displayAge !== undefined ? (
           <View style={ph.tagRow}>
             <View style={ph.tag}>
-              <AppText style={ph.tagText}>{child.age} yrs</AppText>
+              <AppText style={ph.tagText}>{displayAge} yrs</AppText>
             </View>
-            {child.gender ? (
+            {displaySex ? (
               <View style={ph.tag}>
-                <AppText style={ph.tagText}>{child.gender}</AppText>
+                <AppText style={ph.tagText}>{displaySex}</AppText>
               </View>
             ) : null}
             {child.height ? (
@@ -430,21 +524,60 @@ export function ChildPassportCard({ child, onCapture }: Props) {
 
   const SlideDetails = () => (
     <InfoShell slideKey="details" label="PERSONAL DETAILS">
-      <Row label="Full name" value={child.fullName} />
-      <Row label="Age" value={child.age ? `${child.age} years old` : null} />
-      <Row label="Gender" value={child.gender} />
-      <Row label="Height" value={child.height ? `${child.height} cm` : null} />
-      <Row label="Weight" value={child.weight ? `${child.weight} kg` : null} />
+      <Row label="Full name" value={displayName} />
+      <Row label="Date of Birth" value={displayDob} />
       <Row
-        label={child.schoolDaycareType === "daycare" ? "Daycare" : "School"}
+        label="Age"
         value={
-          child.schoolDaycareType && child.schoolDaycareType !== "none"
-            ? child.schoolDaycareName
+          displayAge !== null && displayAge !== undefined
+            ? `${displayAge} years old`
             : null
         }
       />
-      <Row label="Sports" value={child.sportsTeams} />
-      <Row label="Last Seen" value={child.lastKnownLocation} last />
+      <Row label="Sex" value={displaySex} />
+      <Row label="Ethnicity" value={profile.ethnicity} />
+      <Row label="Height" value={child.height ? `${child.height} cm` : null} />
+      <Row label="Weight" value={child.weight ? `${child.weight} kg` : null} />
+      <Row
+        label="Communication"
+        value={formatChoice(profile.communicationNeeds)}
+      />
+      <Row
+        label="Language"
+        value={
+          profile.communicationNeeds === "language_barrier"
+            ? profile.languageSpoken
+            : null
+        }
+      />
+      <Row label="Eye Color" value={displayEyeColor} />
+      <Row label="Hair Color" value={displayHairColor} />
+      <Row label="Hair Style" value={profile.hairStyle} />
+      <Row label="Wearing Headwear" value={boolToYesNo(profile.hasHat)} />
+      <Row
+        label="Headwear Color"
+        value={profile.hasHat ? profile.hatColor : null}
+      />
+      <Row
+        label="Headwear Type"
+        value={profile.hasHat ? profile.hatStyle : null}
+      />
+      <Row label="Top / Shirt" value={profile.topColor} />
+      <Row label="Pants / Bottom" value={profile.pantsColor} />
+      <Row label="Shoes Color" value={profile.shoesColor} />
+      <Row label="Shoes Type" value={profile.shoesType} />
+      <Row label="Wears Glasses" value={boolToYesNo(profile.hasGlasses)} />
+      <Row
+        label="Wears Hearing Aids"
+        value={boolToYesNo(profile.hasHearingAids)}
+      />
+      <Row label="Other Sensory Needs" value={profile.otherSensoryNeeds} />
+      <Row
+        label={displaySchoolLabel || "School / Daycare"}
+        value={displaySchoolLabel ? profile.schoolDaycareName : null}
+      />
+      <Row label="Sports Teams" value={profile.sportsTeams} />
+      <Row label="Last Known Location" value={child.lastKnownLocation} last />
     </InfoShell>
   );
 
@@ -452,7 +585,11 @@ export function ChildPassportCard({ child, onCapture }: Props) {
 
   const SlideMedical = () => {
     const hasAny =
-      child.medicalNotes ||
+      profile.lifeThreatAllergies ||
+      profile.emergencyMedications ||
+      profile.communicationNeeds ||
+      profile.languageSpoken ||
+      displayMedicalNotes ||
       child.hasBirthmarks === "yes" ||
       child.hasScars === "yes" ||
       child.hasIdentifyingFeatures === "yes" ||
@@ -470,20 +607,67 @@ export function ChildPassportCard({ child, onCapture }: Props) {
           </View>
         ) : null}
 
-        {child.medicalNotes ? (
+        {profile.lifeThreatAllergies ||
+        profile.emergencyMedications ||
+        displayMedicalNotes ? (
           <Block
             icon="🏥"
             title="Medical Notes"
             accentColor="#E05252"
             bgColor="#FFF0F0"
           >
-            <AppText style={bodyText}>{child.medicalNotes}</AppText>
+            {profile.lifeThreatAllergies ? (
+              <AppText style={bodyText}>
+                <AppText style={boldText}>
+                  Life-Threatening Allergies —{" "}
+                </AppText>
+                {profile.lifeThreatAllergies}
+              </AppText>
+            ) : null}
+            {profile.emergencyMedications ? (
+              <AppText style={[bodyText, { marginTop: DS.sp(1) }]}>
+                <AppText style={boldText}>Emergency Medications — </AppText>
+                {profile.emergencyMedications}
+              </AppText>
+            ) : null}
+            {displayMedicalNotes ? (
+              <AppText style={[bodyText, { marginTop: DS.sp(1) }]}>
+                <AppText style={boldText}>Other Medical Notes — </AppText>
+                {displayMedicalNotes}
+              </AppText>
+            ) : null}
+          </Block>
+        ) : null}
+
+        {profile.communicationNeeds || profile.languageSpoken ? (
+          <Block
+            icon="💬"
+            title="Communication"
+            accentColor="#4F6BED"
+            bgColor="#EEF2FF"
+          >
+            {profile.communicationNeeds ? (
+              <AppText style={bodyText}>
+                <AppText style={boldText}>Needs — </AppText>
+                {formatChoice(profile.communicationNeeds)}
+              </AppText>
+            ) : null}
+            {profile.communicationNeeds === "language_barrier" &&
+            profile.languageSpoken ? (
+              <AppText style={[bodyText, { marginTop: DS.sp(1) }]}>
+                <AppText style={boldText}>Language — </AppText>
+                {profile.languageSpoken}
+              </AppText>
+            ) : null}
           </Block>
         ) : null}
 
         {child.hasBirthmarks === "yes" ||
         child.hasScars === "yes" ||
         child.hasIdentifyingFeatures === "yes" ||
+        child.hasBirthmarks === "no" ||
+        child.hasScars === "no" ||
+        child.hasIdentifyingFeatures === "no" ||
         !!child.birthmarkImageUris?.length ||
         !!child.scarImageUris?.length ||
         !!child.identifyingFeatureImageUris?.length ? (
@@ -493,16 +677,34 @@ export function ChildPassportCard({ child, onCapture }: Props) {
             accentColor="#35B57B"
             bgColor="#EDFAF3"
           >
-            {child.hasBirthmarks === "yes" && child.birthmarksDescription ? (
+            {child.hasBirthmarks ? (
               <AppText style={bodyText}>
+                <AppText style={boldText}>Has Birthmarks — </AppText>
+                {child.hasBirthmarks === "yes" ? "Yes" : "No"}
+              </AppText>
+            ) : null}
+            {child.hasBirthmarks === "yes" && child.birthmarksDescription ? (
+              <AppText style={[bodyText, { marginTop: DS.sp(1) }]}>
                 <AppText style={boldText}>Birthmarks — </AppText>
                 {child.birthmarksDescription}
+              </AppText>
+            ) : null}
+            {child.hasScars ? (
+              <AppText style={[bodyText, { marginTop: DS.sp(1) }]}>
+                <AppText style={boldText}>Has Scars — </AppText>
+                {child.hasScars === "yes" ? "Yes" : "No"}
               </AppText>
             ) : null}
             {child.hasScars === "yes" && child.scarsDescription ? (
               <AppText style={[bodyText, { marginTop: DS.sp(1) }]}>
                 <AppText style={boldText}>Scars — </AppText>
                 {child.scarsDescription}
+              </AppText>
+            ) : null}
+            {child.hasIdentifyingFeatures ? (
+              <AppText style={[bodyText, { marginTop: DS.sp(1) }]}>
+                <AppText style={boldText}>Has Other Features — </AppText>
+                {child.hasIdentifyingFeatures === "yes" ? "Yes" : "No"}
               </AppText>
             ) : null}
             {child.hasIdentifyingFeatures === "yes" &&
@@ -558,18 +760,18 @@ export function ChildPassportCard({ child, onCapture }: Props) {
 
   const SlideContacts = () => {
     const hasContacts = (child.emergencyContacts?.length ?? 0) > 0;
-    const hasParents = !!(
-      child.parent1Name ||
-      child.parent1Phone ||
-      child.parent1Address ||
-      child.parent2Name ||
-      child.parent2Phone ||
-      child.parent2Address
+    const hasGuardians = !!(
+      guardian1?.name ||
+      guardian1?.phone ||
+      guardian1?.address ||
+      guardian2?.name ||
+      guardian2?.phone ||
+      guardian2?.address
     );
 
     return (
       <InfoShell slideKey="contacts" label="EMERGENCY CONTACTS">
-        {!hasContacts && !hasParents ? (
+        {!hasContacts && !hasGuardians ? (
           <View style={empty.wrap}>
             <AppText style={empty.icon}>📋</AppText>
             <AppText style={empty.text}>No contacts on record</AppText>
@@ -612,32 +814,32 @@ export function ChildPassportCard({ child, onCapture }: Props) {
           </View>
         ))}
 
-        {hasParents ? (
+        {hasGuardians ? (
           <View style={[ct.card, { borderLeftColor: DS.inkLight }]}>
-            <AppText style={ct.parentLabel}>Parents / Guardians</AppText>
-            {child.parent1Name || child.parent1Phone || child.parent1Address ? (
+            <AppText style={ct.parentLabel}>Primary Guardians</AppText>
+            {guardian1?.name || guardian1?.phone || guardian1?.address ? (
               <View style={ct.parentRow}>
                 <AppText style={ct.parentName}>
-                  {child.parent1Name || "Parent 1"}
+                  {guardian1?.name || "Guardian 1"}
                 </AppText>
-                {child.parent1Phone ? (
-                  <AppText style={ct.phone}>📞 {child.parent1Phone}</AppText>
+                {guardian1?.phone ? (
+                  <AppText style={ct.phone}>📞 {guardian1.phone}</AppText>
                 ) : null}
-                {child.parent1Address ? (
-                  <AppText style={ct.addr}>🏠 {child.parent1Address}</AppText>
+                {guardian1?.address ? (
+                  <AppText style={ct.addr}>🏠 {guardian1.address}</AppText>
                 ) : null}
               </View>
             ) : null}
-            {child.parent2Name || child.parent2Phone || child.parent2Address ? (
+            {guardian2?.name || guardian2?.phone || guardian2?.address ? (
               <View style={[ct.parentRow, { marginTop: DS.sp(2) }]}>
                 <AppText style={ct.parentName}>
-                  {child.parent2Name || "Parent 2"}
+                  {guardian2?.name || "Guardian 2"}
                 </AppText>
-                {child.parent2Phone ? (
-                  <AppText style={ct.phone}>📞 {child.parent2Phone}</AppText>
+                {guardian2?.phone ? (
+                  <AppText style={ct.phone}>📞 {guardian2.phone}</AppText>
                 ) : null}
-                {child.parent2Address ? (
-                  <AppText style={ct.addr}>🏠 {child.parent2Address}</AppText>
+                {guardian2?.address ? (
+                  <AppText style={ct.addr}>🏠 {guardian2.address}</AppText>
                 ) : null}
               </View>
             ) : null}
@@ -896,16 +1098,16 @@ export function ChildPassportCard({ child, onCapture }: Props) {
             }}
             numberOfLines={1}
           >
-            {child.fullName || "—"}
+            {displayName}
           </AppText>
-          {child.age ? (
+          {displayAge !== null && displayAge !== undefined ? (
             <AppText
               style={{
                 color: "rgba(255,255,255,0.7)",
                 fontSize: 8,
               }}
             >
-              {child.age} yrs · {child.gender || ""}
+              {displayAge} yrs · {displaySex || ""}
             </AppText>
           ) : null}
         </View>
@@ -918,17 +1120,26 @@ export function ChildPassportCard({ child, onCapture }: Props) {
         labelColor={DS.tints.details.dot}
       >
         {[
-          ["Name", child.fullName],
-          ["Age", child.age ? `${child.age} yrs` : null],
-          ["Height", child.height ? `${child.height} cm` : null],
-          ["Weight", child.weight ? `${child.weight} kg` : null],
+          ["Name", displayName],
+          ["DOB", displayDob],
           [
-            child.schoolDaycareType === "daycare" ? "Daycare" : "School",
-            child.schoolDaycareType && child.schoolDaycareType !== "none"
-              ? child.schoolDaycareName
+            "Age",
+            displayAge !== null && displayAge !== undefined
+              ? `${displayAge} yrs`
               : null,
           ],
-          ["Sports", child.sportsTeams],
+          ["Sex", displaySex],
+          ["Ethnicity", profile.ethnicity],
+          ["Height", child.height ? `${child.height} cm` : null],
+          ["Weight", child.weight ? `${child.weight} kg` : null],
+          ["Eye", displayEyeColor],
+          ["Hair", displayHairColor],
+          [
+            displaySchoolLabel || "School/Daycare",
+            displaySchoolLabel ? profile.schoolDaycareName : null,
+          ],
+          ["Sports", profile.sportsTeams],
+          ["Last Seen", child.lastKnownLocation],
         ]
           .filter(([, v]) => v)
           .map(([l, v]) => (
@@ -946,7 +1157,7 @@ export function ChildPassportCard({ child, onCapture }: Props) {
         label="MEDICAL"
         labelColor={DS.tints.medical.dot}
       >
-        {child.medicalNotes ? (
+        {profile.lifeThreatAllergies ? (
           <AppText
             style={{
               fontSize: 8,
@@ -955,20 +1166,54 @@ export function ChildPassportCard({ child, onCapture }: Props) {
             }}
             numberOfLines={3}
           >
-            {child.medicalNotes}
+            Allergies: {profile.lifeThreatAllergies}
           </AppText>
+        ) : null}
+        {profile.emergencyMedications ? (
+          <ExportRow label="Meds" value={profile.emergencyMedications} />
+        ) : null}
+        {profile.communicationNeeds ? (
+          <ExportRow
+            label="Comms"
+            value={formatChoice(profile.communicationNeeds) || ""}
+          />
+        ) : null}
+        {profile.communicationNeeds === "language_barrier" &&
+        profile.languageSpoken ? (
+          <ExportRow label="Language" value={profile.languageSpoken} />
+        ) : null}
+        {displayMedicalNotes ? (
+          <ExportRow label="Notes" value={displayMedicalNotes} />
         ) : null}
         {child.hasBirthmarks === "yes" && child.birthmarksDescription ? (
           <ExportRow label="Marks" value={child.birthmarksDescription} />
         ) : null}
+        {child.hasBirthmarks ? (
+          <ExportRow
+            label="Birthmarks"
+            value={child.hasBirthmarks === "yes" ? "Yes" : "No"}
+          />
+        ) : null}
         {child.hasScars === "yes" && child.scarsDescription ? (
           <ExportRow label="Scars" value={child.scarsDescription} />
+        ) : null}
+        {child.hasScars ? (
+          <ExportRow
+            label="Scars?"
+            value={child.hasScars === "yes" ? "Yes" : "No"}
+          />
         ) : null}
         {child.hasIdentifyingFeatures === "yes" &&
         child.identifyingFeaturesDescription ? (
           <ExportRow
             label="Other"
             value={child.identifyingFeaturesDescription}
+          />
+        ) : null}
+        {child.hasIdentifyingFeatures ? (
+          <ExportRow
+            label="Other?"
+            value={child.hasIdentifyingFeatures === "yes" ? "Yes" : "No"}
           />
         ) : null}
         {renderExportFeaturePhotoGroup(
@@ -983,7 +1228,11 @@ export function ChildPassportCard({ child, onCapture }: Props) {
         {child.lastKnownLocation ? (
           <ExportRow label="Last Seen" value={child.lastKnownLocation} />
         ) : null}
-        {!child.medicalNotes &&
+        {!profile.lifeThreatAllergies &&
+        !profile.emergencyMedications &&
+        !profile.communicationNeeds &&
+        !profile.languageSpoken &&
+        !displayMedicalNotes &&
         child.hasBirthmarks !== "yes" &&
         child.hasScars !== "yes" &&
         child.hasIdentifyingFeatures !== "yes" &&
@@ -1044,29 +1293,27 @@ export function ChildPassportCard({ child, onCapture }: Props) {
             ) : null}
           </View>
         ))}
-        {child.parent1Name ? (
+        {guardian1?.name ? (
           <ExportRow
-            label="Parent 1"
+            label="G1"
             value={
-              child.parent1Name +
-              (child.parent1Phone ? ` · ${child.parent1Phone}` : "")
+              guardian1.name + (guardian1.phone ? ` · ${guardian1.phone}` : "")
             }
           />
         ) : null}
-        {child.parent1Address ? (
-          <ExportRow label="P1 Addr" value={child.parent1Address} />
+        {guardian1?.address ? (
+          <ExportRow label="G1 Addr" value={guardian1.address} />
         ) : null}
-        {child.parent2Name ? (
+        {guardian2?.name ? (
           <ExportRow
-            label="Parent 2"
+            label="G2"
             value={
-              child.parent2Name +
-              (child.parent2Phone ? ` · ${child.parent2Phone}` : "")
+              guardian2.name + (guardian2.phone ? ` · ${guardian2.phone}` : "")
             }
           />
         ) : null}
-        {child.parent2Address ? (
-          <ExportRow label="P2 Addr" value={child.parent2Address} />
+        {guardian2?.address ? (
+          <ExportRow label="G2 Addr" value={guardian2.address} />
         ) : null}
       </ExportTile>
     </View>
