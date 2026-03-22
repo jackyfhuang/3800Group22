@@ -135,14 +135,13 @@ export default function ViewChildScreen() {
   const hairDisplay = child.hairColor === 'other' ? child.hairColorOther : child.hairColor;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-
+    <View style={styles.container}>
       <ScreenHeader
         title="Child Profile"
         onLeftPress={() => router.back()}
         onRightPress={() => router.replace('/(tabs)')}
       />
-
+    <ScrollView contentContainerStyle={styles.content}>
       {/* ── Single card containing everything ───────────────────────────────── */}
       <View style={styles.card}>
 
@@ -246,6 +245,7 @@ export default function ViewChildScreen() {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+    </View>
   );
 }
 

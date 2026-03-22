@@ -19,7 +19,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ViewShot, { captureRef } from 'react-native-view-shot';
 import { z } from 'zod';
 
-import { MaterialIcons } from '@expo/vector-icons';
 import { AppDropdown } from '@/components/ui/app-dropdown';
 import { AppText } from '@/components/ui/app-text';
 import { FormField } from '@/components/ui/form-field';
@@ -27,6 +26,7 @@ import { FormSection } from '@/components/ui/form-section';
 import { ScreenHeader, confirmDiscard } from '@/components/ui/screen-header';
 import { StepProgressBar } from '@/components/ui/step-progress-bar';
 import { colors, sharedStyles, addChildStyles as styles } from '@/styles';
+import { MaterialIcons } from '@expo/vector-icons';
 
 // ─── Validation Schema ────────────────────────────────────────────────────────
 const guardianSchema = z.object({
@@ -619,6 +619,13 @@ export default function AddChildScreen() {
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <View style={styles.screen}>
+      {/* Frozen header — outside scroll so it never moves */}
+      <ScreenHeader
+        title={isEditMode ? 'Edit Profile' : stepTitles[currentStep].title}
+        subtitle={isEditMode ? 'Update child information' : stepTitles[currentStep].subtitle}
+        onLeftPress={handleBack}
+        onRightPress={() => confirmDiscard(() => router.replace('/(tabs)'))}
+      />
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1 }}
@@ -630,14 +637,6 @@ export default function AddChildScreen() {
           { paddingBottom: BOTTOM_OFFSET + 20 },
         ]}
       >
-        {/* Header */}
-        <ScreenHeader
-          title={isEditMode ? 'Edit Profile' : stepTitles[currentStep].title}
-          subtitle={isEditMode ? 'Update child information' : stepTitles[currentStep].subtitle}
-          onLeftPress={handleBack}
-          onRightPress={() => confirmDiscard(() => router.replace('/(tabs)'))}
-        />
-
         {/* Step Content */}
         {currentStep === 1 && renderStep1()}
         {currentStep === 2 && renderStep2()}
@@ -734,7 +733,7 @@ export default function AddChildScreen() {
 
       {/* Progress bar — outside KeyboardAvoidingView so keyboard never shifts it */}
       {!keyboardVisible && (
-        <View style={[styles.progressBarWrapper, { bottom: insets.bottom + 10 }]}>
+        <View style={[styles.progressBarWrapper, { bottom: insets.bottom - 20 }]}>
           <StepProgressBar
             currentStep={currentStep}
             completedSteps={completedSteps}

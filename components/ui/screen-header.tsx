@@ -74,8 +74,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.xl,
+    marginTop: spacing.xxxl,
     marginBottom: spacing.xxl,
+    paddingHorizontal: spacing.xxl,
   },
   button: {
     width: 48,
