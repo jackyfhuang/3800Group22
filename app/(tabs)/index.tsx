@@ -6,7 +6,7 @@ import {
 import { HelpModal } from '@/components/ui/help-modal';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { palette } from '@/constants/theme';
-import { colors, homeStyles as styles, radius, sharedStyles, spacing, typography } from '@/styles';
+import { colors, radius, sharedStyles, spacing, homeStyles as styles, typography } from '@/styles';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -57,6 +57,7 @@ type ChildProfile = {
   hasHat?: boolean;
   hasGlasses?: boolean;
   hasHearingAids?: boolean;
+  lastUpdated?: string;
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -204,18 +205,7 @@ export default function HomeScreen() {
                             <AppText style={styles.detailValue}>{child.age} yrs</AppText>
                           </View>
                         )}
-                        {child.height !== undefined && (
-                          <View style={styles.detailItem}>
-                            <AppText style={styles.detailLabel}>Height</AppText>
-                            <AppText style={styles.detailValue}>{child.height} cm</AppText>
-                          </View>
-                        )}
-                        {child.weight !== undefined && (
-                          <View style={styles.detailItem}>
-                            <AppText style={styles.detailLabel}>Weight</AppText>
-                            <AppText style={styles.detailValue}>{child.weight} kg</AppText>
-                          </View>
-                        )}
+                        <LastUpdatedPill lastUpdated={child.lastUpdated} />
                       </View>
                     </View>
                   </View>
@@ -290,6 +280,64 @@ export default function HomeScreen() {
     </View>
   );
 }
+
+// ─── Last Updated Pill ────────────────────────────────────────────────────────
+function LastUpdatedPill({ lastUpdated }: { lastUpdated?: string }) {
+  let value: string;
+  let bg: string;
+  let textColor: string;
+  let icon: React.ComponentProps<typeof MaterialIcons>['name'];
+
+  if (!lastUpdated) {
+    value = 'Never';
+    bg = colors.cardBorder;
+    textColor = colors.textSubtle;
+    icon = 'warning';
+  } else {
+    const days = Math.floor((Date.now() - new Date(lastUpdated).getTime()) / 86_400_000);
+    const months = Math.floor(days / 30);
+    value = days === 0 ? 'Today' : days < 30 ? `${days}d ago` : months < 12 ? `${months}mo ago` : `${Math.floor(months / 12)}yr ago`;
+
+    if (days < 90) {
+      bg = '#E6F7F0';
+      textColor = '#1A7A4A';
+      icon = 'check-circle';
+    } else if (days < 180) {
+      bg = '#FFF8E6';
+      textColor = '#A06000';
+      icon = 'add-alert';
+    } else {
+      bg = '#FFF8E6';
+      textColor = '#A06000';
+      icon = 'warning';
+    }
+  }
+
+  return (
+    <View style={pillStyles.container}>
+      <AppText style={styles.detailLabel}>Updated</AppText>
+      <View style={[pillStyles.pill, { backgroundColor: bg }]}>
+        <MaterialIcons name={icon} size={12} color={textColor} />
+        <AppText style={[styles.detailValue, { color: textColor }]}>{value}</AppText>
+      </View>
+    </View>
+  );
+}
+
+const pillStyles = StyleSheet.create({
+  container: {
+    minWidth: 80,
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    paddingVertical: 2,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
+  },
+});
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const localStyles = StyleSheet.create({

@@ -299,7 +299,7 @@ export default function AddChildScreen() {
       const monthDiff = today.getMonth() - dob.getMonth();
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
 
-      const record = { ...data, fullName, age };
+      const record = { ...data, fullName, age, lastUpdated: new Date().toISOString() };
 
       const json = await AsyncStorage.getItem('children_list');
       let list = json ? JSON.parse(json) : [];
