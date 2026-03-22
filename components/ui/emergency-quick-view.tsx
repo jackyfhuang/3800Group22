@@ -42,13 +42,13 @@ export function EmergencyQuickViewCard({ onPress }: { onPress: () => void }) {
       onPress={onPress}
     >
       <View style={cardStyles.iconWrap}>
-        <MaterialIcons name="local-police" size={24} color={palette.navy} />
+        <MaterialIcons name="local-police" size={24} color={palette.red} />
       </View>
       <View style={{ flex: 1 }}>
         <AppText style={cardStyles.title}>Emergency Quick View</AppText>
         <AppText style={cardStyles.subtitle}>Tap to show key info to first responders</AppText>
       </View>
-      <MaterialIcons name="chevron-right" size={22} color={palette.navy} />
+      <MaterialIcons name="chevron-right" size={22} color={palette.red} />
     </Pressable>
   );
 }
@@ -67,10 +67,11 @@ export function EmergencyQuickViewModal({
     <Modal visible={visible} animationType="slide" transparent statusBarTranslucent>
       <View style={modalStyles.overlay}>
         <View style={modalStyles.sheet}>
-          {/* Header */}
+
+          {/* ── Header ─────────────────────────────────────────────────────── */}
           <View style={modalStyles.header}>
             <View style={modalStyles.iconWrap}>
-              <MaterialIcons name="local-police" size={24} color={palette.navy} />
+              <MaterialIcons name="local-police" size={24} color={palette.red} />
             </View>
             <View style={{ flex: 1 }}>
               <AppText style={modalStyles.title}>Emergency Quick View</AppText>
@@ -81,8 +82,11 @@ export function EmergencyQuickViewModal({
             </TouchableOpacity>
           </View>
 
-          {/* Profiles */}
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+          {/* ── Profiles ───────────────────────────────────────────────────── */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={modalStyles.scrollContent}
+          >
             {profiles.map((child, i) => {
               const name =
                 child.fullName ||
@@ -91,41 +95,87 @@ export function EmergencyQuickViewModal({
               const eye = child.eyeColor === 'other' ? child.eyeColorOther : child.eyeColor;
               const hair = child.hairColor === 'other' ? child.hairColorOther : child.hairColor;
 
+              const hasPhysical =
+                child.age !== undefined ||
+                child.height !== undefined ||
+                child.weight !== undefined ||
+                eye || hair || child.sex;
+
+              const hasContacts =
+                child.dateOfBirth || child.guardian1?.phone || child.guardian2?.phone;
+
               return (
                 <View key={child.id ?? i} style={modalStyles.card}>
-                  <AppText style={modalStyles.childName}>{name}</AppText>
 
-                  {/* Stat pills */}
-                  <View style={modalStyles.pillRow}>
-                    {child.age !== undefined && <StatPill label="Age" value={`${child.age} yrs`} />}
-                    {child.height !== undefined && <StatPill label="Height" value={`${child.height} cm`} />}
-                    {child.weight !== undefined && <StatPill label="Weight" value={`${child.weight} kg`} />}
-                  </View>
-                  {(eye || hair || child.sex) && (
-                    <View style={modalStyles.pillRow}>
-                      {eye  && <StatPill label="Eyes"   value={eye} />}
-                      {hair && <StatPill label="Hair"   value={hair} />}
-                      {child.sex && <StatPill label="Sex" value={child.sex} />}
+                  {/* Name */}
+                  <AppText style={modalStyles.childName}>{name}</AppText>
+                  <View style={modalStyles.nameDivider} />
+
+                  {/* ── Physical Section ───────────────────────────────────── */}
+                  {hasPhysical && (
+                    <View style={modalStyles.section}>
+                      <SectionHeader label="Physical" icon="straighten" />
+                      <View style={modalStyles.pillGrid}>
+                        {child.age !== undefined && (
+                          <StatPill label="Age" value={`${child.age} yrs`} />
+                        )}
+                        {child.sex && <StatPill label="Sex" value={child.sex} />}
+                        {child.height !== undefined && (
+                          <StatPill label="Height" value={`${child.height} cm`} />
+                        )}
+                        {child.weight !== undefined && (
+                          <StatPill label="Weight" value={`${child.weight} kg`} />
+                        )}
+                        {eye && <StatPill label="Eyes" value={eye} />}
+                        {hair && <StatPill label="Hair" value={hair} />}
+                      </View>
                     </View>
                   )}
 
-                  {/* Info rows */}
-                  {child.dateOfBirth && (
-                    <InfoRow label="Date of Birth" value={child.dateOfBirth} />
-                  )}
-                  {child.guardian1?.phone && (
-                    <InfoRow label="Guardian 1 Phone" value={child.guardian1.phone} highlight />
-                  )}
-                  {child.guardian2?.phone && (
-                    <InfoRow label="Guardian 2 Phone" value={child.guardian2.phone} highlight />
+                  {/* ── Contact Section ────────────────────────────────────── */}
+                  {hasContacts && (
+                    <View style={modalStyles.section}>
+                      <SectionHeader label="Contacts" icon="phone" />
+                      <View style={modalStyles.contactList}>
+                        {child.dateOfBirth && (
+                          <IconCardRow
+                            icon="cake"
+                            iconColor={palette.blue}
+                            iconBg={colors.primaryLight}
+                            label="Date of Birth"
+                            value={child.dateOfBirth}
+                          />
+                        )}
+                        {child.guardian1?.phone && (
+                          <IconCardRow
+                            icon="phone"
+                            iconColor={palette.teal}
+                            iconBg={colors.secondaryLight}
+                            label="Guardian 1"
+                            value={child.guardian1.phone.replace(/\D/g, '').replace(/^(\d{3})(\d{3})(\d{4})$/, '($1) $2-$3') || child.guardian1.phone}
+                          />
+                        )}
+                        {child.guardian2?.phone && (
+                          <IconCardRow
+                            icon="phone"
+                            iconColor={palette.teal}
+                            iconBg={colors.secondaryLight}
+                            label="Guardian 2"
+                            value={child.guardian2.phone.replace(/\D/g, '').replace(/^(\d{3})(\d{3})(\d{4})$/, '($1) $2-$3') || child.guardian2.phone}
+                          />
+                        )}
+                      </View>
+                    </View>
                   )}
 
-                  {/* Allergy warning */}
+                  {/* ── Allergy Warning ────────────────────────────────────── */}
                   {child.lifeThreatAllergies && (
-                    <View style={modalStyles.allergyRow}>
-                      <MaterialIcons name="warning" size={14} color={palette.navy} />
+                    <View style={modalStyles.allergySection}>
+                      <View style={modalStyles.allergyHeader}>
+                        <MaterialIcons name="warning" size={16} color={palette.red} />
+                        <AppText style={modalStyles.allergyLabel}>Life-Threatening Allergies</AppText>
+                      </View>
                       <AppText style={modalStyles.allergyText}>
-                        <AppText style={{ fontWeight: '700' }}>Allergies: </AppText>
                         {child.lifeThreatAllergies}
                       </AppText>
                     </View>
@@ -140,31 +190,47 @@ export function EmergencyQuickViewModal({
   );
 }
 
-// ─── Small helpers ─────────────────────────────────────────────────────────────
-function StatPill({ label, value }: { label: string; value: string }) {
+// ─── Helper components ────────────────────────────────────────────────────────
+function SectionHeader({ label, icon }: { label: string; icon: React.ComponentProps<typeof MaterialIcons>['name'] }) {
   return (
-    <View style={modalStyles.pill}>
-      <AppText style={modalStyles.pillLabel}>{label}</AppText>
-      <AppText style={modalStyles.pillValue}>{value}</AppText>
+    <View style={helperStyles.sectionHeader}>
+      <MaterialIcons name={icon} size={13} color={colors.textSubtle} />
+      <AppText style={helperStyles.sectionLabel}>{label}</AppText>
     </View>
   );
 }
 
-function InfoRow({
+function StatPill({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={helperStyles.pill}>
+      <AppText style={helperStyles.pillLabel}>{label}</AppText>
+      <AppText style={helperStyles.pillValue}>{value}</AppText>
+    </View>
+  );
+}
+
+function IconCardRow({
+  icon,
+  iconColor,
+  iconBg,
   label,
   value,
-  highlight,
 }: {
+  icon: React.ComponentProps<typeof MaterialIcons>['name'];
+  iconColor: string;
+  iconBg: string;
   label: string;
   value: string;
-  highlight?: boolean;
 }) {
   return (
-    <View style={modalStyles.infoRow}>
-      <AppText style={modalStyles.infoLabel}>{label}</AppText>
-      <AppText style={[modalStyles.infoValue, highlight && modalStyles.infoHighlight]}>
-        {value}
-      </AppText>
+    <View style={helperStyles.contactRow}>
+      <View style={[helperStyles.contactIcon, { backgroundColor: iconBg }]}>
+        <MaterialIcons name={icon} size={16} color={iconColor} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <AppText style={helperStyles.contactLabel}>{label}</AppText>
+        <AppText style={helperStyles.contactPhone}>{value}</AppText>
+      </View>
     </View>
   );
 }
@@ -174,14 +240,14 @@ const cardStyles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.navyTint,
+    backgroundColor: palette.redLight,
     borderRadius: radius.xl,
     borderWidth: 1.5,
-    borderColor: palette.navyBorder,
+    borderColor: palette.redBorder,
     padding: spacing.xl,
     marginBottom: spacing.xxl,
     gap: spacing.lg,
-    shadowColor: palette.navy,
+    shadowColor: palette.red,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
@@ -196,9 +262,9 @@ const cardStyles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: palette.navyBackground,
+    backgroundColor: palette.redBackground,
     borderWidth: 1,
-    borderColor: palette.navyBorder,
+    borderColor: palette.redBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -231,6 +297,9 @@ const modalStyles = StyleSheet.create({
     paddingBottom: spacing.xxxl,
     maxHeight: '92%',
   },
+  scrollContent: {
+    paddingBottom: spacing.xxxl,
+  },
 
   // Header
   header: {
@@ -246,9 +315,9 @@ const modalStyles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: palette.navyBackground,
+    backgroundColor: palette.redBackground,
     borderWidth: 1,
-    borderColor: palette.navyBorder,
+    borderColor: palette.redBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -274,12 +343,17 @@ const modalStyles = StyleSheet.create({
 
   // Child card
   card: {
-    backgroundColor: colors.appBackground,
+    backgroundColor: colors.cardBackground,
     borderRadius: radius.xl,
     padding: spacing.xl,
     marginBottom: spacing.xl,
     borderWidth: 1.5,
     borderColor: colors.cardBorder,
+    shadowColor: palette.navy,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   childName: {
     fontSize: typography.title,
@@ -287,20 +361,79 @@ const modalStyles = StyleSheet.create({
     color: palette.navy,
     marginBottom: spacing.md,
   },
-  pillRow: {
+  nameDivider: {
+    height: 1,
+    backgroundColor: colors.cardBorder,
+    marginBottom: spacing.lg,
+  },
+  section: {
+    marginBottom: spacing.lg,
+  },
+  pillGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+
+  contactList: {
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+
+  // Allergy
+  allergySection: {
+    marginTop: spacing.sm,
+    backgroundColor: palette.redLight,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: palette.redBorder,
+    padding: spacing.md,
+  },
+  allergyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     marginBottom: spacing.sm,
   },
+  allergyLabel: {
+    fontSize: typography.body,
+    fontWeight: '700',
+    color: palette.red,
+  },
+  allergyText: {
+    fontSize: typography.body,
+    color: palette.navy,
+    lineHeight: 20,
+  },
+});
+
+// ─── Helper styles ────────────────────────────────────────────────────────────
+const helperStyles = StyleSheet.create({
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  sectionLabel: {
+    fontSize: typography.tiny,
+    fontWeight: '700',
+    color: colors.textSubtle,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
   pill: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.appBackground,
     borderRadius: radius.sm,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
     borderWidth: 1,
     borderColor: colors.cardBorder,
     alignItems: 'center',
+    flexBasis: '31%',
+    flexGrow: 0,
+    flexShrink: 0,
   },
   pillLabel: {
     fontSize: typography.tiny,
@@ -313,44 +446,39 @@ const modalStyles = StyleSheet.create({
     fontSize: typography.default,
     fontWeight: '700',
     color: palette.navy,
+    marginTop: 2,
   },
-  infoRow: {
+  contactRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 5,
-    borderTopWidth: 1,
-    borderTopColor: colors.subtleBorder,
-    marginTop: spacing.xs,
-  },
-  infoLabel: {
-    fontSize: typography.body,
-    fontWeight: '600',
-    color: palette.navy,
-  },
-  infoValue: {
-    fontSize: typography.body,
-    color: palette.navyLight,
-  },
-  infoHighlight: {
-    fontWeight: '700',
-    color: palette.teal,
-  },
-  allergyRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.xs,
-    marginTop: spacing.md,
-    backgroundColor: palette.navyBackground,
-    borderRadius: radius.sm,
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.appBackground,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: palette.navyBorder,
+    borderColor: colors.cardBorder,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
   },
-  allergyText: {
-    fontSize: typography.body,
+  contactIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.secondaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contactLabel: {
+    fontSize: typography.tiny,
+    fontWeight: '600',
+    color: colors.textSubtle,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  contactPhone: {
+    fontSize: typography.default,
+    fontWeight: '700',
     color: palette.navy,
-    flex: 1,
-    lineHeight: 20,
+    letterSpacing: 0.3,
   },
 });

@@ -561,7 +561,7 @@ export default function AddChildScreen() {
 
       <FormSection title="Clothing" subtitle="All optional">
         <View style={styles.toggleRow}>
-          <AppText style={styles.toggleLabel}>Wearing a hat?</AppText>
+          <AppText style={styles.toggleLabel}>Wearing headwear?</AppText>
           <Switch
             value={hasHat ?? false}
             onValueChange={v => setValue('hasHat', v)}
@@ -571,9 +571,9 @@ export default function AddChildScreen() {
         </View>
         {hasHat && (
           <View style={styles.row}>
-            <FormField control={control} name="hatColor" label="Hat Color"
+            <FormField control={control} name="hatColor" label="Headwear Color"
               placeholder="e.g. Red" containerStyle={{ flex: 1 }} />
-            <FormField control={control} name="hatStyle" label="Hat Style"
+            <FormField control={control} name="hatStyle" label="Headwear Type"
               placeholder="e.g. Baseball cap" containerStyle={{ flex: 1 }} />
           </View>
         )}
