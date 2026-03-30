@@ -21,16 +21,25 @@ import React, { useCallback, useState } from "react";
 import {
   Alert,
   Image,
+  Modal,
   Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+type ChildFolder = {
+  id: string;
+  name: string;
+  childIds: string[];
+  createdAt: string;
+};
+
 type ChildProfile = {
   id?: string;
   imageUri?: string;
@@ -76,6 +85,15 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
+  const [viewMode, setViewMode] = useState<"all" | "folders">("all");
+  const [folders, setFolders] = useState<ChildFolder[]>([]);
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
+  const [folderModalVisible, setFolderModalVisible] = useState(false);
+  const [folderModalTitle, setFolderModalTitle] = useState("");
+  const [folderModalValue, setFolderModalValue] = useState("");
+  const [folderModalCallback, setFolderModalCallback] = useState<
+    ((value: string) => void) | null
+  >(null);
 
   // ─── Data Handlers ──────────────────────────────────────────────────────────
   const loadChildren = async () => {
@@ -101,9 +119,25 @@ export default function HomeScreen() {
     }
   };
 
+  const loadFolders = async () => {
+    try {
+      const json = await AsyncStorage.getItem("child_folders");
+      if (json) setFolders(JSON.parse(json));
+      else setFolders([]);
+    } catch {
+      setFolders([]);
+    }
+  };
+
+  const saveFolders = async (updated: ChildFolder[]) => {
+    setFolders(updated);
+    await AsyncStorage.setItem("child_folders", JSON.stringify(updated));
+  };
+
   useFocusEffect(
     useCallback(() => {
       loadChildren();
+      loadFolders();
     }, []),
   );
 
@@ -146,6 +180,115 @@ export default function HomeScreen() {
     }
   };
 
+  // ─── Folder Handlers ────────────────────────────────────────────────────────
+  const showFolderInput = (
+    title: string,
+    defaultValue: string,
+    callback: (value: string) => void,
+  ) => {
+    setFolderModalTitle(title);
+    setFolderModalValue(defaultValue);
+    setFolderModalCallback(() => callback);
+    setFolderModalVisible(true);
+  };
+
+  const handleCreateFolder = () => {
+    showFolderInput("New Folder", "", (name) => {
+      if (!name.trim()) return;
+      const newFolder: ChildFolder = {
+        id: Date.now().toString(),
+        name: name.trim(),
+        childIds: [],
+        createdAt: new Date().toISOString(),
+      };
+      saveFolders([...folders, newFolder]);
+    });
+  };
+
+  const handleRenameFolder = (folderId: string, currentName: string) => {
+    showFolderInput("Rename Folder", currentName, (name) => {
+      if (!name.trim()) return;
+      const updated = folders.map((f) =>
+        f.id === folderId ? { ...f, name: name.trim() } : f,
+      );
+      saveFolders(updated);
+    });
+  };
+
+  const handleDeleteFolder = (folderId: string, folderName: string) => {
+    Alert.alert(
+      "Delete Folder",
+      `Delete "${folderName}"? Children inside won't be deleted.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            saveFolders(folders.filter((f) => f.id !== folderId));
+            if (activeFolderId === folderId) setActiveFolderId(null);
+          },
+        },
+      ],
+    );
+  };
+
+  const handleAddChildToFolder = (childId: string) => {
+    if (folders.length === 0) {
+      Alert.alert("No Folders", "Create a folder first.");
+      return;
+    }
+    const options = folders.map((f) => f.name);
+    options.push("Cancel");
+    Alert.alert("Add to Folder", "Choose a folder:", [
+      ...folders.map((f) => ({
+        text: f.name,
+        onPress: () => {
+          if (f.childIds.includes(childId)) return;
+          const updated = folders.map((folder) =>
+            folder.id === f.id
+              ? { ...folder, childIds: [...folder.childIds, childId] }
+              : folder,
+          );
+          saveFolders(updated);
+        },
+      })),
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
+  const handleRemoveChildFromFolder = (
+    folderId: string,
+    childId: string,
+    childName: string,
+  ) => {
+    Alert.alert(
+      "Remove from Folder",
+      `Remove ${childName} from this folder?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => {
+            const updated = folders.map((f) =>
+              f.id === folderId
+                ? { ...f, childIds: f.childIds.filter((id) => id !== childId) }
+                : f,
+            );
+            saveFolders(updated);
+          },
+        },
+      ],
+    );
+  };
+
+  const activeFolder = folders.find((f) => f.id === activeFolderId);
+  const displayChildren =
+    viewMode === "folders" && activeFolder
+      ? children.filter((c) => c.id && activeFolder.childIds.includes(c.id))
+      : children;
+
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
     <View style={{ flex: 1 }}>
@@ -185,6 +328,131 @@ export default function HomeScreen() {
           <EmergencyQuickViewCard onPress={() => setShowEmergency(true)} />
         )}
 
+        {/* ── View Mode Toggle ──────────────────────────────────────────── */}
+        {children.length > 0 && (
+          <View style={localStyles.viewToggle}>
+            <TouchableOpacity
+              style={[
+                localStyles.toggleButton,
+                viewMode === "all" && localStyles.toggleButtonActive,
+              ]}
+              onPress={() => {
+                setViewMode("all");
+                setActiveFolderId(null);
+              }}
+            >
+              <AppText
+                style={[
+                  localStyles.toggleText,
+                  viewMode === "all" && localStyles.toggleTextActive,
+                ]}
+              >
+                All
+              </AppText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                localStyles.toggleButton,
+                viewMode === "folders" && localStyles.toggleButtonActive,
+              ]}
+              onPress={() => setViewMode("folders")}
+            >
+              <AppText
+                style={[
+                  localStyles.toggleText,
+                  viewMode === "folders" && localStyles.toggleTextActive,
+                ]}
+              >
+                Folders
+              </AppText>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ── Folders View ─────────────────────────────────────────────── */}
+        {viewMode === "folders" && !activeFolderId && children.length > 0 && (
+          <View style={styles.childrenList}>
+            {folders.map((folder) => {
+              const count = folder.childIds.filter((id) =>
+                children.some((c) => c.id === id),
+              ).length;
+              return (
+                <TouchableOpacity
+                  key={folder.id}
+                  style={[sharedStyles.card, localStyles.folderCard]}
+                  onPress={() => setActiveFolderId(folder.id)}
+                  onLongPress={() =>
+                    Alert.alert(folder.name, "Choose an action:", [
+                      {
+                        text: "Rename",
+                        onPress: () =>
+                          handleRenameFolder(folder.id, folder.name),
+                      },
+                      {
+                        text: "Delete Folder",
+                        style: "destructive",
+                        onPress: () =>
+                          handleDeleteFolder(folder.id, folder.name),
+                      },
+                      { text: "Cancel", style: "cancel" },
+                    ])
+                  }
+                  activeOpacity={0.7}
+                >
+                  <View style={localStyles.folderCardContent}>
+                    <MaterialIcons
+                      name="folder"
+                      size={32}
+                      color={palette.teal}
+                    />
+                    <View style={{ flex: 1, marginLeft: spacing.md }}>
+                      <AppText style={localStyles.folderName}>
+                        {folder.name}
+                      </AppText>
+                      <AppText style={localStyles.folderCount}>
+                        {count} {count === 1 ? "child" : "children"}
+                      </AppText>
+                    </View>
+                    <MaterialIcons
+                      name="chevron-right"
+                      size={24}
+                      color={colors.textSubtle}
+                    />
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity
+              style={[sharedStyles.secondaryButton, { marginTop: spacing.md }]}
+              onPress={handleCreateFolder}
+            >
+              <AppText variant="label" style={sharedStyles.secondaryButtonText}>
+                + New Folder
+              </AppText>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ── Folder Breadcrumb ────────────────────────────────────────── */}
+        {viewMode === "folders" && activeFolder && (
+          <View style={localStyles.breadcrumb}>
+            <TouchableOpacity
+              onPress={() => setActiveFolderId(null)}
+              style={localStyles.breadcrumbBack}
+            >
+              <MaterialIcons
+                name="arrow-back"
+                size={20}
+                color={palette.teal}
+              />
+              <AppText style={localStyles.breadcrumbText}>Folders</AppText>
+            </TouchableOpacity>
+            <AppText style={localStyles.breadcrumbFolder}>
+              {activeFolder.name}
+            </AppText>
+          </View>
+        )}
+
         {/* ── Profile List or Empty State ───────────────────────────────── */}
         {children.length === 0 ? (
           <View style={localStyles.emptyState}>
@@ -196,9 +464,17 @@ export default function HomeScreen() {
               Add your first child profile so you&apos;re always prepared
             </AppText>
           </View>
-        ) : (
+        ) : viewMode === "folders" && !activeFolderId ? null : (
           <View style={styles.childrenList}>
-            {children.map((child) => {
+            {displayChildren.length === 0 && activeFolderId && (
+              <View style={localStyles.emptyState}>
+                <AppText style={localStyles.emptySubtitle}>
+                  No children in this folder yet. Use "Add to Folder" from the
+                  All view.
+                </AppText>
+              </View>
+            )}
+            {displayChildren.map((child) => {
               const name =
                 child.fullName ||
                 `${child.firstName ?? ""} ${child.lastName ?? ""}`.trim() ||
@@ -282,6 +558,42 @@ export default function HomeScreen() {
                       />
                       <AppText style={styles.deleteButtonText}>Delete</AppText>
                     </TouchableOpacity>
+                    {viewMode === "all" && (
+                      <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => handleAddChildToFolder(child.id!)}
+                        activeOpacity={0.7}
+                      >
+                        <MaterialIcons
+                          name="folder-open"
+                          size={16}
+                          color={palette.teal}
+                        />
+                        <AppText style={styles.editButtonText}>Folder</AppText>
+                      </TouchableOpacity>
+                    )}
+                    {viewMode === "folders" && activeFolderId && (
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() =>
+                          handleRemoveChildFromFolder(
+                            activeFolderId,
+                            child.id!,
+                            name,
+                          )
+                        }
+                        activeOpacity={0.7}
+                      >
+                        <MaterialIcons
+                          name="folder-off"
+                          size={16}
+                          color={palette.red}
+                        />
+                        <AppText style={styles.deleteButtonText}>
+                          Remove
+                        </AppText>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </TouchableOpacity>
               );
@@ -329,6 +641,46 @@ export default function HomeScreen() {
         profiles={children}
         onClose={() => setShowEmergency(false)}
       />
+
+      {/* ── Folder Name Input Modal ─────────────────────────────────────── */}
+      <Modal
+        visible={folderModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFolderModalVisible(false)}
+      >
+        <View style={localStyles.modalOverlay}>
+          <View style={localStyles.modalContent}>
+            <AppText style={localStyles.modalTitle}>
+              {folderModalTitle}
+            </AppText>
+            <TextInput
+              style={localStyles.modalInput}
+              value={folderModalValue}
+              onChangeText={setFolderModalValue}
+              placeholder="Folder name"
+              autoFocus
+            />
+            <View style={localStyles.modalButtons}>
+              <TouchableOpacity
+                style={localStyles.modalCancelButton}
+                onPress={() => setFolderModalVisible(false)}
+              >
+                <AppText style={localStyles.modalCancelText}>Cancel</AppText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={localStyles.modalConfirmButton}
+                onPress={() => {
+                  setFolderModalVisible(false);
+                  folderModalCallback?.(folderModalValue);
+                }}
+              >
+                <AppText style={localStyles.modalConfirmText}>Done</AppText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -489,6 +841,128 @@ const localStyles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 10,
     elevation: 8,
+  },
+  viewToggle: {
+    flexDirection: "row",
+    backgroundColor: colors.cardBorder,
+    borderRadius: radius.sm,
+    padding: 3,
+    marginBottom: spacing.lg,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    alignItems: "center",
+    borderRadius: radius.sm - 2,
+  },
+  toggleButtonActive: {
+    backgroundColor: palette.white,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  toggleText: {
+    fontSize: typography.body,
+    fontWeight: "600",
+    color: colors.textSubtle,
+  },
+  toggleTextActive: {
+    color: palette.navy,
+  },
+  folderCard: {
+    marginBottom: spacing.sm,
+  },
+  folderCardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: spacing.lg,
+  },
+  folderName: {
+    fontSize: typography.default,
+    fontWeight: "700",
+    color: palette.navy,
+  },
+  folderCount: {
+    fontSize: typography.small,
+    color: colors.textSubtle,
+    marginTop: 2,
+  },
+  breadcrumb: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  breadcrumbBack: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  breadcrumbText: {
+    fontSize: typography.body,
+    color: palette.teal,
+    fontWeight: "600",
+  },
+  breadcrumbFolder: {
+    fontSize: typography.body,
+    color: palette.navy,
+    fontWeight: "700",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.xxl,
+  },
+  modalContent: {
+    backgroundColor: palette.white,
+    borderRadius: radius.lg,
+    padding: spacing.xxl,
+    width: "100%",
+    maxWidth: 360,
+  },
+  modalTitle: {
+    fontSize: typography.subtitle,
+    fontWeight: "700",
+    color: palette.navy,
+    marginBottom: spacing.lg,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    fontSize: typography.default,
+    color: palette.navy,
+    marginBottom: spacing.lg,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: spacing.md,
+  },
+  modalCancelButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  modalCancelText: {
+    fontSize: typography.default,
+    color: colors.textSubtle,
+    fontWeight: "600",
+  },
+  modalConfirmButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: palette.teal,
+    borderRadius: radius.sm,
+  },
+  modalConfirmText: {
+    fontSize: typography.default,
+    color: palette.white,
+    fontWeight: "600",
   },
   emergencyFab: {
     position: "absolute",

@@ -34,8 +34,18 @@ type ExtendedChildProfile = ChildProfile & {
   lifeThreatAllergies?: string;
   emergencyMedications?: string;
   communicationNeeds?: string;
+  communicationNeedsOther?: string;
   languageSpoken?: string;
+  unitSystem?: string;
   otherMedicalNotes?: string;
+  skinColor?: string;
+  skinColorOther?: string;
+  heightFeet?: number;
+  heightInches?: number;
+  hasTrackingDevice?: string;
+  trackingDeviceType?: string;
+  trackingDeviceTypeOther?: string;
+  trackingDeviceDetails?: string;
   schoolDaycareType?: string;
   schoolDaycareName?: string;
   sportsTeams?: string;
@@ -179,6 +189,29 @@ export function ChildPassportCard({ child, onCapture }: Props) {
         ? "School"
         : null;
 
+  const displaySkinColor =
+    profile.skinColor === "other" ? profile.skinColorOther : profile.skinColor;
+
+  const displayHeight =
+    profile.unitSystem === "metric"
+      ? (child.height ? `${child.height} cm` : null)
+      : profile.heightFeet != null
+        ? `${profile.heightFeet} ft ${profile.heightInches ?? 0} in`
+        : child.height
+          ? `${child.height} cm`
+          : null;
+
+  const displayWeight = child.weight
+    ? `${child.weight} ${profile.unitSystem === "metric" ? "kg" : "lbs"}`
+    : null;
+
+  const displayTrackingDevice =
+    profile.hasTrackingDevice === "yes"
+      ? profile.trackingDeviceType === "other"
+        ? profile.trackingDeviceTypeOther
+        : profile.trackingDeviceType
+      : null;
+
   const identityItems: Item[] = [
     { label: "Full Name", value: displayName },
     { label: "Date of Birth", value: displayDob },
@@ -191,20 +224,23 @@ export function ChildPassportCard({ child, onCapture }: Props) {
     },
     { label: "Sex", value: displaySex },
     { label: "Ethnicity", value: profile.ethnicity },
-    { label: "Height", value: child.height ? `${child.height} cm` : null },
-    { label: "Weight", value: child.weight ? `${child.weight} kg` : null },
+    { label: "Skin Color", value: formatChoice(displaySkinColor) },
+    { label: "Language(s) Spoken", value: profile.languageSpoken },
+    { label: "Height", value: displayHeight },
+    { label: "Weight", value: displayWeight },
+    { label: "Tracking Device", value: formatChoice(displayTrackingDevice) },
+    { label: "Device Details", value: profile.hasTrackingDevice === "yes" ? profile.trackingDeviceDetails : null },
   ];
 
   const medicalItems: Item[] = [
     { label: "Life-Threat Allergies", value: profile.lifeThreatAllergies },
     { label: "Emergency Medications", value: profile.emergencyMedications },
-    { label: "Communication", value: formatChoice(profile.communicationNeeds) },
     {
-      label: "Language Spoken",
+      label: "Communication",
       value:
-        profile.communicationNeeds === "language_barrier"
-          ? profile.languageSpoken
-          : null,
+        profile.communicationNeeds === "other"
+          ? profile.communicationNeedsOther
+          : formatChoice(profile.communicationNeeds),
     },
     { label: "Other Medical Notes", value: displayMedicalNotes },
     {
@@ -273,12 +309,12 @@ export function ChildPassportCard({ child, onCapture }: Props) {
   ];
 
   const guardianItems: Item[] = [
-    { label: "Guardian 1", value: guardian1.name },
-    { label: "Guardian 1 Phone", value: guardian1.phone },
-    { label: "Guardian 1 Address", value: guardian1.address },
-    { label: "Guardian 2", value: guardian2.name },
-    { label: "Guardian 2 Phone", value: guardian2.phone },
-    { label: "Guardian 2 Address", value: guardian2.address },
+    { label: "Primary Contact 1", value: guardian1.name },
+    { label: "Contact 1 Phone", value: guardian1.phone },
+    { label: "Contact 1 Address", value: guardian1.address },
+    { label: "Primary Contact 2", value: guardian2.name },
+    { label: "Contact 2 Phone", value: guardian2.phone },
+    { label: "Contact 2 Address", value: guardian2.address },
   ];
 
   const emergencyItems: Item[] = (child.emergencyContacts || []).flatMap(

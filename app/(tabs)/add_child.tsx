@@ -63,23 +63,53 @@ const childSchema = z.object({
   dateOfBirth: z.string().min(1, "Date of birth is required"),
   sex: z.string().min(1, "Sex is required"),
   ethnicity: z.string().min(2, "Ethnicity is required"),
+  skinColor: z.string().min(1, "Skin color is required"),
+  skinColorOther: z.string().optional(),
+  languageSpoken: z.string().min(1, "Language spoken is required"),
+  unitSystem: z.enum(["imperial", "metric"]),
   height: z.preprocess(
-    (v) => parseFloat(String(v)),
-    z
-      .number()
-      .min(30, "Height (cm) seems too low")
-      .max(250, "Height seems too high"),
+    (v) => (v === undefined || v === "" ? undefined : parseFloat(String(v))),
+    z.number().min(30, "Height (cm) seems too low").max(250, "Height seems too high").optional(),
+  ),
+  heightFeet: z.preprocess(
+    (v) => (v === undefined || v === "" ? undefined : parseFloat(String(v))),
+    z.number().min(1, "Height (ft) seems too low").max(8, "Height (ft) seems too high").optional(),
+  ),
+  heightInches: z.preprocess(
+    (v) => (v === undefined || v === "" ? undefined : parseFloat(String(v))),
+    z.number().min(0, "Inches must be 0 or more").max(11, "Inches must be 11 or less").optional(),
   ),
   weight: z.preprocess(
-    (v) => parseFloat(String(v)),
-    z.number().min(2, "Weight (kg) seems too low"),
+    (v) => (v === undefined || v === "" ? undefined : parseFloat(String(v))),
+    z.number().min(1, "Weight seems too low").optional(),
   ),
+  hasTrackingDevice: z.string().optional(),
+  trackingDeviceType: z.string().optional(),
+  trackingDeviceTypeOther: z.string().optional(),
+  trackingDeviceDetails: z.string().optional(),
 
-  // ── Step 2: Medical ───────────────────────────────────────────────────────
+  // ── Step 2: Visual Identifiers ────────────────────────────────────────────
+  eyeColor: z.string().min(1, "Eye color is required"),
+  eyeColorOther: z.string().optional(),
+  hairColor: z.string().min(1, "Hair color is required"),
+  hairColorOther: z.string().optional(),
+  hairStyle: z.string().optional(),
+  hasHat: z.boolean().optional(),
+  hatColor: z.string().optional(),
+  hatStyle: z.string().optional(),
+  topColor: z.string().optional(),
+  pantsColor: z.string().optional(),
+  shoesColor: z.string().optional(),
+  shoesType: z.string().optional(),
+  hasGlasses: z.boolean().optional(),
+  hasHearingAids: z.boolean().optional(),
+  otherSensoryNeeds: z.string().optional(),
+
+  // ── Step 3: Medical ───────────────────────────────────────────────────────
   lifeThreatAllergies: z.string().optional(),
   emergencyMedications: z.string().optional(),
   communicationNeeds: z.string().optional(),
-  languageSpoken: z.string().optional(),
+  communicationNeedsOther: z.string().optional(),
   otherMedicalNotes: z.string().optional(),
   imageUri: z.string().optional(),
   hasBirthmarks: z.string().optional(),
@@ -96,27 +126,10 @@ const childSchema = z.object({
   schoolDaycareName: z.string().optional(),
   sportsTeams: z.string().optional(),
 
-  // ── Step 3: Contacts ──────────────────────────────────────────────────────
+  // ── Step 4: Contacts ──────────────────────────────────────────────────────
   guardian1: primaryGuardianSchema,
   guardian2: guardianSchema,
   emergencyContacts: z.array(emergencyContactSchema),
-
-  // ── Step 4: Visual Identifiers ────────────────────────────────────────────
-  eyeColor: z.string().min(1, "Eye color is required"),
-  eyeColorOther: z.string().optional(),
-  hairColor: z.string().min(1, "Hair color is required"),
-  hairColorOther: z.string().optional(),
-  hairStyle: z.string().optional(),
-  hasHat: z.boolean().optional(),
-  hatColor: z.string().optional(),
-  hatStyle: z.string().optional(),
-  topColor: z.string().optional(),
-  pantsColor: z.string().optional(),
-  shoesColor: z.string().optional(),
-  shoesType: z.string().optional(),
-  hasGlasses: z.boolean().optional(),
-  hasHearingAids: z.boolean().optional(),
-  otherSensoryNeeds: z.string().optional(),
 });
 
 type ChildFormData = z.infer<typeof childSchema>;
@@ -129,12 +142,12 @@ const STEP_FIELDS: Record<number, (keyof ChildFormData)[]> = {
     "dateOfBirth",
     "sex",
     "ethnicity",
-    "height",
-    "weight",
+    "skinColor",
+    "languageSpoken",
   ],
-  2: [],
-  3: ["guardian1", "guardian2", "emergencyContacts"],
-  4: ["eyeColor", "hairColor"],
+  2: ["eyeColor", "hairColor"],
+  3: [],
+  4: ["guardian1", "guardian2", "emergencyContacts"],
 };
 
 const YES_NO_OPTIONS = [
@@ -158,6 +171,26 @@ const COMMUNICATION_OPTIONS = [
   { label: "Verbal", value: "verbal" },
   { label: "Non-verbal", value: "non_verbal" },
   { label: "Language Barrier", value: "language_barrier" },
+  { label: "Other", value: "other" },
+];
+
+const SKIN_COLOR_OPTIONS = [
+  { label: "Light", value: "light" },
+  { label: "Fair", value: "fair" },
+  { label: "Medium", value: "medium" },
+  { label: "Olive", value: "olive" },
+  { label: "Brown", value: "brown" },
+  { label: "Dark Brown", value: "dark_brown" },
+  { label: "Dark", value: "dark" },
+  { label: "Other", value: "other" },
+];
+
+const TRACKING_DEVICE_OPTIONS = [
+  { label: "Phone", value: "phone" },
+  { label: "Watch", value: "watch" },
+  { label: "AirTag", value: "airtag" },
+  { label: "Tile", value: "tile" },
+  { label: "Other", value: "other" },
 ];
 
 const EYE_COLOR_OPTIONS = [
@@ -232,12 +265,22 @@ export default function AddChildScreen() {
       dateOfBirth: "",
       sex: "",
       ethnicity: "",
+      skinColor: "",
+      skinColorOther: "",
+      languageSpoken: "",
+      unitSystem: "imperial" as const,
       height: undefined,
+      heightFeet: undefined,
+      heightInches: undefined,
       weight: undefined,
+      hasTrackingDevice: "",
+      trackingDeviceType: "",
+      trackingDeviceTypeOther: "",
+      trackingDeviceDetails: "",
       lifeThreatAllergies: "",
       emergencyMedications: "",
       communicationNeeds: "",
-      languageSpoken: "",
+      communicationNeedsOther: "",
       otherMedicalNotes: "",
       imageUri: "",
       hasBirthmarks: "no",
@@ -275,6 +318,10 @@ export default function AddChildScreen() {
   });
 
   // ─── Watched values ───────────────────────────────────────────────────────
+  const skinColor = watch("skinColor");
+  const unitSystem = watch("unitSystem");
+  const hasTrackingDevice = watch("hasTrackingDevice");
+  const trackingDeviceType = watch("trackingDeviceType");
   const communicationNeeds = watch("communicationNeeds");
   const hasHat = watch("hasHat");
   const hasGlasses = watch("hasGlasses");
@@ -370,12 +417,22 @@ export default function AddChildScreen() {
       dateOfBirth: toText(raw.dateOfBirth),
       sex: toText(raw.sex || raw.gender),
       ethnicity: toText(raw.ethnicity),
+      skinColor: toText(raw.skinColor),
+      skinColorOther: toText(raw.skinColorOther),
+      languageSpoken: toText(raw.languageSpoken),
+      unitSystem: raw.unitSystem === "metric" ? "metric" : "imperial",
       height: toOptionalNumber(raw.height) as any,
+      heightFeet: toOptionalNumber(raw.heightFeet) as any,
+      heightInches: toOptionalNumber(raw.heightInches) as any,
       weight: toOptionalNumber(raw.weight) as any,
+      hasTrackingDevice: toText(raw.hasTrackingDevice),
+      trackingDeviceType: toText(raw.trackingDeviceType),
+      trackingDeviceTypeOther: toText(raw.trackingDeviceTypeOther),
+      trackingDeviceDetails: toText(raw.trackingDeviceDetails),
       lifeThreatAllergies: toText(raw.lifeThreatAllergies),
       emergencyMedications: toText(raw.emergencyMedications),
       communicationNeeds: toText(raw.communicationNeeds),
-      languageSpoken: toText(raw.languageSpoken),
+      communicationNeedsOther: toText(raw.communicationNeedsOther),
       otherMedicalNotes: toText(raw.otherMedicalNotes || raw.medicalNotes),
       imageUri: toText(raw.imageUri),
       hasBirthmarks: toText(raw.hasBirthmarks) || "no",
@@ -467,12 +524,66 @@ export default function AddChildScreen() {
     confirmDiscard(() => router.back());
   };
 
+  const getStep1PhysicalFields = (): (keyof ChildFormData)[] => {
+    const unit = getValues("unitSystem");
+    return unit === "metric"
+      ? ["height", "weight"]
+      : ["heightFeet", "heightInches", "weight"];
+  };
+
+  const validateStep = async (step: number): Promise<boolean> => {
+    const staticFields = STEP_FIELDS[step];
+    const allFields =
+      step === 1
+        ? [...staticFields, ...getStep1PhysicalFields()]
+        : staticFields;
+
+    if (allFields.length === 0) return true;
+
+    // For physical fields, do manual checks since Zod marks them optional
+    if (step === 1) {
+      const unit = getValues("unitSystem");
+      let manualError = false;
+      if (unit === "metric") {
+        const h = getValues("height");
+        const w = getValues("weight");
+        if (h === undefined || h === null || String(h).trim() === "") {
+          manualError = true;
+          Alert.alert("Validation", "Height (cm) is required.");
+          return false;
+        }
+        if (w === undefined || w === null || String(w).trim() === "") {
+          manualError = true;
+          Alert.alert("Validation", "Weight (kg) is required.");
+          return false;
+        }
+      } else {
+        const ft = getValues("heightFeet");
+        const inches = getValues("heightInches");
+        const w = getValues("weight");
+        if (ft === undefined || ft === null || String(ft).trim() === "") {
+          manualError = true;
+          Alert.alert("Validation", "Height (ft) is required.");
+          return false;
+        }
+        if (inches === undefined || inches === null || String(inches).trim() === "") {
+          manualError = true;
+          Alert.alert("Validation", "Height (in) is required.");
+          return false;
+        }
+        if (w === undefined || w === null || String(w).trim() === "") {
+          manualError = true;
+          Alert.alert("Validation", "Weight (lbs) is required.");
+          return false;
+        }
+      }
+    }
+
+    return await trigger(allFields as any);
+  };
+
   const handleNext = async () => {
-    const fieldsToValidate = STEP_FIELDS[currentStep];
-    const valid =
-      fieldsToValidate.length === 0
-        ? true
-        : await trigger(fieldsToValidate as any);
+    const valid = await validateStep(currentStep);
     if (!valid) return;
     if (!completedSteps.includes(currentStep)) {
       setCompletedSteps((prev) => [...prev, currentStep]);
@@ -489,11 +600,8 @@ export default function AddChildScreen() {
       return;
     }
     for (let s = currentStep; s < step; s++) {
-      const fields = STEP_FIELDS[s];
-      if (fields.length > 0) {
-        const valid = await trigger(fields as any);
-        if (!valid) return;
-      }
+      const valid = await validateStep(s);
+      if (!valid) return;
       if (!completedSteps.includes(s)) {
         setCompletedSteps((prev) => [...prev, s]);
       }
@@ -710,9 +818,9 @@ export default function AddChildScreen() {
   // ─── Step titles ──────────────────────────────────────────────────────────
   const stepTitles: Record<number, { title: string; subtitle: string }> = {
     1: { title: "Essential ID", subtitle: "Basic identification information" },
-    2: { title: "Medical", subtitle: "Health and communication needs" },
-    3: { title: "Contacts", subtitle: "Guardians and emergency contacts" },
-    4: { title: "Visual ID", subtitle: "Appearance and identifiers" },
+    2: { title: "Visual ID", subtitle: "Appearance and identifiers" },
+    3: { title: "Medical", subtitle: "Health and communication needs" },
+    4: { title: "Contacts", subtitle: "Guardians and emergency contacts" },
   };
 
   // ─── Step Renders ─────────────────────────────────────────────────────────
@@ -812,29 +920,161 @@ export default function AddChildScreen() {
           placeholder="e.g. Hispanic, Black, Asian, White, Mixed..."
           error={errors.ethnicity?.message}
         />
+
+        {/* Skin Color */}
+        <AppDropdown
+          control={control}
+          name="skinColor"
+          label="Skin Color"
+          options={SKIN_COLOR_OPTIONS}
+          placeholder="Select"
+          error={errors.skinColor?.message}
+        />
+        {skinColor === "other" && (
+          <FormField
+            control={control}
+            name="skinColorOther"
+            label="Describe Skin Color"
+            placeholder="Enter skin color"
+          />
+        )}
+
+        {/* Language(s) Spoken */}
+        <FormField
+          control={control}
+          name="languageSpoken"
+          label="Language(s) Spoken"
+          placeholder="e.g. English, Spanish, Mandarin"
+          error={errors.languageSpoken?.message}
+        />
       </FormSection>
 
       <FormSection title="Physical" subtitle="All fields required">
-        <View style={styles.row}>
-          <FormField
-            control={control}
-            name="height"
-            label="Height (cm)"
-            placeholder="e.g. 120"
-            keyboardType="numeric"
-            error={errors.height?.message}
-            containerStyle={{ flex: 1 }}
-          />
-          <FormField
-            control={control}
-            name="weight"
-            label="Weight (kg)"
-            placeholder="e.g. 25"
-            keyboardType="numeric"
-            error={errors.weight?.message}
-            containerStyle={{ flex: 1 }}
-          />
+        <View style={styles.toggleRow}>
+          <AppText style={styles.toggleLabel}>Units</AppText>
+          <View style={styles.unitToggle}>
+            <TouchableOpacity
+              style={[
+                styles.unitToggleButton,
+                unitSystem === "imperial" && styles.unitToggleButtonActive,
+              ]}
+              onPress={() => setValue("unitSystem", "imperial")}
+            >
+              <AppText
+                style={[
+                  styles.unitToggleText,
+                  unitSystem === "imperial" && styles.unitToggleTextActive,
+                ]}
+              >
+                ft / lbs
+              </AppText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.unitToggleButton,
+                unitSystem === "metric" && styles.unitToggleButtonActive,
+              ]}
+              onPress={() => setValue("unitSystem", "metric")}
+            >
+              <AppText
+                style={[
+                  styles.unitToggleText,
+                  unitSystem === "metric" && styles.unitToggleTextActive,
+                ]}
+              >
+                cm / kg
+              </AppText>
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {unitSystem === "imperial" ? (
+          <View style={styles.row}>
+            <FormField
+              control={control}
+              name="heightFeet"
+              label="Height (ft)"
+              placeholder="e.g. 4"
+              keyboardType="numeric"
+              error={errors.heightFeet?.message}
+              containerStyle={{ flex: 1 }}
+            />
+            <FormField
+              control={control}
+              name="heightInches"
+              label="Height (in)"
+              placeholder="e.g. 2"
+              keyboardType="numeric"
+              error={errors.heightInches?.message}
+              containerStyle={{ flex: 1 }}
+            />
+            <FormField
+              control={control}
+              name="weight"
+              label="Weight (lbs)"
+              placeholder="e.g. 55"
+              keyboardType="numeric"
+              error={errors.weight?.message}
+              containerStyle={{ flex: 1 }}
+            />
+          </View>
+        ) : (
+          <View style={styles.row}>
+            <FormField
+              control={control}
+              name="height"
+              label="Height (cm)"
+              placeholder="e.g. 120"
+              keyboardType="numeric"
+              error={errors.height?.message}
+              containerStyle={{ flex: 1 }}
+            />
+            <FormField
+              control={control}
+              name="weight"
+              label="Weight (kg)"
+              placeholder="e.g. 25"
+              keyboardType="numeric"
+              error={errors.weight?.message}
+              containerStyle={{ flex: 1 }}
+            />
+          </View>
+        )}
+      </FormSection>
+
+      <FormSection title="Tracking Device" subtitle="Optional">
+        <AppDropdown
+          control={control}
+          name="hasTrackingDevice"
+          label="Does your child have a tracking device?"
+          options={YES_NO_OPTIONS}
+          placeholder="Select"
+        />
+        {hasTrackingDevice === "yes" && (
+          <>
+            <AppDropdown
+              control={control}
+              name="trackingDeviceType"
+              label="Device Type"
+              options={TRACKING_DEVICE_OPTIONS}
+              placeholder="Select"
+            />
+            {trackingDeviceType === "other" && (
+              <FormField
+                control={control}
+                name="trackingDeviceTypeOther"
+                label="Describe Device"
+                placeholder="Enter device type"
+              />
+            )}
+            <FormField
+              control={control}
+              name="trackingDeviceDetails"
+              label="Device Details (Optional)"
+              placeholder="e.g. iPhone 15 in blue case, Apple Watch on left wrist"
+            />
+          </>
+        )}
       </FormSection>
     </>
   );
@@ -865,13 +1105,12 @@ export default function AddChildScreen() {
           options={COMMUNICATION_OPTIONS}
           placeholder="Select"
         />
-        {communicationNeeds === "language_barrier" && (
+        {communicationNeeds === "other" && (
           <FormField
             control={control}
-            name="languageSpoken"
-            label="Language They Speak"
-            placeholder="e.g. Spanish, Mandarin, French"
-            error={errors.languageSpoken?.message}
+            name="communicationNeedsOther"
+            label="Describe Communication Needs"
+            placeholder="Describe the communication needs"
           />
         )}
         <FormField
@@ -1005,7 +1244,7 @@ export default function AddChildScreen() {
   const renderStep3 = () => (
     <>
       <FormSection
-        title="Primary Guardian 1"
+        title="Primary Contact 1"
         subtitle="Name, phone and address required"
       >
         <FormField
@@ -1033,7 +1272,7 @@ export default function AddChildScreen() {
       </FormSection>
 
       <FormSection
-        title="Primary Guardian 2"
+        title="Primary Contact 2"
         subtitle="Name and phone required"
       >
         <FormField
@@ -1061,7 +1300,7 @@ export default function AddChildScreen() {
 
       <FormSection
         title="Additional Emergency Contacts"
-        subtitle="Optional — must not be a parent or guardian"
+        subtitle="Optional — must not be a primary contact"
       >
         {fields.map((field, index) => (
           <View key={field.id} style={styles.contactCard}>
@@ -1284,9 +1523,9 @@ export default function AddChildScreen() {
         >
           {/* Step Content */}
           {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep2()}
-          {currentStep === 3 && renderStep3()}
-          {currentStep === 4 && renderStep4()}
+          {currentStep === 2 && renderStep4()}
+          {currentStep === 3 && renderStep2()}
+          {currentStep === 4 && renderStep3()}
 
           {/* Navigation Buttons */}
           <View style={styles.navButtonRow}>
@@ -1320,7 +1559,7 @@ export default function AddChildScreen() {
             )}
           </View>
 
-          {/* Export + Delete (step 4 or edit mode) */}
+          {/* Export + Delete (last step or edit mode) */}
           {(currentStep === 4 || isEditMode) && (
             <>
               <TouchableOpacity
@@ -1374,8 +1613,10 @@ export default function AddChildScreen() {
               ["Date of Birth", captureData?.dateOfBirth],
               ["Sex", captureData?.sex],
               ["Ethnicity", captureData?.ethnicity],
-              ["Height (cm)", captureData?.height],
-              ["Weight (kg)", captureData?.weight],
+              ["Height", captureData?.unitSystem === "metric"
+                ? (captureData?.height != null ? `${captureData.height} cm` : undefined)
+                : (captureData?.heightFeet != null ? `${captureData.heightFeet} ft ${captureData.heightInches ?? 0} in` : undefined)],
+              [captureData?.unitSystem === "metric" ? "Weight (kg)" : "Weight (lbs)", captureData?.weight],
             ].map(([label, value]) =>
               value ? (
                 <View key={label as string} style={styles.captureRow}>
@@ -1394,7 +1635,7 @@ export default function AddChildScreen() {
             )}
             {captureData?.guardian1?.name && (
               <>
-                <AppText style={styles.captureSection}>Guardian 1</AppText>
+                <AppText style={styles.captureSection}>Primary Contact 1</AppText>
                 <AppText style={styles.captureNotes}>
                   {captureData.guardian1.name} — {captureData.guardian1.phone}
                 </AppText>

@@ -28,13 +28,23 @@ type ChildProfile = {
   dateOfBirth?: string;
   sex?: string;
   ethnicity?: string;
+  unitSystem?: string;
   height?: number;
+  heightFeet?: number;
+  heightInches?: number;
   weight?: number;
+  skinColor?: string;
+  skinColorOther?: string;
   lifeThreatAllergies?: string;
   emergencyMedications?: string;
   communicationNeeds?: string;
+  communicationNeedsOther?: string;
   languageSpoken?: string;
   otherMedicalNotes?: string;
+  hasTrackingDevice?: string;
+  trackingDeviceType?: string;
+  trackingDeviceTypeOther?: string;
+  trackingDeviceDetails?: string;
   guardian1?: { name?: string; phone?: string; address?: string };
   guardian2?: { name?: string; phone?: string; address?: string };
   emergencyContacts?: {
@@ -257,17 +267,51 @@ export default function ViewChildScreen() {
           <InfoRow label="Sex" value={child.sex} />
           <InfoRow label="Ethnicity" value={child.ethnicity} />
           <InfoRow
+            label="Skin Color"
+            value={
+              child.skinColor === "other"
+                ? child.skinColorOther
+                : child.skinColor
+            }
+          />
+          <InfoRow label="Language(s) Spoken" value={child.languageSpoken} />
+          <InfoRow
             label="Height"
             value={
-              child.height !== undefined ? `${child.height} cm` : undefined
+              child.unitSystem === "metric"
+                ? (child.height != null ? `${child.height} cm` : undefined)
+                : child.heightFeet != null
+                  ? `${child.heightFeet} ft ${child.heightInches ?? 0} in`
+                  : child.height != null
+                    ? `${child.height} cm`
+                    : undefined
             }
           />
           <InfoRow
             label="Weight"
             value={
-              child.weight !== undefined ? `${child.weight} kg` : undefined
+              child.weight != null
+                ? `${child.weight} ${child.unitSystem === "metric" ? "kg" : "lbs"}`
+                : undefined
             }
           />
+          {child.hasTrackingDevice === "yes" && (
+            <>
+              <GroupLabel title="Tracking Device" />
+              <InfoRow
+                label="Device Type"
+                value={
+                  child.trackingDeviceType === "other"
+                    ? child.trackingDeviceTypeOther
+                    : child.trackingDeviceType
+                }
+              />
+              <InfoRow
+                label="Device Details"
+                value={child.trackingDeviceDetails}
+              />
+            </>
+          )}
 
           {(child.lifeThreatAllergies ||
             child.emergencyMedications ||
@@ -285,11 +329,12 @@ export default function ViewChildScreen() {
               />
               <InfoRow
                 label="Communication Needs"
-                value={child.communicationNeeds}
+                value={
+                  child.communicationNeeds === "other"
+                    ? child.communicationNeedsOther
+                    : child.communicationNeeds
+                }
               />
-              {child.communicationNeeds === "language_barrier" && (
-                <InfoRow label="Language Spoken" value={child.languageSpoken} />
-              )}
               <InfoRow
                 label="Other Medical Notes"
                 value={child.otherMedicalNotes}
@@ -300,7 +345,7 @@ export default function ViewChildScreen() {
           <SectionHeading title="Contacts" />
           {child.guardian1?.name && (
             <>
-              <GroupLabel title="Primary Guardian 1" />
+              <GroupLabel title="Primary Contact 1" />
               <InfoRow label="Name" value={child.guardian1.name} />
               <InfoRow label="Phone" value={child.guardian1.phone} />
               <InfoRow label="Address" value={child.guardian1.address} />
@@ -308,7 +353,7 @@ export default function ViewChildScreen() {
           )}
           {child.guardian2?.name && (
             <>
-              <GroupLabel title="Primary Guardian 2" />
+              <GroupLabel title="Primary Contact 2" />
               <InfoRow label="Name" value={child.guardian2.name} />
               <InfoRow label="Phone" value={child.guardian2.phone} />
               <InfoRow label="Address" value={child.guardian2.address} />

@@ -136,6 +136,35 @@ export const addChildStyles = StyleSheet.create({
     flex: 1,
   },
 
+  // ─── Unit Toggle ──────────────────────────────────────────────────────────
+  unitToggle: {
+    flexDirection: "row",
+    backgroundColor: colors.cardBorder,
+    borderRadius: radius.sm,
+    padding: 2,
+  },
+  unitToggleButton: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm - 2,
+  },
+  unitToggleButtonActive: {
+    backgroundColor: colors.white,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  unitToggleText: {
+    fontSize: typography.small,
+    fontWeight: "600",
+    color: colors.textSubtle,
+  },
+  unitToggleTextActive: {
+    color: colors.textPrimary,
+  },
+
   // ─── Emergency Contact Card ───────────────────────────────────────────────
   contactCard: {
     backgroundColor: colors.appBackground,
