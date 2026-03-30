@@ -42,3 +42,8 @@ app-example
 # generated native folders
 /ios
 /android
+
+#AI Stuff
+.claude
+CLAUDE.md
+CLAUDE.local.md

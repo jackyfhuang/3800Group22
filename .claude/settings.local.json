@@ -4,7 +4,8 @@
       "Bash(npm install:*)",
       "Bash(npm uninstall:*)",
       "Bash(npx expo-doctor:*)",
-      "Bash(npx expo:*)"
+      "Bash(npx expo:*)",
+      "Bash(ls:*)"
     ]
   }
 }
