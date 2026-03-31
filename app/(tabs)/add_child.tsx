@@ -93,7 +93,7 @@ const childSchema = z.object({
   eyeColorOther: z.string().optional(),
   hairColor: z.string().min(1, "Hair color is required"),
   hairColorOther: z.string().optional(),
-  hairStyle: z.string().optional(),
+  hairStyle: z.string().min(1, "Hair style is required"),
   hasHat: z.boolean().optional(),
   hatColor: z.string().optional(),
   hatStyle: z.string().optional(),
@@ -106,8 +106,8 @@ const childSchema = z.object({
   otherSensoryNeeds: z.string().optional(),
 
   // ── Step 3: Medical ───────────────────────────────────────────────────────
-  lifeThreatAllergies: z.string().optional(),
-  emergencyMedications: z.string().optional(),
+  lifeThreatAllergies: z.string().min(1, "Life-threatening allergies is required"),
+  emergencyMedications: z.string().min(1, "Emergency medications is required"),
   communicationNeeds: z.string().optional(),
   communicationNeedsOther: z.string().optional(),
   otherMedicalNotes: z.string().optional(),
@@ -144,10 +144,13 @@ const STEP_FIELDS: Record<number, (keyof ChildFormData)[]> = {
     "ethnicity",
     "skinColor",
     "languageSpoken",
+    "eyeColor",
+    "hairColor",
+    "hairStyle",
   ],
-  2: ["eyeColor", "hairColor"],
-  3: [],
-  4: ["guardian1", "guardian2", "emergencyContacts"],
+  2: ["lifeThreatAllergies", "emergencyMedications"],
+  3: ["guardian1", "guardian2", "emergencyContacts"],
+  4: [],
 };
 
 const YES_NO_OPTIONS = [
@@ -255,6 +258,8 @@ export default function AddChildScreen() {
     trigger,
     setValue,
     getValues,
+    setError,
+    clearErrors,
   } = useForm<ChildFormData>({
     resolver: zodResolver(childSchema) as any,
     mode: "onSubmit",
@@ -533,53 +538,82 @@ export default function AddChildScreen() {
 
   const validateStep = async (step: number): Promise<boolean> => {
     const staticFields = STEP_FIELDS[step];
-    const allFields =
-      step === 1
-        ? [...staticFields, ...getStep1PhysicalFields()]
-        : staticFields;
 
-    if (allFields.length === 0) return true;
+    if (step !== 1 && staticFields.length === 0) return true;
 
-    // For physical fields, do manual checks since Zod marks them optional
+    // Always run trigger on Zod-validated fields first so all inline errors appear
+    const zodValid = staticFields.length > 0
+      ? await trigger(staticFields as any)
+      : true;
+
+    // For physical + "other" fields on step 1, do manual checks since Zod marks them optional
     if (step === 1) {
-      const unit = getValues("unitSystem");
       let manualError = false;
+      const unit = getValues("unitSystem");
       if (unit === "metric") {
+        // Clear imperial-only fields so stale errors don't persist
+        clearErrors(["heightFeet", "heightInches"]);
         const h = getValues("height");
         const w = getValues("weight");
         if (h === undefined || h === null || String(h).trim() === "") {
           manualError = true;
-          Alert.alert("Validation", "Height (cm) is required.");
-          return false;
+          setError("height", { type: "manual", message: "Height (cm) is required" });
         }
         if (w === undefined || w === null || String(w).trim() === "") {
           manualError = true;
-          Alert.alert("Validation", "Weight (kg) is required.");
-          return false;
+          setError("weight", { type: "manual", message: "Weight (kg) is required" });
         }
       } else {
+        // Clear metric-only fields so stale errors don't persist
+        clearErrors(["height"]);
         const ft = getValues("heightFeet");
         const inches = getValues("heightInches");
         const w = getValues("weight");
         if (ft === undefined || ft === null || String(ft).trim() === "") {
           manualError = true;
-          Alert.alert("Validation", "Height (ft) is required.");
-          return false;
+          setError("heightFeet", { type: "manual", message: "Height (ft) is required" });
         }
         if (inches === undefined || inches === null || String(inches).trim() === "") {
           manualError = true;
-          Alert.alert("Validation", "Height (in) is required.");
-          return false;
+          setError("heightInches", { type: "manual", message: "Height (in) is required" });
         }
         if (w === undefined || w === null || String(w).trim() === "") {
           manualError = true;
-          Alert.alert("Validation", "Weight (lbs) is required.");
-          return false;
+          setError("weight", { type: "manual", message: "Weight (lbs) is required" });
         }
       }
+
+      const skinColorVal = getValues("skinColor");
+      if (skinColorVal === "other") {
+        const v = getValues("skinColorOther");
+        if (!v || String(v).trim() === "") {
+          manualError = true;
+          setError("skinColorOther", { type: "manual", message: "Please describe the skin color" });
+        }
+      }
+
+      const eyeColorVal = getValues("eyeColor");
+      if (eyeColorVal === "other") {
+        const v = getValues("eyeColorOther");
+        if (!v || String(v).trim() === "") {
+          manualError = true;
+          setError("eyeColorOther", { type: "manual", message: "Please describe the eye color" });
+        }
+      }
+
+      const hairColorVal = getValues("hairColor");
+      if (hairColorVal === "other") {
+        const v = getValues("hairColorOther");
+        if (!v || String(v).trim() === "") {
+          manualError = true;
+          setError("hairColorOther", { type: "manual", message: "Please describe the hair color" });
+        }
+      }
+
+      return zodValid && !manualError;
     }
 
-    return await trigger(allFields as any);
+    return zodValid;
   };
 
   const handleNext = async () => {
@@ -818,9 +852,9 @@ export default function AddChildScreen() {
   // ─── Step titles ──────────────────────────────────────────────────────────
   const stepTitles: Record<number, { title: string; subtitle: string }> = {
     1: { title: "Essential ID", subtitle: "Basic identification information" },
-    2: { title: "Visual ID", subtitle: "Appearance and identifiers" },
-    3: { title: "Medical", subtitle: "Health and communication needs" },
-    4: { title: "Contacts", subtitle: "Guardians and emergency contacts" },
+    2: { title: "Medical", subtitle: "Health and communication needs" },
+    3: { title: "Contacts", subtitle: "Guardians and emergency contacts" },
+    4: { title: "Identification", subtitle: "Appearance and identifiers" },
   };
 
   // ─── Step Renders ─────────────────────────────────────────────────────────
@@ -936,6 +970,7 @@ export default function AddChildScreen() {
             name="skinColorOther"
             label="Describe Skin Color"
             placeholder="Enter skin color"
+            error={errors.skinColorOther?.message}
           />
         )}
 
@@ -1042,61 +1077,78 @@ export default function AddChildScreen() {
         )}
       </FormSection>
 
-      <FormSection title="Tracking Device" subtitle="Optional">
-        <AppDropdown
-          control={control}
-          name="hasTrackingDevice"
-          label="Does your child have a tracking device?"
-          options={YES_NO_OPTIONS}
-          placeholder="Select"
-        />
-        {hasTrackingDevice === "yes" && (
-          <>
+      <FormSection title="Hair & Eyes" subtitle="All fields required">
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
             <AppDropdown
               control={control}
-              name="trackingDeviceType"
-              label="Device Type"
-              options={TRACKING_DEVICE_OPTIONS}
+              name="eyeColor"
+              label="Eye Color"
+              options={EYE_COLOR_OPTIONS}
               placeholder="Select"
+              error={errors.eyeColor?.message}
             />
-            {trackingDeviceType === "other" && (
+            {eyeColor === "other" && (
               <FormField
                 control={control}
-                name="trackingDeviceTypeOther"
-                label="Describe Device"
-                placeholder="Enter device type"
+                name="eyeColorOther"
+                label="Describe Eye Color"
+                placeholder="Enter eye color"
+                error={errors.eyeColorOther?.message}
               />
             )}
-            <FormField
+          </View>
+          <View style={{ flex: 1 }}>
+            <AppDropdown
               control={control}
-              name="trackingDeviceDetails"
-              label="Device Details (Optional)"
-              placeholder="e.g. iPhone 15 in blue case, Apple Watch on left wrist"
+              name="hairColor"
+              label="Hair Color"
+              options={HAIR_COLOR_OPTIONS}
+              placeholder="Select"
+              error={errors.hairColor?.message}
             />
-          </>
-        )}
+            {hairColor === "other" && (
+              <FormField
+                control={control}
+                name="hairColorOther"
+                label="Describe Hair Color"
+                placeholder="Enter hair color"
+                error={errors.hairColorOther?.message}
+              />
+            )}
+          </View>
+        </View>
+        <FormField
+          control={control}
+          name="hairStyle"
+          label="Hair Style"
+          placeholder="e.g. Short, Curly, Braids, Ponytail"
+          error={errors.hairStyle?.message}
+        />
       </FormSection>
     </>
   );
 
   const renderStep2 = () => (
     <>
-      <FormSection title="Medical Info" subtitle="All fields optional">
+      <FormSection title="Medical Info" subtitle="Allergies and medications required">
         <FormField
           control={control}
           name="lifeThreatAllergies"
           label="Life-Threatening Allergies"
-          placeholder="e.g. Peanuts, Bee stings — leave blank if none"
+          placeholder="e.g. Peanuts, Bee stings — leave N/A if none"
           multiline
           numberOfLines={3}
+          error={errors.lifeThreatAllergies?.message}
         />
         <FormField
           control={control}
           name="emergencyMedications"
           label="Emergency Medications"
-          placeholder="e.g. EpiPen, Inhaler — leave blank if none"
+          placeholder="e.g. EpiPen, Inhaler — leave N/A if none"
           multiline
           numberOfLines={3}
+          error={errors.emergencyMedications?.message}
         />
         <AppDropdown
           control={control}
@@ -1123,119 +1175,32 @@ export default function AddChildScreen() {
         />
       </FormSection>
 
-      <FormSection
-        title="Additional Identifying Features"
-        subtitle="All fields optional"
-      >
-        <AppDropdown
-          control={control}
-          name="hasBirthmarks"
-          label="Does your child have any birthmarks?"
-          options={YES_NO_OPTIONS}
-          placeholder="Select"
-        />
-        {hasBirthmarks === "yes" && (
-          <>
-            <FormField
-              control={control}
-              name="birthmarksDescription"
-              label="Describe Birthmarks"
-              placeholder="Describe location and appearance"
-              multiline
-              numberOfLines={3}
-            />
-            {renderFeatureUploader(
-              "birthmarkImageUris",
-              birthmarkImageUris,
-              "Birthmark Photos (Optional, up to 3)",
-            )}
-          </>
-        )}
-
-        <AppDropdown
-          control={control}
-          name="hasScars"
-          label="Does your child have any scars?"
-          options={YES_NO_OPTIONS}
-          placeholder="Select"
-        />
-        {hasScars === "yes" && (
-          <>
-            <FormField
-              control={control}
-              name="scarsDescription"
-              label="Describe Scars"
-              placeholder="Describe location and appearance"
-              multiline
-              numberOfLines={3}
-            />
-            {renderFeatureUploader(
-              "scarImageUris",
-              scarImageUris,
-              "Scar Photos (Optional, up to 3)",
-            )}
-          </>
-        )}
-
-        <AppDropdown
-          control={control}
-          name="hasIdentifyingFeatures"
-          label="Any other key identifying features?"
-          options={YES_NO_OPTIONS}
-          placeholder="Select"
-        />
-        {hasIdentifyingFeatures === "yes" && (
-          <>
-            <FormField
-              control={control}
-              name="identifyingFeaturesDescription"
-              label="Describe Additional Features"
-              placeholder="e.g. mole, birth defect, tattoos"
-              multiline
-              numberOfLines={3}
-            />
-            {renderFeatureUploader(
-              "identifyingFeatureImageUris",
-              identifyingFeatureImageUris,
-              "Additional Feature Photos (Optional, up to 3)",
-            )}
-          </>
-        )}
-
-        <FormField
-          control={control}
-          name="lastKnownLocation"
-          label="Last Known Location"
-          placeholder="e.g. School playground, community center"
-        />
-
-        <AppDropdown
-          control={control}
-          name="schoolDaycareType"
-          label="Is your child in school or daycare?"
-          options={[
-            { label: "School", value: "school" },
-            { label: "Daycare", value: "daycare" },
-            { label: "None", value: "none" },
-          ]}
-          placeholder="Select"
-        />
-        {schoolDaycareType && schoolDaycareType !== "none" && (
-          <FormField
-            control={control}
-            name="schoolDaycareName"
-            label={
-              schoolDaycareType === "school" ? "School Name" : "Daycare Name"
-            }
-            placeholder="Enter name"
+      <FormSection title="Sensory Needs" subtitle="All optional">
+        <View style={styles.toggleRow}>
+          <AppText style={styles.toggleLabel}>Wears glasses?</AppText>
+          <Switch
+            value={hasGlasses ?? false}
+            onValueChange={(v) => setValue("hasGlasses", v)}
+            trackColor={{ false: colors.cardBorder, true: colors.secondary }}
+            thumbColor={colors.white}
           />
-        )}
-
+        </View>
+        <View style={styles.toggleRow}>
+          <AppText style={styles.toggleLabel}>Wears hearing aids?</AppText>
+          <Switch
+            value={hasHearingAids ?? false}
+            onValueChange={(v) => setValue("hasHearingAids", v)}
+            trackColor={{ false: colors.cardBorder, true: colors.secondary }}
+            thumbColor={colors.white}
+          />
+        </View>
         <FormField
           control={control}
-          name="sportsTeams"
-          label="Sports Teams"
-          placeholder="Optional"
+          name="otherSensoryNeeds"
+          label="Other Sensory Needs"
+          placeholder="e.g. Wheelchair, walking aid, sensory bracelet"
+          multiline
+          numberOfLines={3}
         />
       </FormSection>
     </>
@@ -1360,54 +1325,7 @@ export default function AddChildScreen() {
 
   const renderStep4 = () => (
     <>
-      <FormSection title="Hair & Eyes" subtitle="Eye and hair color required">
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <AppDropdown
-              control={control}
-              name="eyeColor"
-              label="Eye Color"
-              options={EYE_COLOR_OPTIONS}
-              placeholder="Select"
-              error={errors.eyeColor?.message}
-            />
-            {eyeColor === "other" && (
-              <FormField
-                control={control}
-                name="eyeColorOther"
-                label="Describe Eye Color"
-                placeholder="Enter eye color"
-              />
-            )}
-          </View>
-          <View style={{ flex: 1 }}>
-            <AppDropdown
-              control={control}
-              name="hairColor"
-              label="Hair Color"
-              options={HAIR_COLOR_OPTIONS}
-              placeholder="Select"
-              error={errors.hairColor?.message}
-            />
-            {hairColor === "other" && (
-              <FormField
-                control={control}
-                name="hairColorOther"
-                label="Describe Hair Color"
-                placeholder="Enter hair color"
-              />
-            )}
-          </View>
-        </View>
-        <FormField
-          control={control}
-          name="hairStyle"
-          label="Hair Style"
-          placeholder="e.g. Short, Curly, Braids, Ponytail"
-        />
-      </FormSection>
-
-      <FormSection title="Clothing" subtitle="All optional">
+    <FormSection title="Clothing" subtitle="All optional">
         <View style={styles.toggleRow}>
           <AppText style={styles.toggleLabel}>Wearing headwear?</AppText>
           <Switch
@@ -1465,33 +1383,155 @@ export default function AddChildScreen() {
         </View>
       </FormSection>
 
-      <FormSection title="Sensory Needs" subtitle="All optional">
-        <View style={styles.toggleRow}>
-          <AppText style={styles.toggleLabel}>Wears glasses?</AppText>
-          <Switch
-            value={hasGlasses ?? false}
-            onValueChange={(v) => setValue("hasGlasses", v)}
-            trackColor={{ false: colors.cardBorder, true: colors.secondary }}
-            thumbColor={colors.white}
-          />
-        </View>
-        <View style={styles.toggleRow}>
-          <AppText style={styles.toggleLabel}>Wears hearing aids?</AppText>
-          <Switch
-            value={hasHearingAids ?? false}
-            onValueChange={(v) => setValue("hasHearingAids", v)}
-            trackColor={{ false: colors.cardBorder, true: colors.secondary }}
-            thumbColor={colors.white}
-          />
-        </View>
+      <FormSection
+        title="Identifying Features"
+        subtitle="All fields optional"
+      >
+        <AppDropdown
+          control={control}
+          name="hasBirthmarks"
+          label="Does your child have any birthmarks?"
+          options={YES_NO_OPTIONS}
+          placeholder="Select"
+        />
+        {hasBirthmarks === "yes" && (
+          <>
+            <FormField
+              control={control}
+              name="birthmarksDescription"
+              label="Describe Birthmarks"
+              placeholder="Describe location and appearance"
+              multiline
+              numberOfLines={3}
+            />
+            {renderFeatureUploader(
+              "birthmarkImageUris",
+              birthmarkImageUris,
+              "Birthmark Photos (Optional, up to 3)",
+            )}
+          </>
+        )}
+
+        <AppDropdown
+          control={control}
+          name="hasScars"
+          label="Does your child have any scars?"
+          options={YES_NO_OPTIONS}
+          placeholder="Select"
+        />
+        {hasScars === "yes" && (
+          <>
+            <FormField
+              control={control}
+              name="scarsDescription"
+              label="Describe Scars"
+              placeholder="Describe location and appearance"
+              multiline
+              numberOfLines={3}
+            />
+            {renderFeatureUploader(
+              "scarImageUris",
+              scarImageUris,
+              "Scar Photos (Optional, up to 3)",
+            )}
+          </>
+        )}
+
+        <AppDropdown
+          control={control}
+          name="hasIdentifyingFeatures"
+          label="Any other key identifying features?"
+          options={YES_NO_OPTIONS}
+          placeholder="Select"
+        />
+        {hasIdentifyingFeatures === "yes" && (
+          <>
+            <FormField
+              control={control}
+              name="identifyingFeaturesDescription"
+              label="Describe Additional Features"
+              placeholder="e.g. mole, birth defect, tattoos"
+              multiline
+              numberOfLines={3}
+            />
+            {renderFeatureUploader(
+              "identifyingFeatureImageUris",
+              identifyingFeatureImageUris,
+              "Additional Feature Photos (Optional, up to 3)",
+            )}
+          </>
+        )}
+
         <FormField
           control={control}
-          name="otherSensoryNeeds"
-          label="Other Sensory Needs"
-          placeholder="e.g. Wheelchair, walking aid, sensory bracelet"
-          multiline
-          numberOfLines={3}
+          name="lastKnownLocation"
+          label="Last Known Location"
+          placeholder="e.g. School playground, community center"
         />
+
+        <AppDropdown
+          control={control}
+          name="schoolDaycareType"
+          label="Is your child in school or daycare?"
+          options={[
+            { label: "School", value: "school" },
+            { label: "Daycare", value: "daycare" },
+            { label: "None", value: "none" },
+          ]}
+          placeholder="Select"
+        />
+        {schoolDaycareType && schoolDaycareType !== "none" && (
+          <FormField
+            control={control}
+            name="schoolDaycareName"
+            label={
+              schoolDaycareType === "school" ? "School Name" : "Daycare Name"
+            }
+            placeholder="Enter name"
+          />
+        )}
+
+        <FormField
+          control={control}
+          name="sportsTeams"
+          label="Sports Teams"
+          placeholder="Optional"
+        />
+      </FormSection>
+
+      <FormSection title="Tracking Device" subtitle="Optional">
+        <AppDropdown
+          control={control}
+          name="hasTrackingDevice"
+          label="Does your child have a tracking device?"
+          options={YES_NO_OPTIONS}
+          placeholder="Select"
+        />
+        {hasTrackingDevice === "yes" && (
+          <>
+            <AppDropdown
+              control={control}
+              name="trackingDeviceType"
+              label="Device Type"
+              options={TRACKING_DEVICE_OPTIONS}
+              placeholder="Select"
+            />
+            {trackingDeviceType === "other" && (
+              <FormField
+                control={control}
+                name="trackingDeviceTypeOther"
+                label="Describe Device"
+                placeholder="Enter device type"
+              />
+            )}
+            <FormField
+              control={control}
+              name="trackingDeviceDetails"
+              label="Device Details (Optional)"
+              placeholder="e.g. iPhone 15 in blue case, Apple Watch on left wrist"
+            />
+          </>
+        )}
       </FormSection>
     </>
   );
@@ -1523,9 +1563,9 @@ export default function AddChildScreen() {
         >
           {/* Step Content */}
           {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep4()}
-          {currentStep === 3 && renderStep2()}
-          {currentStep === 4 && renderStep3()}
+          {currentStep === 2 && renderStep2()}
+          {currentStep === 3 && renderStep3()}
+          {currentStep === 4 && renderStep4()}
 
           {/* Navigation Buttons */}
           <View style={styles.navButtonRow}>
