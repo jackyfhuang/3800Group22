@@ -539,12 +539,42 @@ export default function AddChildScreen() {
   const validateStep = async (step: number): Promise<boolean> => {
     const staticFields = STEP_FIELDS[step];
 
-    if (step !== 1 && staticFields.length === 0) return true;
+    if (step !== 1 && step !== 4 && staticFields.length === 0) return true;
 
     // Always run trigger on Zod-validated fields first so all inline errors appear
     const zodValid = staticFields.length > 0
       ? await trigger(staticFields as any)
       : true;
+
+    // For identifying features on step 4 — at least one of description or photo required
+    if (step === 4) {
+      let manualError = false;
+      const birthmarks = getValues("hasBirthmarks");
+      if (birthmarks === "yes") {
+        const desc = getValues("birthmarksDescription");
+        const photos = getValues("birthmarkImageUris") ?? [];
+        if ((!desc || String(desc).trim() === "") && photos.length === 0) {
+          manualError = true;
+          setError("birthmarksDescription", {
+            type: "manual",
+            message: "Please provide a description or at least one photo",
+          });
+        }
+      }
+      const scars = getValues("hasScars");
+      if (scars === "yes") {
+        const desc = getValues("scarsDescription");
+        const photos = getValues("scarImageUris") ?? [];
+        if ((!desc || String(desc).trim() === "") && photos.length === 0) {
+          manualError = true;
+          setError("scarsDescription", {
+            type: "manual",
+            message: "Please provide a description or at least one photo",
+          });
+        }
+      }
+      return zodValid && !manualError;
+    }
 
     // For physical + "other" fields on step 1, do manual checks since Zod marks them optional
     if (step === 1) {
@@ -706,10 +736,14 @@ export default function AddChildScreen() {
   };
 
   const handleSave = async () => {
-    const fields = STEP_FIELDS[currentStep];
-    if (fields.length > 0) {
-      const valid = await trigger(fields as any);
-      if (!valid) return;
+    // Validate every step before saving so no required field is skipped
+    for (let s = 1; s <= 4; s++) {
+      const valid = await validateStep(s);
+      if (!valid) {
+        setCurrentStep(s);
+        scrollRef.current?.scrollTo({ y: 0, animated: true });
+        return;
+      }
     }
     const data = getValues();
     await onSubmit(data);
@@ -1403,6 +1437,7 @@ export default function AddChildScreen() {
               placeholder="Describe location and appearance"
               multiline
               numberOfLines={3}
+              error={errors.birthmarksDescription?.message}
             />
             {renderFeatureUploader(
               "birthmarkImageUris",
@@ -1428,6 +1463,7 @@ export default function AddChildScreen() {
               placeholder="Describe location and appearance"
               multiline
               numberOfLines={3}
+              error={errors.scarsDescription?.message}
             />
             {renderFeatureUploader(
               "scarImageUris",
