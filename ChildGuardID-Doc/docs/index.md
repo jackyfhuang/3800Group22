@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+title: Overview
+---
 # Overview
 
 Welcome to the ChildGuardID handoff guide. This document is designed to help you launch, explore, and demonstrate the application using the files provided in your project folder.
@@ -23,19 +27,23 @@ To run the ChildGuardID demo, please ensure you have the following:
 The automated setup will attempt to install these for you, but they are required for the app to function:
 
 - [**Node.js**](https://nodejs.org/en/download) | The engine that powers the app's interface
-- [**Mobile Simulator (optional)**](https://chromewebstore.google.com/detail/mobile-simulator-responsi/ckejmhbmlajgoklhgbapkiccekfoccmk) | This is a Chrome extention if you want to run preview on your computer with mobile view
+- [**Mobile Simulator (optional)**](https://chromewebstore.google.com/detail/mobile-simulator-responsi/ckejmhbmlajgoklhgbapkiccekfoccmk) | This is a Chrome extension if you want to run preview on your computer with mobile view
 
-## Task Overview
+# Task Overview
 ---
-Here are the following tasks that our guide will help walk you through:
+What to expect after following each section:
 
 1. **One-Click Launch** | Using the automated script to start the app instantly
 
 2. **Manual Fail-Safe** | Step-by-step instructions if the one-click solution encounters an error
 
-## Conventions
+# This Document's Conventions
 ---
 - Images will be annotated with red boxes to highlight key information to pay attention to
+<!-- ![Number of Profiles](/img/numberOfProfiles.png) -->
+<div align="center">
+  <img src="/img/numberOfProfiles.png" width="400" alt="Number of Profiles" />
+</div>
 - Code will be displayed in code blocks for readability and can be easily copied by clicking the copy icon on the far right
 
 ```
