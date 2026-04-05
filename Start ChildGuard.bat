@@ -3,6 +3,8 @@ setlocal
 
 cd /d "%~dp0"
 
+cls
+
 for /f %%a in ('echo prompt $E^| cmd') do set "ESC=%%a"
 set "GREEN=%ESC%[32m"
 set "YELLOW=%ESC%[33m"
@@ -10,8 +12,8 @@ set "RED=%ESC%[31m"
 set "RESET=%ESC%[0m"
 
 echo %GREEN%╔══════════════════════════════════════════╗%RESET%
-echo %GREEN%║          ChildGuard App Launcher          ║%RESET%
-echo %GREEN%║      Keeping families safe, one scan      ║%RESET%
+echo %GREEN%║        ChildGuard  App  Launcher         ║%RESET%
+echo %GREEN%║    Keeping families safe, one scan.      ║%RESET%
 echo %GREEN%╚══════════════════════════════════════════╝%RESET%
 echo.
 
@@ -49,12 +51,15 @@ echo   %YELLOW%[1]%RESET% Hotspot        -- npx expo start --offline
 echo   %YELLOW%[2]%RESET% Wi-Fi          -- npm start
 echo   %YELLOW%[3]%RESET% Other / Tunnel -- npx expo start --tunnel
 echo.
+set "choice="
 set /p "choice=Enter 1, 2, or 3: "
 
-if "%choice%"=="1" set "LAUNCH_CMD=npx expo start --offline" & goto launch
-if "%choice%"=="2" set "LAUNCH_CMD=npm start" & goto launch
-if "%choice%"=="3" set "LAUNCH_CMD=npx expo start --tunnel" & goto launch
+if not defined choice goto invalid
+if "%choice%"=="1" ( set "LAUNCH_CMD=npx expo start --offline" & goto launch )
+if "%choice%"=="2" ( set "LAUNCH_CMD=npm start" & goto launch )
+if "%choice%"=="3" ( set "LAUNCH_CMD=npx expo start --tunnel" & goto launch )
 
+:invalid
 echo.
 echo %RED%Please enter 1, 2, or 3.%RESET%
 echo.
@@ -72,5 +77,8 @@ echo.
 echo Press Ctrl+C to stop the server.
 echo.
 %LAUNCH_CMD%
+echo.
+echo Server stopped. Press any key to close this window.
+pause >nul
 
 endlocal
