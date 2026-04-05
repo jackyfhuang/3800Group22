@@ -7,7 +7,6 @@ title: Quick Fixes
 ## Network and Connectivity
 Since Expo relies on the phone and computer "talking" to each other, network firewalls are the most common hurdle.
 
-### Pitfalls Scenarios  
 **Pitfall 1. The QR code is scanned, but the phone says "Request Timed Out" or "No connection could be made."**
 
 > **Cause:** The computer's Firewall is blocking Expo, or the phone and laptop are on different Wi-Fi bands (e.g., one on 2.4GHz and one on 5GHz).
@@ -26,7 +25,7 @@ Since Expo relies on the phone and computer "talking" to each other, network fir
 
 ___
 ## Environment & Installation
-You may not have everything you need
+Your machine may not have all the tools it needs yet
 
 **Pitfall 1. The command npm is not recognized**
 > **Cause:** Node.js is not installed on your machine
@@ -40,7 +39,7 @@ You may not have everything you need
 
 > **Cause:** May have skipped the `npm install` step or moved the folder and broke the links
 
-- **Solution:** Delete the node_modules folder and run `npm install`. Follow these steps to [navigate to your project](manual-setup#navigating-to-the-project) before running the command above
+**Solution:** Delete the node_modules folder and run `npm install`. Follow these steps to [navigate to your project](manual-setup#navigating-to-the-project) before running the command above
 
 ___
 ## Cleaning the "Cache"
