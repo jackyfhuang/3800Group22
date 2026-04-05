@@ -15,10 +15,10 @@ If the **Launch_Demo.bat** script does not start the app automatically, please f
 ### Navigating to the project
 <Tabs>
   <TabItem value="win" label="Windows Instruction">
-    ### 1. Open Command Prompt
+    #### 1. Open Command Prompt
     Press the **Windows Key**, type `cmd`, and press **Enter**.
 
-    ### 2. Navigate to the Project
+    #### 2. Navigate to the Project
     Type the following and press **Enter:**
     ```
     cd Desktop\ChildGuardID
@@ -44,10 +44,10 @@ If the **Launch_Demo.bat** script does not start the app automatically, please f
 
   </TabItem>
   <TabItem value="mac" label="macOS Instruction">
-    ### 1. Open the Terminal 
+    #### 1. Open the Terminal 
     Pressing Command `⌘` + `Space Bar` to open Spotlight Search. Type `Terminal` and press Enter.
     
-    ### 2. Navigate to the Project 
+    #### 2. Navigate to the Project 
     Type the following and press **Enter:**
     ```
     cd ~/Desktop/ChildGuardID
@@ -80,32 +80,26 @@ Once you have successfully navigated to the project folder, using the Command Pr
 
 <Tabs>
     <TabItem value="Standard" label="Same Wi-Fi" default>
-        ### If your computer and phone are on the same Wi-Fi network
-        1. In your Command Prompt, run this command:
+        #### If your computer and phone are on the same Wi-Fi network
+        1. Ensure all devices are on the same Wi-Fi network
+        2. In your Command Prompt / Terminal, run this command:
         ```
         npm start
         ```
-        :::tip Success
-        This might take a while to load. Once finished, a large QR Code will appear. Open your phone's camera, scan the code, and the app will open!
-        :::
     </TabItem>
     <TabItem value="hot_spot" label="Hot Spot">
-        ### If your computer and phone are connecting via Hot-Spot
-        If you are using your phone's Hot-Spot to connect your laptop:
-        1. Ensure all devices are on the same Hot-Spot network.
-        2. In your Command Prompt, run the command: 
+        #### If your computer and phone are connecting via Hot-Spot
+        1. Ensure all devices are on the same Hot-Spot network
+        2. In your Command Prompt / Terminal, run the command: 
         ```
         npx expo start --offline
         ```
-        :::tip "Success"
-        This might take a while to load. Once finished, a large QR Code will appear. Open your phone's camera, scan the code, and the app will open!
-        :::
     </TabItem>
     <TabItem value="Online" label="Online">
-        ### If your computer and phone are on different networks
+        #### If your computer and phone are on different networks
         While the other options require the phone and computer to be "talking" to each other on the same local network, the tunnel mode uses a service (usually Ngrok) to create a secure, public entry point
         
-        ### Remote Demo
+        #### Remote Demo
         In your Command Prompt / Terminal:
         
         1. First you will need to install a package. Run the command: 
@@ -124,8 +118,10 @@ Once you have successfully navigated to the project folder, using the Command Pr
 
         **Reliability:** If you are on a university Wi-Fi, a corporate network, or using a VPN, they often block "Tunnels" because they look like a security hole
         :::
-        :::tip Success
-        This might take a while to load. Once finished, a large QR Code will appear. Open your phone's camera, scan the code, and the app will open!
-        :::
     </TabItem>
 </Tabs>
+:::tip Success
+    This might take a while to load. Once finished loading, a large QR Code will appear. Open your Expo Go app, scan the code, and the app will open!
+    
+    ***NOTE:** You will not need to create an account to scan and demo the app*
+:::
