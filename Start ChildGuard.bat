@@ -50,9 +50,9 @@ if not exist "node_modules\" (
 :menu
 echo %YELLOW%How are you connecting?%RESET%
 echo.
-echo   %YELLOW%[1]%RESET% Hotspot        -- npx expo start --offline
-echo   %YELLOW%[2]%RESET% Wi-Fi          -- npm start
-echo   %YELLOW%[3]%RESET% Other / Tunnel -- npx expo start --tunnel
+echo   %YELLOW%[1]%RESET% Hot-Spot        -- npx expo start --offline
+echo   %YELLOW%[2]%RESET% Wi-Fi           -- npm start
+echo   %YELLOW%[3]%RESET% Online / other  -- npx expo start --tunnel
 echo.
 set "choice="
 set /p "choice=Enter an option: "
