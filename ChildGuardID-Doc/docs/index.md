@@ -2,9 +2,11 @@
 sidebar_position: 1
 title: Overview
 ---
-# Overview
+# <h1 style={{textAlign: 'center'}}>Overview</h1>
 
 Welcome to the ChildGuardID handoff guide. This document is designed to help you launch, explore, and demonstrate the application using the files provided in your project folder.
+
+---
 
 ## Intended Users
 
@@ -31,11 +33,13 @@ The automated setup will attempt to install these for you, but they are required
 
 # Task Overview
 ---
-What to expect after following each section:
+What to expect after following this document:
 
 1. **One-Click Launch** | Using the automated script to start the app instantly
 
 2. **Manual Fail-Safe** | Step-by-step instructions if the one-click solution encounters an error
+
+3. **Trouble shooting** | How to navigate through common pitfalls 
 
 # This Document's Conventions
 ---
