@@ -26,8 +26,7 @@ fi
 if [ ! -d "node_modules" ]; then
     echo "Setting up for the first time -- this may take a few minutes..."
     echo
-    npm install
-    if [ $? -ne 0 ]; then
+    if ! npm install; then
         echo
         echo -e "${RED}Setup failed. Check your internet connection and try again.${RESET}"
         echo
@@ -39,18 +38,19 @@ if [ ! -d "node_modules" ]; then
     echo
 fi
 
+echo -e "${YELLOW}How are you connecting?${RESET}"
+echo
+echo -e "  ${YELLOW}[1]${RESET} Hotspot        — npx expo start --offline"
+echo -e "  ${YELLOW}[2]${RESET} Wi-Fi          — npm start"
+echo -e "  ${YELLOW}[3]${RESET} Other / Tunnel — npx expo start --tunnel"
+echo
+
 while true; do
-    echo -e "${YELLOW}How are you connecting?${RESET}"
-    echo
-    echo -e "  ${YELLOW}[1]${RESET} Hotspot        — npx expo start --offline"
-    echo -e "  ${YELLOW}[2]${RESET} Wi-Fi          — npm start"
-    echo -e "  ${YELLOW}[3]${RESET} Other / Tunnel — npx expo start --tunnel"
-    echo
     read -rp "Enter 1, 2, or 3: " choice
     case $choice in
-        1) LAUNCH_CMD="npx expo start --offline"; break ;;
-        2) LAUNCH_CMD="npm start"; break ;;
-        3) LAUNCH_CMD="npx expo start --tunnel"; break ;;
+        1) break ;;
+        2) break ;;
+        3) break ;;
         *)
             echo
             echo -e "${RED}Please enter 1, 2, or 3.${RESET}"
@@ -70,7 +70,11 @@ echo
 echo "Press Cmd+C to stop the server."
 echo
 
-eval "$LAUNCH_CMD"
+case $choice in
+    1) npx expo start --offline ;;
+    2) npm start ;;
+    3) npx expo start --tunnel ;;
+esac
 
 echo
 echo "Server stopped. Press Enter to close this window."
