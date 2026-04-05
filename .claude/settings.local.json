@@ -5,7 +5,9 @@
       "Bash(npm uninstall:*)",
       "Bash(npx expo-doctor:*)",
       "Bash(npx expo:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(python3:*)",
+      "Bash(node:*)"
     ]
   }
 }

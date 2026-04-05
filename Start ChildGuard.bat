@@ -9,12 +9,15 @@ for /f %%a in ('echo prompt $E^| cmd') do set "ESC=%%a"
 set "GREEN=%ESC%[32m"
 set "YELLOW=%ESC%[33m"
 set "RED=%ESC%[31m"
+set "CYAN=%ESC%[36m"
 set "RESET=%ESC%[0m"
 
-echo %GREEN%╔══════════════════════════════════════════╗%RESET%
-echo %GREEN%║        ChildGuard  App  Launcher         ║%RESET%
-echo %GREEN%║    Keeping families safe, one scan.      ║%RESET%
-echo %GREEN%╚══════════════════════════════════════════╝%RESET%
+echo %GREEN%=================================================%RESET%
+echo %GREEN%            ChildGuard  App  Launcher            %RESET%
+echo %GREEN%   Keeping families safe, for a better future.   %RESET%
+echo %GREEN%=================================================%RESET%
+echo.
+echo %CYAN% Reminder: you will need node.js installed first%RESET%
 echo.
 
 where node >nul 2>&1
@@ -52,7 +55,7 @@ echo   %YELLOW%[2]%RESET% Wi-Fi          -- npm start
 echo   %YELLOW%[3]%RESET% Other / Tunnel -- npx expo start --tunnel
 echo.
 set "choice="
-set /p "choice=Enter 1, 2, or 3: "
+set /p "choice=Enter an option: "
 
 if not defined choice goto invalid
 if "%choice%"=="1" ( set "LAUNCH_CMD=npx expo start --offline" & goto launch )
