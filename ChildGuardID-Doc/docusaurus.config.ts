@@ -105,7 +105,7 @@ export default {
   url: 'https://jackyfhuang.github.io',
   baseUrl: '/ChildGuardID-Doc/', // The name of your GitHub repository
   organizationName: 'jackyfhuang',
-  projectName: 'ChildGuardID-Doc', 
+  projectName: '3800Group22', 
   deploymentBranch: 'gh-pages', 
   trailingSlash: false,
 };
