@@ -100,4 +100,12 @@ const config: Config = {
   } satisfies Preset.ThemeConfig,
 };
 
-export default config;
+export default {
+  title: 'ChildGuardID',
+  url: 'https://jackyfhuang.github.io',
+  baseUrl: '/ChildGuardID-Doc/', // The name of your GitHub repository
+  organizationName: 'jackyfhuang',
+  projectName: 'ChildGuardID-Doc', 
+  deploymentBranch: 'gh-pages', 
+  trailingSlash: false,
+};
