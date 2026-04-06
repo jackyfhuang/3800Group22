@@ -14,16 +14,14 @@ const config: Config = {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
   },
 
-  // Set the production url of your site here
-  url: 'https://your-docusaurus-site.example.com',
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  // GitHub Pages: https://<org>.github.io/<repo>/
+  url: 'https://jackyfhuang.github.io',
+  baseUrl: '/3800Group22/',
 
-  // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'facebook', // Usually your GitHub org/user name.
-  projectName: 'docusaurus', // Usually your repo name.
+  organizationName: 'jackyfhuang',
+  projectName: '3800Group22',
+  deploymentBranch: 'gh-pages',
+  trailingSlash: false,
 
   onBrokenLinks: 'throw',
 
@@ -42,17 +40,7 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts'
         },
-        blog: {
-          showReadingTime: true,
-          feedOptions: {
-            type: ['rss', 'atom'],
-            xslt: true,
-          },
-          // Useful options to enforce blogging best practices
-          onInlineTags: 'warn',
-          onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
-        },
+        blog: false,
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -79,9 +67,8 @@ const config: Config = {
           position: 'left',
           label: 'Tutorial',
         },
-        {to: '/blog', label: 'Blog', position: 'left'},
         {
-          href: 'https://github.com/facebook/docusaurus',
+          href: 'https://github.com/jackyfhuang/3800Group22',
           label: 'GitHub',
           position: 'right',
         },
@@ -100,12 +87,4 @@ const config: Config = {
   } satisfies Preset.ThemeConfig,
 };
 
-export default {
-  title: 'ChildGuardID',
-  url: 'https://jackyfhuang.github.io',
-  baseUrl: '/3800Group22/ChildGuardID-Doc/', // The name of your GitHub repository
-  organizationName: 'jackyfhuang',
-  projectName: '3800Group22', 
-  deploymentBranch: 'gh-pages', 
-  trailingSlash: false,
-};
+export default config;
