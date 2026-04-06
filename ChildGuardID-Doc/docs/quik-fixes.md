@@ -11,9 +11,9 @@ Since Expo relies on the phone and computer "talking" to each other, network fir
 
 > **Cause:** The computer's Firewall is blocking Expo, or the phone and laptop are on different Wi-Fi bands (e.g., one on 2.4GHz and one on 5GHz).
     
-- **Solution 1)** Run the demo online. Go to [Running the Demo Online](./Manual-Setup#running-the-demo) for reference
+- **Solution 1)** Run the demo online. Go to [Running the Demo Online](./manual-setup#running-the-demo) for reference
 
-- **Solution 2)** Ensure both devices are on the exact same Wi-Fi / Hot-Spot and [follow the proper commands](./Manual-Setup#running-the-demo)
+- **Solution 2)** Ensure both devices are on the exact same Wi-Fi / Hot-Spot and [follow the proper commands](manual-setup#running-the-demo)
 
 - **Solution 3)** Temporary fix: Turn off the VPN if one is active
 
@@ -21,7 +21,7 @@ Since Expo relies on the phone and computer "talking" to each other, network fir
     
 > **Cause:** the project doesn't have the tunneling dependency installed globally yet
 
-- **Solution:** Using the Command Prompt / Terminal, navigate to your project, run `npm install -g @expo/ngrok` and try again with `npx expo start --tunnel`. [Follow these steps for reference](./Manual-Setup#navigating-to-the-project)
+- **Solution:** Using the Command Prompt / Terminal, navigate to your project, run `npm install -g @expo/ngrok` and try again with `npx expo start --tunnel`. [Follow these steps for reference](./manual-setup#navigating-to-the-project)
 
 ___
 ## Environment & Installation
@@ -39,7 +39,7 @@ Your machine may not have all the tools it needs yet
 
 > **Cause:** May have skipped the `npm install` step or moved the folder and broke the links
 
-**Solution:** Delete the node_modules folder and run `npm install`. Follow these steps to [navigate to your project](./Manual-Setup#navigating-to-the-project) before running the command above
+**Solution:** Delete the node_modules folder and run `npm install`. Follow these steps to [navigate to your project](manual-setup#navigating-to-the-project) before running the command above
 
 ___
 ## Cleaning the "Cache"

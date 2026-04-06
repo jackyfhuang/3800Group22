@@ -48,5 +48,5 @@ When the setup is complete, and the QR code has been scanned, the demo will appe
 :::
 
 :::warning Troubleshooting the Launch
-If the window closes immediately or shows an error message, please proceed to the [**Manual Fail-Safe**](./Manual-Setup) section of this guide.
+If the window closes immediately or shows an error message, please proceed to the [**Manual Fail-Safe**](./manual-setup) section of this guide.
 :::
