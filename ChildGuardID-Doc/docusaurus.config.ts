@@ -103,7 +103,7 @@ const config: Config = {
 export default {
   title: 'ChildGuardID',
   url: 'https://jackyfhuang.github.io',
-  baseUrl: '/ChildGuardID-Doc/', // The name of your GitHub repository
+  baseUrl: '/3800Group22/ChildGuardID-Doc/', // The name of your GitHub repository
   organizationName: 'jackyfhuang',
   projectName: '3800Group22', 
   deploymentBranch: 'gh-pages', 
