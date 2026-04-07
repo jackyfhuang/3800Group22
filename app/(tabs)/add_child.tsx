@@ -17,6 +17,7 @@ import {
   Image,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   Switch,
@@ -27,6 +28,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ViewShot, { captureRef } from "react-native-view-shot";
 import { z } from "zod";
 
+import { ChildPassportCard } from "@/components/child-passport";
 import { AppDropdown } from "@/components/ui/app-dropdown";
 import { AppText } from "@/components/ui/app-text";
 import { FormField } from "@/components/ui/form-field";
@@ -363,6 +365,7 @@ export default function AddChildScreen() {
   const viewShotRef = React.createRef<ViewShot>();
   const [captureData, setCaptureData] = useState<ChildFormData | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [showPassport, setShowPassport] = useState(false);
 
   useEffect(() => {
     if (hasBirthmarks !== "yes" && birthmarkImageUris.length > 0) {
@@ -1642,16 +1645,14 @@ export default function AddChildScreen() {
                 style={[
                   sharedStyles.secondaryButton,
                   styles.exportButton,
-                  isExporting && styles.disabledButton,
                 ]}
-                onPress={exportImage}
-                disabled={isExporting}
+                onPress={() => setShowPassport(true)}
               >
                 <AppText
                   variant="label"
                   style={sharedStyles.secondaryButtonText}
                 >
-                  {isExporting ? "Working..." : "Export Image"}
+                  Generate Passport
                 </AppText>
               </TouchableOpacity>
               {isEditMode && (
@@ -1670,6 +1671,40 @@ export default function AddChildScreen() {
             </>
           )}
         </ScrollView>
+
+        <Modal
+          visible={showPassport}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowPassport(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: colors.appBackground }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "flex-end",
+                padding: 16,
+                backgroundColor: colors.cardBackground,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.cardBorder,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => setShowPassport(false)}
+                style={{ padding: 8 }}
+              >
+                <AppText
+                  style={{ color: colors.primary, fontSize: 16, fontWeight: "600" }}
+                >
+                  ✕ Close
+                </AppText>
+              </TouchableOpacity>
+            </View>
+            <ChildPassportCard
+              child={{ ...getValues(), id: id || "unknown" } as any}
+            />
+          </View>
+        </Modal>
 
         {/* Hidden export card */}
         <ViewShot
