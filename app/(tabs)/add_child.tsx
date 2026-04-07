@@ -25,7 +25,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import ViewShot, { captureRef } from "react-native-view-shot";
 import { z } from "zod";
 
 import { ChildPassportCard } from "@/components/child-passport";
@@ -362,9 +361,6 @@ export default function AddChildScreen() {
     name: "emergencyContacts",
   });
 
-  const viewShotRef = React.createRef<ViewShot>();
-  const [captureData, setCaptureData] = useState<ChildFormData | null>(null);
-  const [isExporting, setIsExporting] = useState(false);
   const [showPassport, setShowPassport] = useState(false);
 
   useEffect(() => {
@@ -848,36 +844,6 @@ export default function AddChildScreen() {
     </View>
   );
 
-  const sanitizeForFileSystem = (value: string) => {
-    const clean = value.trim().replace(/[^a-z0-9-_]+/gi, "_");
-    return clean.length ? clean.slice(0, 40) : "child";
-  };
-
-  const exportImage = handleSubmit(async (data: ChildFormData) => {
-    setIsExporting(true);
-    try {
-      setCaptureData(data);
-      await new Promise((r) => setTimeout(r, 30));
-      if (!viewShotRef.current) throw new Error("Capture view not ready");
-      const uri = await captureRef(viewShotRef, { format: "png", quality: 1 });
-      const permission = await MediaLibrary.requestPermissionsAsync();
-      if (permission.status !== "granted") {
-        Alert.alert("Permission needed", "Please allow photo library access.");
-        return;
-      }
-      const asset = await MediaLibrary.createAssetAsync(uri);
-      const albumName = `ChildGuardID - ${sanitizeForFileSystem(data.firstName)}`;
-      let album = await MediaLibrary.getAlbumAsync(albumName);
-      if (!album)
-        album = await MediaLibrary.createAlbumAsync(albumName, asset, false);
-      else await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-      Alert.alert("Saved", `Image saved to: ${albumName}`);
-    } catch {
-      Alert.alert("Error", "Could not export image.");
-    } finally {
-      setIsExporting(false);
-    }
-  });
 
   // ─── DOB picker handler ───────────────────────────────────────────────────
   const handleDateConfirm = (date: Date) => {
@@ -1706,64 +1672,6 @@ export default function AddChildScreen() {
           </View>
         </Modal>
 
-        {/* Hidden export card */}
-        <ViewShot
-          ref={viewShotRef}
-          options={{ format: "png", quality: 1 }}
-          style={styles.hiddenCapture}
-        >
-          <View style={styles.captureCard}>
-            <AppText variant="heading" style={styles.captureTitle}>
-              Child Guard ID
-            </AppText>
-            <AppText variant="label" style={styles.captureName}>
-              {`${captureData?.firstName || ""} ${captureData?.lastName || ""}`.trim() ||
-                "Name missing"}
-            </AppText>
-            {[
-              ["Date of Birth", captureData?.dateOfBirth],
-              ["Sex", captureData?.sex],
-              ["Ethnicity", captureData?.ethnicity],
-              ["Height", captureData?.unitSystem === "metric"
-                ? (captureData?.height != null ? `${captureData.height} cm` : undefined)
-                : (captureData?.heightFeet != null ? `${captureData.heightFeet} ft ${captureData.heightInches ?? 0} in` : undefined)],
-              [captureData?.unitSystem === "metric" ? "Weight (kg)" : "Weight (lbs)", captureData?.weight],
-            ].map(([label, value]) =>
-              value ? (
-                <View key={label as string} style={styles.captureRow}>
-                  <AppText style={styles.captureLabel}>{label}</AppText>
-                  <AppText style={styles.captureValue}>{String(value)}</AppText>
-                </View>
-              ) : null,
-            )}
-            {captureData?.lifeThreatAllergies && (
-              <>
-                <AppText style={styles.captureSection}>Medical</AppText>
-                <AppText style={styles.captureNotes}>
-                  {captureData.lifeThreatAllergies}
-                </AppText>
-              </>
-            )}
-            {captureData?.guardian1?.name && (
-              <>
-                <AppText style={styles.captureSection}>Primary Contact 1</AppText>
-                <AppText style={styles.captureNotes}>
-                  {captureData.guardian1.name} — {captureData.guardian1.phone}
-                </AppText>
-              </>
-            )}
-            {captureData?.emergencyContacts?.map((c, i) => (
-              <View key={i}>
-                <AppText style={styles.captureSection}>
-                  Emergency Contact {i + 1}
-                </AppText>
-                <AppText style={styles.captureNotes}>
-                  {c.name} ({c.relationship}) — {c.phone}
-                </AppText>
-              </View>
-            ))}
-          </View>
-        </ViewShot>
       </KeyboardAvoidingView>
 
       {/* Progress bar — outside KeyboardAvoidingView so keyboard never shifts it */}
