@@ -86,22 +86,25 @@ Scan the QR code from Expo Go once the server starts. Your device and computer m
 
 ### Manual Setup
 
+Make sure you're in the project directory
 ```bash
-cd 3800Group22
+cd ChildGuardID
 npm install
 npm start
 ```
 
-> The app bundle is large — cloning and the first install may take a few minutes.
+> The app bundle is large. Cloning and first install may take a few minutes.
 
 ### Running in a Browser
+
+If you don't have 'Expo Go' installed on your phone and would like to make preview changes, you can run this app on the browser
 
 ```bash
 npm start
 # Press W in the terminal to open in browser
 ```
 
-Note: Some native features (camera, media library) are unavailable in the web build.
+***Note:** Some native features (camera, media library) are unavailable in the web build. Additionally, features like 'Generate Passport' will not work on computers, and format may differ slightly on web app*
 
 ---
 
