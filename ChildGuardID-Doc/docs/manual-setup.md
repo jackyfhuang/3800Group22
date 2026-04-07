@@ -32,7 +32,7 @@ If the **Launch_Demo.bat** script does not start the app automatically, please f
 
     2. Click the address bar at the very top of the window (the bar that shows the folder name). The text will turn blue. Right-click it and select Copy.
     <div align="center">
-        <img src={useBaseUrl("/img/project_folder_navigation.png")} width="400" alt="Number of Profiles" />
+        <img src={useBaseUrl("/img/project_folder_navigation.png")} width="400" alt="project folder navigation" />
     </div>
     _**NOTE:** The example project folder here is called `3800Group22`. Yours will be `ChildGuardID`_
     
