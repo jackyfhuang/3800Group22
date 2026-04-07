@@ -2,47 +2,69 @@
 sidebar_position: 3
 title: Quick Fixes
 ---
-# <h1 style={{textAlign: 'center'}}>Quick Fixes</h1>
+
+# <h1 style={{ textAlign: 'center' }}>Quick Fixes</h1>
 
 ## Network and Connectivity
+
 Since Expo relies on the phone and computer "talking" to each other, network firewalls are the most common hurdle.
 
-**Pitfall 1. The QR code is scanned, but the phone says "Request Timed Out" or "No connection could be made."**
+**Pitfall 1: The QR code is scanned, but the phone shows "Request Timed Out" or "No connection could be made."**
 
-> **Cause:** The computer's Firewall is blocking Expo, or the phone and laptop are on different Wi-Fi bands (e.g., one on 2.4GHz and one on 5GHz).
+> **Cause:** The computer's firewall is blocking Expo, or the phone and computer are on different Wi-Fi bands (e.g., one on 2.4 GHz and the other on 5 GHz).
     
-- **Solution 1)** Run the demo online. Go to [Running the Demo Online](./manual-setup#running-the-demo) for reference
+- **Solution 1:** Run the demo online. Refer to [Running the Demo Online](./manual-setup#running-the-demo)
 
-- **Solution 2)** Ensure both devices are on the exact same Wi-Fi / Hot-Spot and [follow the proper commands](manual-setup#running-the-demo)
+- **Solution 2:** Ensure both devices are connected to the exact same Wi-Fi or hotspot, then [follow the proper commands](./manual-setup#running-the-demo)
 
-- **Solution 3)** Temporary fix: Turn off the VPN if one is active
+- **Solution 3:** Temporarily disable any active VPN
 
-**Pitfall 2. The Tunnel command fails with a "Ngrok" error.**
+---
+
+**Pitfall 2: The tunnel command fails with an "Ngrok" error.**
     
-> **Cause:** the project doesn't have the tunneling dependency installed globally yet
+> **Cause:** The tunneling dependency is not installed globally.
 
-- **Solution:** Using the Command Prompt / Terminal, navigate to your project, run `npm install -g @expo/ngrok` and try again with `npx expo start --tunnel`. [Follow these steps for reference](./manual-setup#navigating-to-the-project)
+- **Solution:** In Command Prompt or Terminal, navigate to your project folder and run:
+```
+npm install -g @expo/ngrok
+``` 
+Then try again with:
+```
+npx expo start --tunnel
+```
+You can [follow these steps for reference](./manual-setup#navigating-to-the-project)
 
 ___
-## Environment & Installation
-Your machine may not have all the tools it needs yet
 
-**Pitfall 1. The command npm is not recognized**
-> **Cause:** Node.js is not installed on your machine
-- **Solution:** Follow the [Link](https://nodejs.org/en/download), scroll to the bottom and download `Windows installer (.msi)` or `macOS Installer(.pkg)`. Then try again. 
+## Environment & Installation
+
+Your machine may not have all the required tools installed.
+
+**Pitfall 1: The command `npm` is not recognized**
+
+> **Cause:** Node.js is not installed on your machine.
+
+- **Solution:** Visit [Node.js](https://nodejs.org/en/download), scroll to the bottom, and download the appropriate installer: `Windows Installer (.msi)` or `macOS Installer (.pkg)`. Then try again.
 
 :::info 
-    *NOTE: you make need to restart your machine after installing*
+*NOTE: You may need to restart your machine after installation.*
 :::
 
-**Pitfall 2. "Module not found" or "Missing dependencies."**
+---
 
-> **Cause:** May have skipped the `npm install` step or moved the folder and broke the links
+**Pitfall 2: "Module not found" or "Missing dependencies."**
 
-**Solution:** Delete the node_modules folder and run `npm install`. Follow these steps to [navigate to your project](manual-setup#navigating-to-the-project) before running the command above
+> **Cause:** You may have skipped the `npm install` step or moved the project folder, which broke the dependencies.
+
+- **Solution:** Delete the `node_modules` folder and run:
+```npm install```
+Make sure you have [navigated to your project folder](./manual-setup#navigating-to-the-project) before running the command.
 
 ___
-## Cleaning the "Cache"
->If the app feels "stuck" or is showing old data from a previous test:
 
-**Solution** In the Command prompt / Terminal on the computer, press `Shift` + `C`. This clears the project cache and forces the phone to download a fresh, clean version of the app.
+## Cleaning the Cache
+
+> If the app feels "stuck" or is showing outdated data from a previous test:
+
+**Solution:** In Command Prompt or Terminal, press `Shift + C`. This clears the project cache and forces the phone to download a fresh version of the app.
