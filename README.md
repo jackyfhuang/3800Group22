@@ -33,3 +33,11 @@ Or Run in web via LocalHost
 For Testing ``` npm test ```
 
 Note: App is pretty big, may take a while to clone.
+
+## Documentation for Owners and Stakeholders
+
+Change directory to ChildGuardID and start the document
+
+1. run ```npm start```
+
+2. Open your browser to ```http://localhost:3000/docs/```

@@ -32,7 +32,6 @@ yarn-error.*
 
 # local env files
 .env*.local
-.claude/settings.json
 
 # typescript
 *.tsbuildinfo
@@ -43,7 +42,3 @@ app-example
 /ios
 /android
 
-#AI Stuff
-.claude
-CLAUDE.md
-CLAUDE.local.md
