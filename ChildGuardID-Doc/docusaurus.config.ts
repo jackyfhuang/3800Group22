@@ -7,7 +7,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 const config: Config = {
   title: 'ChildGuardID',
   tagline: 'Guard our children',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/GuardIcon.png',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -62,7 +62,7 @@ const config: Config = {
       title: 'ChildGuardID',
       logo: {
         alt: 'My Site Logo',
-        src: 'img/GuardIcon1.png',
+        src: 'img/GuardIcon.png',
       },
       items: [
         {

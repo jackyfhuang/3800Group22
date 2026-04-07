@@ -5,6 +5,7 @@ title: Manual Setup (Fail-Safe)
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 
 # <h1 style={{textAlign: 'center'}}>Manual Setup</h1>
 
@@ -31,14 +32,14 @@ If the **Launch_Demo.bat** script does not start the app automatically, please f
 
     2. Click the address bar at the very top of the window (the bar that shows the folder name). The text will turn blue. Right-click it and select Copy.
     <div align="center">
-        <img src="/img/project_folder_navigation.png" width="400" alt="Number of Profiles" />
+        <img src={useBaseUrl("/img/project_folder_navigation.png")} width="400" alt="Number of Profiles" />
     </div>
     _**NOTE:** The example project folder here is called `3800Group22`. Yours will be `ChildGuardID`_
     
     3. Go back to the Command Prompt, type cd followed by a Space, then Right-click to paste that location and press Enter.
     
     <div align="center">
-        <img src="/img/cmd_dir_path.png" width="400" alt="Number of Profiles" />
+        <img src={useBaseUrl('/img/cmd_dir_path.png')} width="400" alt="Command prompt directory" />
     </div>
     :::
 

@@ -3,6 +3,9 @@ slug: /
 sidebar_position: 1
 title: Overview
 ---
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
 # <h1 style={{textAlign: 'center'}}>Overview</h1>
 
 Welcome to the ChildGuardID handoff guide. This document is designed to help you launch, explore, and demonstrate the application using the files provided in your project folder.
@@ -47,7 +50,7 @@ What to expect after following this document:
 - Images will be annotated with red boxes to highlight key information to pay attention to
 <!-- ![Number of Profiles](/img/numberOfProfiles.png) -->
 <div align="center">
-  <img src="/img/numberOfProfiles.png" width="400" alt="Number of Profiles" />
+  <img src={useBaseUrl('/img/numberOfProfiles.png')} width="400" alt="Number of Profiles" />
 </div>
 - Code will be displayed in code blocks for readability and can be easily copied by clicking the copy icon on the far right
 

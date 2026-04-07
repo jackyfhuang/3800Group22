@@ -29,11 +29,6 @@ Open the folder named `ChildGuardID` that you saved to your machine.
     </TabItem>
 </Tabs>
 
-<!-- <div align="center">
-  <img src="/img/folderView.png" width="500" alt="Folder View" />
-  <p><i>Look for the file with the gear icon labeled "Launch_Demo".</i></p>
-</div> -->
-
 ### Step 3: Wait for Initialization
 A black window (the Command Center) will appear. **Do not close this window.** It is preparing the "Virtual Phone" for you. This may take 1-2 minutes depending on your internet speed.
 
