@@ -1,3 +1,4 @@
+import { PHONE_FORMAT_REGEX } from "@/utils/phone";
 import { z } from "zod";
 
 // ─── Helper for numeric coercion ───────────────────────────────────────────────
@@ -33,7 +34,10 @@ export const emergencyContactSchema = z.object({
   name: z.string().min(1, "Name is required"),
   relationship: z.string().min(1, "Relationship is required"),
   sex: z.string().optional(),
-  phone: z.string().min(1, "Phone is required"),
+  phone: z
+    .string()
+    .min(1, "Phone is required")
+    .regex(PHONE_FORMAT_REGEX, "Phone number must be in format (000) 000-0000"),
   address: z.string().optional(),
 });
 
@@ -61,10 +65,18 @@ export const childSchema = z.object({
   sportsTeams: z.string().optional(),
   parent1Name: z.string().optional(),
   parent1Address: z.string().optional(),
-  parent1Phone: z.string().optional(),
+  parent1Phone: z
+    .string()
+    .regex(PHONE_FORMAT_REGEX, "Phone number must be in format (000) 000-0000")
+    .or(z.literal(""))
+    .optional(),
   parent2Name: z.string().optional(),
   parent2Address: z.string().optional(),
-  parent2Phone: z.string().optional(),
+  parent2Phone: z
+    .string()
+    .regex(PHONE_FORMAT_REGEX, "Phone number must be in format (000) 000-0000")
+    .or(z.literal(""))
+    .optional(),
   emergencyContacts: z
     .array(emergencyContactSchema)
     .min(1, "At least one contact required"),
