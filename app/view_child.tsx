@@ -3,18 +3,19 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { palette } from "@/constants/theme";
 import { colors, radius, spacing, typography } from "@/styles";
+import { formatPhoneForDisplay } from "@/utils/phone";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
-  Dimensions,
-  Image,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
+    Alert,
+    Dimensions,
+    Image,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { ChildPassportCard } from "../components/child-passport";
 
@@ -279,7 +280,9 @@ export default function ViewChildScreen() {
             label="Height"
             value={
               child.unitSystem === "metric"
-                ? (child.height != null ? `${child.height} cm` : undefined)
+                ? child.height != null
+                  ? `${child.height} cm`
+                  : undefined
                 : child.heightFeet != null
                   ? `${child.heightFeet} ft ${child.heightInches ?? 0} in`
                   : child.height != null
@@ -347,7 +350,10 @@ export default function ViewChildScreen() {
             <>
               <GroupLabel title="Primary Contact 1" />
               <InfoRow label="Name" value={child.guardian1.name} />
-              <InfoRow label="Phone" value={child.guardian1.phone} />
+              <InfoRow
+                label="Phone"
+                value={formatPhoneForDisplay(child.guardian1.phone)}
+              />
               <InfoRow label="Address" value={child.guardian1.address} />
             </>
           )}
@@ -355,7 +361,10 @@ export default function ViewChildScreen() {
             <>
               <GroupLabel title="Primary Contact 2" />
               <InfoRow label="Name" value={child.guardian2.name} />
-              <InfoRow label="Phone" value={child.guardian2.phone} />
+              <InfoRow
+                label="Phone"
+                value={formatPhoneForDisplay(child.guardian2.phone)}
+              />
               <InfoRow label="Address" value={child.guardian2.address} />
             </>
           )}
@@ -372,7 +381,10 @@ export default function ViewChildScreen() {
                   </AppText>
                   <InfoRow label="Name" value={contact.name} />
                   <InfoRow label="Relationship" value={contact.relationship} />
-                  <InfoRow label="Phone" value={contact.phone} />
+                  <InfoRow
+                    label="Phone"
+                    value={formatPhoneForDisplay(contact.phone)}
+                  />
                   <InfoRow label="Address" value={contact.address} />
                   <InfoRow label="Sex" value={contact.sex} />
                 </View>
