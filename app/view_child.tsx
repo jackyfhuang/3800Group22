@@ -17,7 +17,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { ChildPassportCard } from "../components/child-passport";
+import { ChildImageCard } from "../components/child-image";
 
 type ChildProfile = {
   id?: string;
@@ -149,7 +149,7 @@ export default function ViewChildScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showPassport, setShowPassport] = useState(false);
+  const [showImage, setShowImage] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [viewerImages, setViewerImages] = useState<string[]>([]);
   const [viewerIndex, setViewerIndex] = useState(0);
@@ -534,32 +534,32 @@ export default function ViewChildScreen() {
         </View>
 
         <TouchableOpacity
-          style={styles.passportButton}
-          onPress={() => setShowPassport(true)}
+          style={styles.imageButton}
+          onPress={() => setShowImage(true)}
         >
           <IconSymbol name="doc.text" size={20} color={colors.white} />
-          <AppText style={styles.passportButtonText}>Generate Passport</AppText>
+          <AppText style={styles.imageButtonText}>Generate Image</AppText>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
       </ScrollView>
 
       <Modal
-        visible={showPassport}
+        visible={showImage}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setShowPassport(false)}
+        onRequestClose={() => setShowImage(false)}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity
-              onPress={() => setShowPassport(false)}
+              onPress={() => setShowImage(false)}
               style={styles.closeButton}
             >
               <AppText style={styles.closeButtonText}>✕ Close</AppText>
             </TouchableOpacity>
           </View>
-          <ChildPassportCard
+          <ChildImageCard
             child={
               {
                 ...child,
@@ -743,7 +743,7 @@ const styles = StyleSheet.create({
     borderColor: colors.cardBorder,
     backgroundColor: colors.inputBackground,
   },
-  passportButton: {
+  imageButton: {
     backgroundColor: colors.primary,
     flexDirection: "row",
     alignItems: "center",
@@ -754,7 +754,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
     gap: spacing.sm,
   },
-  passportButtonText: {
+  imageButtonText: {
     color: colors.white,
     fontSize: typography.button,
     fontWeight: "600",

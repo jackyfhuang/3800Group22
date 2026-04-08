@@ -2,27 +2,27 @@
 // Step 1: Disclaimer — must be acknowledged before proceeding.
 // Step 2: How-to guide — introduces core app features.
 // Sets AsyncStorage key 'onboarding_complete' when finished.
-import { AppText } from '@/components/ui/app-text';
-import { palette } from '@/constants/theme';
-import { colors, radius, spacing, typography } from '@/styles';
-import { MaterialIcons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useRef, useState } from 'react';
+import { AppText } from "@/components/ui/app-text";
+import { palette } from "@/constants/theme";
+import { colors, radius, spacing, typography } from "@/styles";
+import { MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useRef, useState } from "react";
 import {
-  Animated,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+    Animated,
+    ScrollView,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-export const ONBOARDING_KEY = 'onboarding_complete';
+export const ONBOARDING_KEY = "onboarding_complete";
 
 export async function hasCompletedOnboarding(): Promise<boolean> {
   try {
     const val = await AsyncStorage.getItem(ONBOARDING_KEY);
-    return val === 'true';
+    return val === "true";
   } catch {
     return false;
   }
@@ -36,14 +36,22 @@ export function OnboardingScreen({ onComplete }: Props) {
 
   const goToStep = (next: 0 | 1) => {
     Animated.sequence([
-      Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
     ]).start();
     setStep(next);
   };
 
   const handleFinish = async () => {
-    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    await AsyncStorage.setItem(ONBOARDING_KEY, "true");
     onComplete();
   };
 
@@ -73,11 +81,21 @@ function DisclaimerStep({ onNext }: { onNext: () => void }) {
     <View style={styles.stepContainer}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={[styles.iconCircle, { backgroundColor: colors.secondaryLight, borderColor: colors.secondaryBorder }]}>
+        <View
+          style={[
+            styles.iconCircle,
+            {
+              backgroundColor: colors.secondaryLight,
+              borderColor: colors.secondaryBorder,
+            },
+          ]}
+        >
           <MaterialIcons name="security" size={36} color={palette.teal} />
         </View>
         <AppText style={styles.stepTitle}>Before You Begin</AppText>
-        <AppText style={styles.stepSubtitle}>Please read and acknowledge the following</AppText>
+        <AppText style={styles.stepSubtitle}>
+          Please read and acknowledge the following
+        </AppText>
       </View>
 
       {/* Scrollable content */}
@@ -115,8 +133,14 @@ function DisclaimerStep({ onNext }: { onNext: () => void }) {
 
       {/* CTA */}
       <View style={styles.btnContainer}>
-        <TouchableOpacity style={styles.primaryBtn} onPress={onNext} activeOpacity={0.85}>
-          <AppText style={styles.primaryBtnText}>I Understand — Continue</AppText>
+        <TouchableOpacity
+          style={styles.primaryBtn}
+          onPress={onNext}
+          activeOpacity={0.85}
+        >
+          <AppText style={styles.primaryBtnText}>
+            I Understand — Continue
+          </AppText>
           <MaterialIcons name="arrow-forward" size={18} color={palette.white} />
         </TouchableOpacity>
       </View>
@@ -125,16 +149,32 @@ function DisclaimerStep({ onNext }: { onNext: () => void }) {
 }
 
 // ─── Step 2: How to use ───────────────────────────────────────────────────────
-function HowToStep({ onFinish, onBack }: { onFinish: () => void; onBack: () => void }) {
+function HowToStep({
+  onFinish,
+  onBack,
+}: {
+  onFinish: () => void;
+  onBack: () => void;
+}) {
   return (
     <View style={styles.stepContainer}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight, borderColor: colors.primaryBorder }]}>
+        <View
+          style={[
+            styles.iconCircle,
+            {
+              backgroundColor: colors.primaryLight,
+              borderColor: colors.primaryBorder,
+            },
+          ]}
+        >
           <MaterialIcons name="menu-book" size={36} color={palette.blue} />
         </View>
         <AppText style={styles.stepTitle}>How to Use ChildGuard</AppText>
-        <AppText style={styles.stepSubtitle}>A quick overview to get you started</AppText>
+        <AppText style={styles.stepSubtitle}>
+          A quick overview to get you started
+        </AppText>
       </View>
 
       <ScrollView
@@ -175,17 +215,25 @@ function HowToStep({ onFinish, onBack }: { onFinish: () => void; onBack: () => v
           iconColor={palette.teal}
           iconBg={colors.secondaryLight}
           heading="Help & Disclaimer"
-          text='Tap the info icon in the top-right corner of the home screen at any time to re-read the disclaimer or review these tips.'
+          text="Tap the info icon in the top-right corner of the home screen at any time to re-read the disclaimer or review these tips."
         />
       </ScrollView>
 
       {/* Navigation */}
       <View style={styles.btnRow}>
-        <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={onBack}
+          activeOpacity={0.7}
+        >
           <MaterialIcons name="arrow-back" size={18} color={palette.navy} />
           <AppText style={styles.backBtnText}>Back</AppText>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.primaryBtn, { flex: 1 }]} onPress={onFinish} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={[styles.primaryBtn, { flex: 1 }]}
+          onPress={onFinish}
+          activeOpacity={0.85}
+        >
           <AppText style={styles.primaryBtnText}>Get Started</AppText>
         </TouchableOpacity>
       </View>
@@ -199,7 +247,7 @@ function BulletItem({
   heading,
   text,
 }: {
-  icon: React.ComponentProps<typeof MaterialIcons>['name'];
+  icon: React.ComponentProps<typeof MaterialIcons>["name"];
   heading: string;
   text: string;
 }) {
@@ -223,7 +271,7 @@ function FeatureCard({
   heading,
   text,
 }: {
-  icon: React.ComponentProps<typeof MaterialIcons>['name'];
+  icon: React.ComponentProps<typeof MaterialIcons>["name"];
   iconColor: string;
   iconBg: string;
   heading: string;
@@ -251,9 +299,9 @@ const styles = StyleSheet.create({
 
   // Step indicator
   stepBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingTop: spacing.xxl,
     paddingBottom: spacing.lg,
     gap: spacing.sm,
@@ -283,29 +331,29 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: spacing.xl,
   },
   iconCircle: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing.lg,
     borderWidth: 2,
   },
   stepTitle: {
     fontSize: typography.heading,
-    fontWeight: '800',
+    fontWeight: "800",
     color: palette.navy,
-    textAlign: 'center',
+    textAlign: "center",
     letterSpacing: -0.3,
   },
   stepSubtitle: {
     fontSize: typography.body,
     color: colors.textSubtle,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: spacing.xs,
   },
 
@@ -320,9 +368,9 @@ const styles = StyleSheet.create({
 
   // Disclaimer bullet items
   bulletItem: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.lg,
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
     backgroundColor: colors.appBackground,
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -334,13 +382,13 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: colors.secondaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     flexShrink: 0,
   },
   bulletHeading: {
     fontSize: typography.default,
-    fontWeight: '700',
+    fontWeight: "700",
     color: palette.navy,
     marginBottom: 3,
   },
@@ -352,9 +400,9 @@ const styles = StyleSheet.create({
 
   // Feature cards (how-to)
   featureCard: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.lg,
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
     backgroundColor: colors.appBackground,
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -365,13 +413,13 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     flexShrink: 0,
   },
   featureHeading: {
     fontSize: typography.default,
-    fontWeight: '700',
+    fontWeight: "700",
     color: palette.navy,
     marginBottom: 4,
   },
@@ -383,9 +431,9 @@ const styles = StyleSheet.create({
 
   // Buttons
   primaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: spacing.sm,
     backgroundColor: palette.teal,
     paddingVertical: 18,
@@ -399,23 +447,23 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     color: palette.white,
     fontSize: typography.button,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 0.3,
   },
   btnContainer: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     paddingTop: spacing.md,
   },
   btnRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.md,
     marginTop: spacing.md,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: spacing.xs,
     backgroundColor: colors.appBackground,
     borderWidth: 1.5,
@@ -426,7 +474,7 @@ const styles = StyleSheet.create({
   },
   backBtnText: {
     fontSize: typography.button,
-    fontWeight: '600',
+    fontWeight: "600",
     color: palette.navy,
   },
 });

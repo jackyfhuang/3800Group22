@@ -1,6 +1,6 @@
 # ChildGuardID
 
-A React Native mobile application for creating and managing child identification profiles. Designed to support rapid identification in missing child scenarios — parents and guardians can store essential physical descriptors, medical information, emergency contacts, and export a passport-style card for law enforcement or public use.
+A React Native mobile application for creating and managing child identification profiles. Designed to support rapid identification in missing child scenarios — parents and guardians can store essential physical descriptors, medical information, emergency contacts, and export a image-style card for law enforcement or public use.
 
 All data is stored locally on-device. No cloud, no accounts, no external servers.
 
@@ -32,11 +32,11 @@ All data is stored locally on-device. No cloud, no accounts, no external servers
 │   │   ├── _layout.tsx           # Tab navigator config
 │   │   ├── index.tsx             # Home screen — child profile list
 │   │   └── add_child.tsx         # 4-step form wizard (create & edit)
-│   ├── view_child.tsx            # Child detail view & passport export
+│   ├── view_child.tsx            # Child detail view & image export
 │   ├── _layout.tsx               # Root layout & navigation stack
 │   └── __tests__/
 ├── components/
-│   ├── child-passport.tsx        # Passport card renderer (ViewShot wrapper)
+│   ├── child-image.tsx        # Image card renderer (ViewShot wrapper)
 │   ├── ui/                       # Reusable UI components
 │   │   ├── icon-symbol.tsx       # Android/Web icon fallback
 │   │   ├── icon-symbol.ios.tsx   # iOS SF Symbols (platform-specific)
@@ -104,7 +104,7 @@ npm start
 # Press W in the terminal to open in browser
 ```
 
-***Note:** Some native features (camera, media library) are unavailable in the web build. Additionally, features like 'Generate Passport' will not work on computers, and format may differ slightly on web app*
+***Note:** Some native features (camera, media library) are unavailable in the web build. Additionally, features like 'Generate Image' will not work on computers, and format may differ slightly on web app*
 
 ---
 
@@ -174,9 +174,9 @@ ID:    Date.now().toString() — used to match profiles on edit/delete
 
 ### ViewShot / Image Export Pipeline
 
-**Files:** `components/child-passport.tsx`, `app/(tabs)/add_child.tsx`
+**Files:** `components/child-image.tsx`, `app/(tabs)/add_child.tsx`
 
-The passport card is rendered off-screen at a fixed resolution and captured as an image.
+The image card is rendered off-screen at a fixed resolution and captured as an image.
 
 - Export dimensions: **1080 × 1680 px** — hardcoded for print quality. Do not change without also updating the preview scale calculations.
 - `react-native-view-shot` must stay at version **4.0.3**. Newer versions have breaking API changes.
@@ -234,7 +234,7 @@ As noted above, the Zod schema exists in two files. This is a known tech debt it
 
 - **Adding a new screen:** Create the file in the appropriate `app/` subfolder. Expo Router picks it up automatically — no route registration needed.
 
-- **Changing the passport card layout:** Edit `components/child-passport.tsx`. The card renders at 1080×1680 internally; the preview is a scaled-down version of the same component. Changes to one affect both.
+- **Changing the image card layout:** Edit `components/child-image.tsx`. The card renders at 1080×1680 internally; the preview is a scaled-down version of the same component. Changes to one affect both.
 
 - **Debugging storage issues:** Use `npx expo start` with the Expo Dev Tools open. AsyncStorage contents can be inspected via React Native Debugger or Flipper.
 

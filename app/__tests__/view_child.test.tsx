@@ -15,8 +15,8 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   removeItem: jest.fn(),
 }));
 
-jest.mock("@/components/child-passport", () => ({
-  ChildPassportCard: ({ child }: { child: any }) => <>{child.fullName}</>,
+jest.mock("@/components/child-image", () => ({
+  ChildImageCard: ({ child }: { child: any }) => <>{child.fullName}</>,
 }));
 
 describe("ViewChildScreen", () => {

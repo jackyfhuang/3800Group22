@@ -31,10 +31,6 @@ import { FormField } from "@/components/ui/form-field";
 import { FormSection } from "@/components/ui/form-section";
 import { confirmDiscard, ScreenHeader } from "@/components/ui/screen-header";
 import { StepProgressBar } from "@/components/ui/step-progress-bar";
-import { colors, sharedStyles, addChildStyles as styles } from "@/styles";
-import { formatPhoneNumber } from "@/utils/phone";
-import { MaterialIcons } from "@expo/vector-icons";
-import { ChildPassportCard } from "../../components/child-passport";
 import {
   ChildFormData,
   childSchema,
@@ -48,6 +44,10 @@ import {
   TRACKING_DEVICE_OPTIONS,
   YES_NO_OPTIONS,
 } from "@/constants/add_child.constants";
+import { colors, sharedStyles, addChildStyles as styles } from "@/styles";
+import { formatPhoneNumber } from "@/utils/phone";
+import { MaterialIcons } from "@expo/vector-icons";
+import { ChildImageCard } from "../../components/child-image";
 
 // ─── Tab bar + progress bar height constants ──────────────────────────────────
 const TAB_BAR_HEIGHT = 40;
@@ -190,7 +190,7 @@ export default function AddChildScreen() {
     name: "emergencyContacts",
   });
 
-  const [showPassport, setShowPassport] = useState(false);
+  const [showImage, setShowImage] = useState(false);
 
   useEffect(() => {
     if (hasBirthmarks !== "yes" && birthmarkImageUris.length > 0) {
@@ -607,7 +607,7 @@ export default function AddChildScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
@@ -637,7 +637,7 @@ export default function AddChildScreen() {
 
     const remaining = 3 - existing.length;
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsMultipleSelection: true,
       selectionLimit: remaining,
       quality: 0.6,
@@ -1454,13 +1454,13 @@ export default function AddChildScreen() {
             <>
               <TouchableOpacity
                 style={[sharedStyles.secondaryButton, styles.exportButton]}
-                onPress={() => setShowPassport(true)}
+                onPress={() => setShowImage(true)}
               >
                 <AppText
                   variant="label"
                   style={sharedStyles.secondaryButtonText}
                 >
-                  Generate Passport
+                  Generate Image
                 </AppText>
               </TouchableOpacity>
               {isEditMode && (
@@ -1481,10 +1481,10 @@ export default function AddChildScreen() {
         </ScrollView>
 
         <Modal
-          visible={showPassport}
+          visible={showImage}
           animationType="slide"
           presentationStyle="pageSheet"
-          onRequestClose={() => setShowPassport(false)}
+          onRequestClose={() => setShowImage(false)}
         >
           <View style={{ flex: 1, backgroundColor: colors.appBackground }}>
             <View
@@ -1498,7 +1498,7 @@ export default function AddChildScreen() {
               }}
             >
               <TouchableOpacity
-                onPress={() => setShowPassport(false)}
+                onPress={() => setShowImage(false)}
                 style={{ padding: 8 }}
               >
                 <AppText
@@ -1512,7 +1512,7 @@ export default function AddChildScreen() {
                 </AppText>
               </TouchableOpacity>
             </View>
-            <ChildPassportCard
+            <ChildImageCard
               child={{ ...getValues(), id: id || "unknown" } as any}
             />
           </View>

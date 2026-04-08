@@ -77,7 +77,7 @@ export const colors = {
   white: palette.white,
   black: palette.black,
 
-  // Additional colors for passport component
+  // Additional colors for image component
   redBackground: palette.redBackground,
   tealLight: palette.tealLight,
   blueLight: palette.blueLight,
