@@ -1,11 +1,13 @@
 import * as MediaLibrary from "expo-media-library";
 import * as Sharing from "expo-sharing";
+import Constants from "expo-constants";
 import React, { useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
     Dimensions,
     Image,
+  Platform,
     ScrollView,
     StyleProp,
     StyleSheet,
@@ -337,7 +339,7 @@ export function ChildImageCard({ child, onCapture }: Props) {
       onCapture?.(uri);
       return uri;
     } catch {
-      Alert.alert("Error", "Failed to generate image image");
+      Alert.alert("Error", "Failed to generate image");
       return null;
     } finally {
       setCapturing(false);
@@ -359,20 +361,38 @@ export function ChildImageCard({ child, onCapture }: Props) {
   };
 
   const save = async () => {
-    const { status } = await MediaLibrary.requestPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permission Required", "Allow photo access to save image");
+    if (Platform.OS === "android" && Constants.appOwnership === "expo") {
+      Alert.alert(
+        "Expo Go Limitation",
+        "Saving to gallery requires a development build on Android. Use Share for now or run a dev build.",
+      );
       return;
     }
-    const uri = await doCapture();
-    if (!uri) return;
 
-    const asset = await MediaLibrary.createAssetAsync(uri);
-    let album = await MediaLibrary.getAlbumAsync("ChildGuard");
-    if (!album) await MediaLibrary.createAlbumAsync("ChildGuard", asset, false);
-    else await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync(false, [
+        "photo",
+      ]);
+      if (status !== "granted") {
+        Alert.alert("Permission Required", "Allow photo access to save image");
+        return;
+      }
+      const uri = await doCapture();
+      if (!uri) return;
 
-    Alert.alert("Saved", "Image image saved to ChildGuard album");
+      const asset = await MediaLibrary.createAssetAsync(uri);
+      let album = await MediaLibrary.getAlbumAsync("ChildGuard");
+      if (!album)
+        await MediaLibrary.createAlbumAsync("ChildGuard", asset, false);
+      else await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+
+      Alert.alert("Saved", "Image saved to ChildGuard album");
+    } catch {
+      Alert.alert(
+        "Save Unavailable",
+        "Unable to access media library in this environment. Try Share or use a development build.",
+      );
+    }
   };
 
   const poster = (
