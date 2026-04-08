@@ -241,3 +241,37 @@ As noted above, the Zod schema exists in two files. This is a known tech debt it
 - **Before upgrading any dependency:** Check `react-native-view-shot` compatibility first — it is the most version-sensitive package in the project.
 
 - **Testing on real devices:** The simulator is sufficient for most UI work, but always verify image export and camera/media library permissions on a physical device before releasing.
+
+---
+## Focus Group Presentation
+
+The main objective of this presentation was to generate interest, identify concerns, and evaluate the usability of the application.
+
+A demo of the app was presented to a small group with diverse backgrounds, including police officers, teachers, and parents. Security concerns were addressed for the officers and teachers; however, some parents still expressed concerns. 
+
+From a usability perspective, all participants were satisfied with the app’s ease of use. Improvements to formatting and additional input fields were implemented based on participant feedback.
+
+- A copy of the [PowerPoint presentation](https://docs.google.com/presentation/d/1Hwv8qyrp5ukEEZoh2xxxscoq14gABS2kIXaxXfEDvzg/edit?usp=sharing)
+- A copy of the [evaluation form](https://forms.gle/fqcwgwxCQwvWFwYS9)
+
+---
+
+## Future Client Expectations
+
+Our client, Ms. Karen Sidhu from the KOM Community Policing Centre, sees potential for this project to be adapted for use with seniors. A simplified revamp of the application would be the most practical approach.
+
+Additional future considerations include:
+
+- Approval from the Vancouver Police Department (VPD)
+- Deployment to the Apple App Store
+
+---
+
+## Authors
+
+### BCIT Students 2026 Jan - Apr
+
+- Titus Lee
+- Jack Huang
+- Yang Li
+- Brownie Khoi Nguyen Tran
