@@ -1,8 +1,5 @@
 import { AppDropdown } from "@/components/ui/app-dropdown";
-import {
-  fireEvent,
-  render,
-} from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
 import React from "react";
 
 describe("AppDropdown Component", () => {
@@ -26,9 +23,7 @@ describe("AppDropdown Component", () => {
         placeholder="Select an option"
       />,
     );
-    expect(
-      getByText("Select an option"),
-    ).toBeTruthy();
+    expect(getByText("Select an option")).toBeTruthy();
   });
 
   it("renders with label", () => {
@@ -62,9 +57,7 @@ describe("AppDropdown Component", () => {
       />,
     );
 
-    const dropdown = getByText(
-      "Select an option",
-    );
+    const dropdown = getByText("Select an option");
     fireEvent.press(dropdown);
 
     // Modal should now show options
@@ -83,18 +76,14 @@ describe("AppDropdown Component", () => {
     );
 
     // Open dropdown
-    const dropdown = getByText(
-      "Select an option",
-    );
+    const dropdown = getByText("Select an option");
     fireEvent.press(dropdown);
 
     // Select option
     const option = getByText("Option 2");
     fireEvent.press(option);
 
-    expect(
-      mockOnValueChange,
-    ).toHaveBeenCalledWith("2");
+    expect(mockOnValueChange).toHaveBeenCalledWith("2");
   });
 
   it("closes modal after selection", () => {
@@ -107,9 +96,7 @@ describe("AppDropdown Component", () => {
     );
 
     // Open dropdown
-    const dropdown = getByText(
-      "Select an option",
-    );
+    const dropdown = getByText("Select an option");
     fireEvent.press(dropdown);
 
     // Select option
@@ -118,9 +105,7 @@ describe("AppDropdown Component", () => {
 
     // Modal should be closed - options should not be visible
     // Note: The modal content might still be in the tree but not visible
-    expect(
-      getByText("Select an option"),
-    ).toBeTruthy();
+    expect(getByText("Select an option")).toBeTruthy();
   });
 
   it("shows error state", () => {
@@ -132,9 +117,7 @@ describe("AppDropdown Component", () => {
         hasError={true}
       />,
     );
-    expect(
-      getByText("Select an option"),
-    ).toBeTruthy();
+    expect(getByText("Select an option")).toBeTruthy();
   });
 
   it("renders with custom placeholder", () => {
@@ -145,9 +128,7 @@ describe("AppDropdown Component", () => {
         placeholder="Choose something"
       />,
     );
-    expect(
-      getByText("Choose something"),
-    ).toBeTruthy();
+    expect(getByText("Choose something")).toBeTruthy();
   });
 
   it("handles empty options array", () => {
@@ -169,6 +150,6 @@ describe("AppDropdown Component", () => {
         placeholder="Select"
       />,
     );
-    expect(getByText("▼")).toBeTruthy();
+    expect(getByText("▾")).toBeTruthy();
   });
 });

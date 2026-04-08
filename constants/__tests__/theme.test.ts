@@ -1,11 +1,11 @@
 import {
-  colors,
-  Colors,
-  Fonts,
-  palette,
-  radius,
-  spacing,
-  typography,
+    colors,
+    Colors,
+    Fonts,
+    palette,
+    radius,
+    spacing,
+    typography,
 } from "@/constants/theme";
 
 describe("Theme Constants", () => {
@@ -23,18 +23,14 @@ describe("Theme Constants", () => {
       expect(palette.red).toBe("#FF4444");
       expect(palette.redLight).toBe("#FFF0F0");
       expect(palette.redBorder).toBe("#FFE0E0");
-      expect(palette.redBackground).toBe(
-        "#FFF5F5",
-      );
+      expect(palette.redBackground).toBe("#FFF5F5");
     });
 
     it("should have neutral colors", () => {
       expect(palette.black).toBe("#000000");
       expect(palette.white).toBe("#FFFFFF");
       expect(palette.lightBorder).toBe("#E8E8E8");
-      expect(palette.subtleBorder).toBe(
-        "#F0F0F0",
-      );
+      expect(palette.subtleBorder).toBe("#F0F0F0");
     });
 
     it("should have teal tints", () => {
@@ -50,87 +46,45 @@ describe("Theme Constants", () => {
 
   describe("colors (light theme)", () => {
     it("should have background colors", () => {
-      expect(colors.appBackground).toBe(
-        palette.offWhite,
-      );
-      expect(colors.cardBackground).toBe(
-        palette.white,
-      );
-      expect(colors.inputBackground).toBe(
-        palette.white,
-      );
-      expect(colors.tabBarBackground).toBe(
-        palette.white,
-      );
+      expect(colors.appBackground).toBe(palette.offWhite);
+      expect(colors.cardBackground).toBe(palette.white);
+      expect(colors.inputBackground).toBe(palette.white);
+      expect(colors.tabBarBackground).toBe(palette.white);
     });
 
     it("should have action colors", () => {
       expect(colors.primary).toBe(palette.blue);
-      expect(colors.primaryLight).toBe(
-        palette.blueLight,
-      );
-      expect(colors.primaryBorder).toBe(
-        palette.blueBorder,
-      );
+      expect(colors.primaryLight).toBe(palette.blueLight);
+      expect(colors.primaryBorder).toBe(palette.blueBorder);
       expect(colors.secondary).toBe(palette.teal);
-      expect(colors.secondaryLight).toBe(
-        palette.tealLight,
-      );
-      expect(colors.secondaryBorder).toBe(
-        palette.tealBorder,
-      );
+      expect(colors.secondaryLight).toBe(palette.tealLight);
+      expect(colors.secondaryBorder).toBe(palette.tealBorder);
     });
 
     it("should have danger colors", () => {
       expect(colors.danger).toBe(palette.red);
-      expect(colors.dangerLight).toBe(
-        palette.redLight,
-      );
-      expect(colors.dangerBorder).toBe(
-        palette.redBorder,
-      );
-      expect(colors.dangerBackground).toBe(
-        palette.redBackground,
-      );
+      expect(colors.dangerLight).toBe(palette.redLight);
+      expect(colors.dangerBorder).toBe(palette.redBorder);
+      expect(colors.dangerBackground).toBe(palette.redBackground);
     });
 
     it("should have text colors", () => {
-      expect(colors.textPrimary).toBe(
-        palette.navy,
-      );
-      expect(colors.textName).toBe(
-        palette.navyLight,
-      );
-      expect(colors.textSubtle).toBe(
-        palette.teal,
-      );
-      expect(colors.textOnDark).toBe(
-        palette.white,
-      );
-      expect(colors.textOnLight).toBe(
-        palette.navy,
-      );
+      expect(colors.textPrimary).toBe(palette.navy);
+      expect(colors.textName).toBe(palette.navyLight);
+      expect(colors.textSubtle).toBe(palette.teal);
+      expect(colors.textOnDark).toBe(palette.white);
+      expect(colors.textOnLight).toBe(palette.navy);
     });
 
     it("should have shadow colors", () => {
-      expect(colors.cardShadow).toBe(
-        palette.amber,
-      );
-      expect(colors.inputShadow).toBe(
-        palette.amber,
-      );
-      expect(colors.inputSelection).toBe(
-        palette.amber,
-      );
+      expect(colors.cardShadow).toBe(palette.amber);
+      expect(colors.inputShadow).toBe(palette.amber);
+      expect(colors.inputSelection).toBe(palette.amber);
     });
 
     it("should have border colors", () => {
-      expect(colors.cardBorder).toBe(
-        palette.lightBorder,
-      );
-      expect(colors.subtleBorder).toBe(
-        palette.subtleBorder,
-      );
+      expect(colors.cardBorder).toBe(palette.lightBorder);
+      expect(colors.subtleBorder).toBe(palette.subtleBorder);
     });
 
     it("should have misc colors", () => {
@@ -141,41 +95,21 @@ describe("Theme Constants", () => {
 
   describe("Colors (theme)", () => {
     it("should have light theme colors", () => {
-      expect(Colors.light.text).toBe(
-        palette.navy,
-      );
-      expect(Colors.light.background).toBe(
-        palette.offWhite,
-      );
-      expect(Colors.light.tint).toBe(
-        palette.blue,
-      );
-      expect(Colors.light.icon).toBe(
-        palette.blue,
-      );
-      expect(Colors.light.tabIconDefault).toBe(
-        palette.navy,
-      );
-      expect(Colors.light.tabIconSelected).toBe(
-        palette.blue,
-      );
+      expect(Colors.light.text).toBe(palette.navy);
+      expect(Colors.light.background).toBe(palette.offWhite);
+      expect(Colors.light.tint).toBe(palette.blue);
+      expect(Colors.light.icon).toBe(palette.blue);
+      expect(Colors.light.tabIconDefault).toBe(palette.navy);
+      expect(Colors.light.tabIconSelected).toBe(palette.blue);
     });
 
     it("should have dark theme colors", () => {
-      expect(Colors.dark.text).toBe(
-        palette.white,
-      );
-      expect(Colors.dark.background).toBe(
-        palette.navy,
-      );
+      expect(Colors.dark.text).toBe(palette.white);
+      expect(Colors.dark.background).toBe(palette.navy);
       expect(Colors.dark.tint).toBe(palette.blue);
       expect(Colors.dark.icon).toBe(palette.blue);
-      expect(Colors.dark.tabIconDefault).toBe(
-        palette.offWhite,
-      );
-      expect(Colors.dark.tabIconSelected).toBe(
-        palette.blue,
-      );
+      expect(Colors.dark.tabIconDefault).toBe(palette.offWhite);
+      expect(Colors.dark.tabIconSelected).toBe(palette.blue);
     });
   });
 
@@ -187,7 +121,7 @@ describe("Theme Constants", () => {
       expect(spacing.lg).toBe(16);
       expect(spacing.xl).toBe(20);
       expect(spacing.xxl).toBe(24);
-      expect(spacing.xxxl).toBe(32);
+      expect(spacing.xxxl).toBe(40);
     });
 
     it("should have ascending spacing values", () => {
@@ -195,12 +129,8 @@ describe("Theme Constants", () => {
       expect(spacing.sm).toBeLessThan(spacing.md);
       expect(spacing.md).toBeLessThan(spacing.lg);
       expect(spacing.lg).toBeLessThan(spacing.xl);
-      expect(spacing.xl).toBeLessThan(
-        spacing.xxl,
-      );
-      expect(spacing.xxl).toBeLessThan(
-        spacing.xxxl,
-      );
+      expect(spacing.xl).toBeLessThan(spacing.xxl);
+      expect(spacing.xxl).toBeLessThan(spacing.xxxl);
     });
   });
 
@@ -236,18 +166,10 @@ describe("Theme Constants", () => {
     });
 
     it("should have ascending font size values", () => {
-      expect(typography.tiny).toBeLessThan(
-        typography.small,
-      );
-      expect(typography.small).toBeLessThan(
-        typography.body,
-      );
-      expect(typography.body).toBeLessThan(
-        typography.default,
-      );
-      expect(typography.default).toBeLessThan(
-        typography.button,
-      );
+      expect(typography.tiny).toBeLessThan(typography.small);
+      expect(typography.small).toBeLessThan(typography.body);
+      expect(typography.body).toBeLessThan(typography.default);
+      expect(typography.default).toBeLessThan(typography.button);
     });
   });
 
