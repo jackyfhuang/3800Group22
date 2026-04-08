@@ -44,7 +44,7 @@ describe("useChildrenStorage Hook - AsyncStorage Integration", () => {
             {
               name: "Jane Doe",
               relationship: "Mother",
-              phone: "123-456-7890",
+              phone: "(123) 456-7890",
             },
           ],
         },
@@ -98,7 +98,7 @@ describe("useChildrenStorage Hook - AsyncStorage Integration", () => {
           {
             name: "Parent",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
@@ -178,7 +178,7 @@ describe("useChildrenStorage Hook - AsyncStorage Integration", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
@@ -222,7 +222,7 @@ describe("useChildrenStorage Hook - AsyncStorage Integration", () => {
             {
               name: "Jane Doe",
               relationship: "Mother",
-              phone: "123-456-7890",
+              phone: "(123) 456-7890",
             },
           ],
         },
@@ -278,7 +278,7 @@ describe("useChildrenStorage Hook - AsyncStorage Integration", () => {
             {
               name: "Jane Doe",
               relationship: "Mother",
-              phone: "123-456-7890",
+              phone: "(123) 456-7890",
             },
           ],
         },
@@ -319,7 +319,7 @@ describe("useChildrenStorage Hook - AsyncStorage Integration", () => {
             {
               name: "Jane Doe",
               relationship: "Mother",
-              phone: "123-456-7890",
+              phone: "(123) 456-7890",
             },
           ],
         },
@@ -333,7 +333,7 @@ describe("useChildrenStorage Hook - AsyncStorage Integration", () => {
             {
               name: "John Smith",
               relationship: "Father",
-              phone: "098-765-4321",
+              phone: "(098) 765-4321",
             },
           ],
         },
