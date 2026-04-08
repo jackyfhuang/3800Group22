@@ -7,19 +7,32 @@ import {
     Dimensions,
     Image,
     ScrollView,
+    StyleProp,
     StyleSheet,
     TouchableOpacity,
     View,
+    ViewStyle,
 } from "react-native";
 import ViewShot from "react-native-view-shot";
 
 import { AppText } from "@/components/ui/app-text";
 import { colors } from "@/constants/theme";
 import { ChildProfile } from "@/types/child";
+import { formatPhoneForDisplay } from "@/utils/phone";
+import {
+    boolToYesNo,
+    computeAge,
+    formatChoice,
+    normalizeDate,
+} from "@/utils/profile-format";
 
 const EXPORT_W = 1080;
-const EXPORT_H = 1680;
-const IDENTIFYING_TILE_SIZE = 149;
+const EXPORT_H = 2050;
+const PHOTO_COLUMN_W = 560;
+const INFO_COLUMN_W = 420;
+const COLUMN_W = PHOTO_COLUMN_W;
+const IDENTIFYING_TILE_SIZE = 175;
+
 const { width: screenWidth } = Dimensions.get("window");
 const PREVIEW_W = Math.max(280, screenWidth - 32);
 const PREVIEW_SCALE = PREVIEW_W / EXPORT_W;
@@ -75,44 +88,22 @@ interface Props {
   onCapture?: (uri: string) => void;
 }
 
-const formatChoice = (value?: string | null) =>
-  value
-    ? value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-    : null;
-
-const normalizeDate = (value?: string | null) => {
-  if (!value) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return parsed.toISOString().split("T")[0];
-};
-
-const computeAge = (dob?: string | null) => {
-  if (!dob) return null;
-  const birth = new Date(dob);
-  if (Number.isNaN(birth.getTime())) return null;
-  const today = new Date();
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate()))
-    age--;
-  return age >= 0 ? age : null;
-};
-
-const boolToYesNo = (value?: boolean) => {
-  if (value === undefined || value === null) return null;
-  return value ? "Yes" : "No";
-};
-
-function InfoSection({ title, items }: { title: string; items: Item[] }) {
+function InfoSection({
+  title,
+  items,
+  containerStyle,
+}: {
+  title: string;
+  items: Item[];
+  containerStyle?: StyleProp<ViewStyle>;
+}) {
   const visible = items.filter(
     (item) => item.value && String(item.value).trim().length > 0,
   );
   if (visible.length === 0) return null;
 
   return (
-    <View style={styles.sectionCard}>
+    <View style={[styles.sectionCard, containerStyle]}>
       <AppText style={styles.sectionTitle}>{title}</AppText>
       {visible.map((item, index) => (
         <View
@@ -194,7 +185,9 @@ export function ChildPassportCard({ child, onCapture }: Props) {
 
   const displayHeight =
     profile.unitSystem === "metric"
-      ? (child.height ? `${child.height} cm` : null)
+      ? child.height
+        ? `${child.height} cm`
+        : null
       : profile.heightFeet != null
         ? `${profile.heightFeet} ft ${profile.heightInches ?? 0} in`
         : child.height
@@ -229,7 +222,13 @@ export function ChildPassportCard({ child, onCapture }: Props) {
     { label: "Height", value: displayHeight },
     { label: "Weight", value: displayWeight },
     { label: "Tracking Device", value: formatChoice(displayTrackingDevice) },
-    { label: "Device Details", value: profile.hasTrackingDevice === "yes" ? profile.trackingDeviceDetails : null },
+    {
+      label: "Device Details",
+      value:
+        profile.hasTrackingDevice === "yes"
+          ? profile.trackingDeviceDetails
+          : null,
+    },
   ];
 
   const medicalItems: Item[] = [
@@ -310,10 +309,10 @@ export function ChildPassportCard({ child, onCapture }: Props) {
 
   const guardianItems: Item[] = [
     { label: "Primary Contact 1", value: guardian1.name },
-    { label: "Contact 1 Phone", value: guardian1.phone },
+    { label: "Contact 1 Phone", value: formatPhoneForDisplay(guardian1.phone) },
     { label: "Contact 1 Address", value: guardian1.address },
     { label: "Primary Contact 2", value: guardian2.name },
-    { label: "Contact 2 Phone", value: guardian2.phone },
+    { label: "Contact 2 Phone", value: formatPhoneForDisplay(guardian2.phone) },
     { label: "Contact 2 Address", value: guardian2.address },
   ];
 
@@ -321,7 +320,10 @@ export function ChildPassportCard({ child, onCapture }: Props) {
     (contact, index) => [
       { label: `Contact ${index + 1} Name`, value: contact.name },
       { label: `Contact ${index + 1} Relation`, value: contact.relationship },
-      { label: `Contact ${index + 1} Phone`, value: contact.phone },
+      {
+        label: `Contact ${index + 1} Phone`,
+        value: formatPhoneForDisplay(contact.phone),
+      },
       { label: `Contact ${index + 1} Address`, value: contact.address },
       { label: `Contact ${index + 1} Sex`, value: contact.sex },
     ],
@@ -364,14 +366,16 @@ export function ChildPassportCard({ child, onCapture }: Props) {
     }
     const uri = await doCapture();
     if (!uri) return;
+
     const asset = await MediaLibrary.createAssetAsync(uri);
     let album = await MediaLibrary.getAlbumAsync("ChildGuard");
     if (!album) await MediaLibrary.createAlbumAsync("ChildGuard", asset, false);
     else await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+
     Alert.alert("Saved", "Passport image saved to ChildGuard album");
   };
 
-  const Poster = (
+  const poster = (
     <View style={styles.posterRoot}>
       <View style={styles.header}>
         <View>
@@ -385,52 +389,57 @@ export function ChildPassportCard({ child, onCapture }: Props) {
         </View>
       </View>
 
-      <View style={styles.photoRow}>
-        <View style={styles.mainPhotoWrap}>
-          {child.imageUri ? (
-            <Image
-              source={{ uri: child.imageUri }}
-              style={styles.mainPhoto}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.mainPhotoEmpty}>
-              <AppText style={styles.mainPhotoEmptyText}>No Main Photo</AppText>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.sidePhotosWrap}>
-          <AppText style={styles.sidePhotosTitle}>Identifying Photos</AppText>
-          <View style={styles.sidePhotosGrid}>
-            {featurePhotos.map((uri, index) => (
+      <View style={styles.contentColumns}>
+        <View style={styles.photoColumn}>
+          <View style={styles.mainPhotoWrap}>
+            {child.imageUri ? (
               <Image
-                key={`${uri}-${index}`}
-                source={{ uri }}
-                style={styles.thumb}
+                source={{ uri: child.imageUri }}
+                style={styles.mainPhoto}
+                resizeMode="cover"
               />
-            ))}
-            {featurePhotos.length === 0 && (
-              <View style={styles.sidePhotosEmptyWrap}>
-                <EmptyThumb />
-                <EmptyThumb />
-                <EmptyThumb />
-                <EmptyThumb />
-                <EmptyThumb />
-                <EmptyThumb />
+            ) : (
+              <View style={styles.mainPhotoEmpty}>
+                <AppText style={styles.mainPhotoEmptyText}>
+                  No Main Photo
+                </AppText>
               </View>
             )}
           </View>
-        </View>
-      </View>
 
-      <View style={styles.sectionsGrid}>
-        <InfoSection title="Identity" items={identityItems} />
-        <InfoSection title="Medical & Feature Details" items={medicalItems} />
-        <InfoSection title="Visual Description" items={visualItems} />
-        <InfoSection title="Location & Activities" items={locationItems} />
-        <InfoSection title="Primary Guardians" items={guardianItems} />
-        <InfoSection title="Emergency Contacts" items={emergencyItems} />
+          <View style={styles.sidePhotosWrap}>
+            <AppText style={styles.sidePhotosTitle}>Identifying Photos</AppText>
+            <View style={styles.sidePhotosGrid}>
+              {featurePhotos.map((uri, index) => (
+                <Image
+                  key={`${uri}-${index}`}
+                  source={{ uri }}
+                  style={styles.thumb}
+                />
+              ))}
+              {featurePhotos.length === 0 && (
+                <View style={styles.sidePhotosEmptyWrap}>
+                  <EmptyThumb />
+                  <EmptyThumb />
+                  <EmptyThumb />
+                  <EmptyThumb />
+                  <EmptyThumb />
+                  <EmptyThumb />
+                </View>
+              )}
+            </View>
+          </View>
+
+          <InfoSection title="Primary Guardians" items={guardianItems} />
+          <InfoSection title="Emergency Contacts" items={emergencyItems} />
+        </View>
+
+        <View style={styles.infoColumn}>
+          <InfoSection title="Identity" items={identityItems} />
+          <InfoSection title="Visual Description" items={visualItems} />
+          <InfoSection title="Medical & Feature Details" items={medicalItems} />
+          <InfoSection title="Location & Activities" items={locationItems} />
+        </View>
       </View>
 
       <View style={styles.footer}>
@@ -448,7 +457,7 @@ export function ChildPassportCard({ child, onCapture }: Props) {
         options={{ format: "jpg", quality: 1 }}
         style={styles.exportHidden}
       >
-        <View style={{ width: EXPORT_W, height: EXPORT_H }}>{Poster}</View>
+        <View style={{ width: EXPORT_W, height: EXPORT_H }}>{poster}</View>
       </ViewShot>
 
       <ScrollView
@@ -468,7 +477,7 @@ export function ChildPassportCard({ child, onCapture }: Props) {
               },
             ]}
           >
-            <View style={{ width: EXPORT_W, height: EXPORT_H }}>{Poster}</View>
+            <View style={{ width: EXPORT_W, height: EXPORT_H }}>{poster}</View>
           </View>
         </View>
 
@@ -485,6 +494,7 @@ export function ChildPassportCard({ child, onCapture }: Props) {
               <AppText style={styles.primaryBtnText}>Share Passport</AppText>
             )}
           </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.secondaryBtn}
             onPress={save}
@@ -543,14 +553,14 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   title: {
-    fontSize: 42,
+    fontSize: 46,
     fontWeight: "800",
     color: "#11253C",
     letterSpacing: -0.5,
   },
   subtitle: {
     marginTop: 4,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "600",
     color: "#4B6685",
   },
@@ -561,20 +571,28 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   idChipText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "700",
     color: "#2059A6",
     letterSpacing: 0.5,
   },
-  photoRow: {
+  contentColumns: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 20,
+    justifyContent: "space-between",
     marginBottom: 20,
   },
+  photoColumn: {
+    width: COLUMN_W,
+    gap: 16,
+  },
+  infoColumn: {
+    width: INFO_COLUMN_W,
+    gap: 16,
+  },
   mainPhotoWrap: {
-    width: 488,
-    height: 360,
+    width: "100%",
+    height: 430,
     borderRadius: 20,
     overflow: "hidden",
     backgroundColor: "#DDE7F5",
@@ -596,15 +614,15 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   sidePhotosWrap: {
-    width: 488,
+    width: "100%",
     borderRadius: 20,
     backgroundColor: colors.white,
     borderWidth: 2,
     borderColor: "#D9E5F5",
-    padding: 12,
+    padding: 14,
   },
   sidePhotosTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "800",
     color: "#1B3554",
     marginBottom: 12,
@@ -617,11 +635,11 @@ const styles = StyleSheet.create({
   thumb: {
     width: IDENTIFYING_TILE_SIZE,
     height: IDENTIFYING_TILE_SIZE,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#D5E2F3",
     backgroundColor: "#EEF4FB",
-    marginBottom: 6,
+    marginBottom: 8,
   },
   sidePhotosEmptyWrap: {
     flexDirection: "row",
@@ -631,44 +649,37 @@ const styles = StyleSheet.create({
   thumbEmpty: {
     width: IDENTIFYING_TILE_SIZE,
     height: IDENTIFYING_TILE_SIZE,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#D5E2F3",
     backgroundColor: "#EEF4FB",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 6,
+    marginBottom: 8,
   },
   thumbEmptyText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
     color: "#67809E",
   },
-  sectionsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 14,
-  },
   sectionCard: {
-    width: 488,
-    minHeight: 120,
+    width: "100%",
     borderRadius: 16,
     backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: "#DCE7F4",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "800",
     color: "#1A385B",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   row: {
     flexDirection: "row",
-    paddingVertical: 6,
+    paddingVertical: 7,
     gap: 12,
   },
   rowBorder: {
@@ -677,22 +688,22 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     width: 190,
-    fontSize: 13,
+    fontSize: 15,
     color: "#56708D",
     fontWeight: "700",
   },
   rowValue: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 15,
     color: "#1B2E46",
     fontWeight: "600",
   },
   footer: {
-    marginTop: 14,
+    marginTop: 12,
     alignItems: "center",
   },
   footerText: {
-    fontSize: 13,
+    fontSize: 15,
     color: "#607A99",
     fontWeight: "600",
   },

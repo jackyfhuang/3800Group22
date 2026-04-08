@@ -1,8 +1,8 @@
 import {
-  childSchema,
-  defaultEmergencyContact,
-  emergencyContactSchema,
-  getDefaultChildFormData,
+    childSchema,
+    defaultEmergencyContact,
+    emergencyContactSchema,
+    getDefaultChildFormData,
 } from "@/types/child";
 
 describe("childSchema - Validation Tests", () => {
@@ -18,12 +18,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
 
@@ -37,17 +36,14 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(invalidData);
+      const result = childSchema.safeParse(invalidData);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(
-          result.error.issues[0].message,
-        ).toBe(
+        expect(result.error.issues[0].message).toBe(
           "Name must be at least 2 characters",
         );
       }
@@ -63,12 +59,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(invalidData);
+      const result = childSchema.safeParse(invalidData);
       expect(result.success).toBe(false);
     });
   });
@@ -85,12 +80,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
 
@@ -104,12 +98,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
 
@@ -123,12 +116,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
   });
@@ -145,12 +137,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
 
@@ -164,12 +155,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
 
@@ -183,12 +173,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
   });
@@ -205,12 +194,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
 
@@ -224,12 +212,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
 
@@ -243,12 +230,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
   });
@@ -266,12 +252,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
 
@@ -286,12 +271,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
   });
@@ -306,13 +290,12 @@ describe("childSchema - Validation Tests", () => {
         weight: "20",
         emergencyContacts: [],
       };
-      const result =
-        childSchema.safeParse(invalidData);
+      const result = childSchema.safeParse(invalidData);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(
-          result.error.issues[0].message,
-        ).toBe("At least one contact required");
+        expect(result.error.issues[0].message).toBe(
+          "At least one contact required",
+        );
       }
     });
 
@@ -326,12 +309,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
 
@@ -345,17 +327,16 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
           {
             name: "John Sr",
             relationship: "Father",
-            phone: "098-765-4321",
+            phone: "(098) 765-4321",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
   });
@@ -390,12 +371,11 @@ describe("childSchema - Validation Tests", () => {
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
 
@@ -409,8 +389,7 @@ describe("childSchema - Validation Tests", () => {
         gender: "male",
         medicalNotes: "Allergic to peanuts",
         hasBirthmarks: "yes",
-        birthmarksDescription:
-          "Small birthmark on left arm",
+        birthmarksDescription: "Small birthmark on left arm",
         hasScars: "yes",
         scarsDescription: "Scar on knee",
         hasIdentifyingFeatures: "yes",
@@ -421,20 +400,19 @@ describe("childSchema - Validation Tests", () => {
         sportsTeams: "Soccer",
         parent1Name: "Jane Doe",
         parent1Address: "123 Main St",
-        parent1Phone: "123-456-7890",
+        parent1Phone: "(123) 456-7890",
         parent2Name: "John Sr",
         parent2Address: "123 Main St",
-        parent2Phone: "098-765-4321",
+        parent2Phone: "(098) 765-4321",
         emergencyContacts: [
           {
             name: "Jane Doe",
             relationship: "Mother",
-            phone: "123-456-7890",
+            phone: "(123) 456-7890",
           },
         ],
       };
-      const result =
-        childSchema.safeParse(validData);
+      const result = childSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
   });
@@ -446,12 +424,9 @@ describe("emergencyContactSchema - Validation Tests", () => {
       const validData = {
         name: "Jane Doe",
         relationship: "Mother",
-        phone: "123-456-7890",
+        phone: "(123) 456-7890",
       };
-      const result =
-        emergencyContactSchema.safeParse(
-          validData,
-        );
+      const result = emergencyContactSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
 
@@ -459,17 +434,12 @@ describe("emergencyContactSchema - Validation Tests", () => {
       const invalidData = {
         name: "",
         relationship: "Mother",
-        phone: "123-456-7890",
+        phone: "(123) 456-7890",
       };
-      const result =
-        emergencyContactSchema.safeParse(
-          invalidData,
-        );
+      const result = emergencyContactSchema.safeParse(invalidData);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(
-          result.error.issues[0].message,
-        ).toBe("Name is required");
+        expect(result.error.issues[0].message).toBe("Name is required");
       }
     });
   });
@@ -479,12 +449,9 @@ describe("emergencyContactSchema - Validation Tests", () => {
       const validData = {
         name: "Jane Doe",
         relationship: "Mother",
-        phone: "123-456-7890",
+        phone: "(123) 456-7890",
       };
-      const result =
-        emergencyContactSchema.safeParse(
-          validData,
-        );
+      const result = emergencyContactSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
 
@@ -494,15 +461,10 @@ describe("emergencyContactSchema - Validation Tests", () => {
         relationship: "Mother",
         phone: "",
       };
-      const result =
-        emergencyContactSchema.safeParse(
-          invalidData,
-        );
+      const result = emergencyContactSchema.safeParse(invalidData);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(
-          result.error.issues[0].message,
-        ).toBe("Phone is required");
+        expect(result.error.issues[0].message).toBe("Phone is required");
       }
     });
   });
@@ -512,12 +474,9 @@ describe("emergencyContactSchema - Validation Tests", () => {
       const validData = {
         name: "Jane Doe",
         relationship: "Mother",
-        phone: "123-456-7890",
+        phone: "(123) 456-7890",
       };
-      const result =
-        emergencyContactSchema.safeParse(
-          validData,
-        );
+      const result = emergencyContactSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
 
@@ -525,17 +484,12 @@ describe("emergencyContactSchema - Validation Tests", () => {
       const invalidData = {
         name: "Jane Doe",
         relationship: "",
-        phone: "123-456-7890",
+        phone: "(123) 456-7890",
       };
-      const result =
-        emergencyContactSchema.safeParse(
-          invalidData,
-        );
+      const result = emergencyContactSchema.safeParse(invalidData);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(
-          result.error.issues[0].message,
-        ).toBe("Relationship is required");
+        expect(result.error.issues[0].message).toBe("Relationship is required");
       }
     });
   });
@@ -545,13 +499,10 @@ describe("emergencyContactSchema - Validation Tests", () => {
       const validData = {
         name: "Jane Doe",
         relationship: "Mother",
-        phone: "123-456-7890",
+        phone: "(123) 456-7890",
         sex: "female",
       };
-      const result =
-        emergencyContactSchema.safeParse(
-          validData,
-        );
+      const result = emergencyContactSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
 
@@ -559,13 +510,10 @@ describe("emergencyContactSchema - Validation Tests", () => {
       const validData = {
         name: "Jane Doe",
         relationship: "Mother",
-        phone: "123-456-7890",
+        phone: "(123) 456-7890",
         address: "123 Main St",
       };
-      const result =
-        emergencyContactSchema.safeParse(
-          validData,
-        );
+      const result = emergencyContactSchema.safeParse(validData);
       expect(result.success).toBe(true);
     });
   });
@@ -589,9 +537,10 @@ describe("Default Values", () => {
       imageUri: "",
       gender: "",
       medicalNotes: "",
-      emergencyContacts: [
-        defaultEmergencyContact,
-      ],
+      birthmarkImageUris: [],
+      scarImageUris: [],
+      identifyingFeatureImageUris: [],
+      emergencyContacts: [defaultEmergencyContact],
     });
   });
 
@@ -601,8 +550,6 @@ describe("Default Values", () => {
     expect(defaultData.imageUri).toBe("");
     expect(defaultData.gender).toBe("");
     expect(defaultData.medicalNotes).toBe("");
-    expect(
-      defaultData.emergencyContacts,
-    ).toHaveLength(1);
+    expect(defaultData.emergencyContacts).toHaveLength(1);
   });
 });

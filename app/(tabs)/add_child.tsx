@@ -2,7 +2,6 @@ import { DatePickerModal } from "@/components/ui/date-picker-modal";
 import { zodResolver } from "@hookform/resolvers/zod";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
-import * as MediaLibrary from "expo-media-library";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, {
   useCallback,
@@ -25,199 +24,30 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { z } from "zod";
 
-import { ChildPassportCard } from "@/components/child-passport";
 import { AppDropdown } from "@/components/ui/app-dropdown";
 import { AppText } from "@/components/ui/app-text";
 import { FormField } from "@/components/ui/form-field";
 import { FormSection } from "@/components/ui/form-section";
-import { ScreenHeader, confirmDiscard } from "@/components/ui/screen-header";
+import { confirmDiscard, ScreenHeader } from "@/components/ui/screen-header";
 import { StepProgressBar } from "@/components/ui/step-progress-bar";
 import { colors, sharedStyles, addChildStyles as styles } from "@/styles";
+import { formatPhoneNumber } from "@/utils/phone";
 import { MaterialIcons } from "@expo/vector-icons";
-
-// ─── Validation Schema ────────────────────────────────────────────────────────
-const guardianSchema = z.object({
-  name: z.string().min(2, "Name is required"),
-  phone: z.string().min(7, "Valid phone number is required"),
-  address: z.string().optional(),
-});
-
-const primaryGuardianSchema = z.object({
-  name: z.string().min(2, "Name is required"),
-  phone: z.string().min(7, "Valid phone number is required"),
-  address: z.string().min(1, "Address is required"),
-});
-
-const emergencyContactSchema = z.object({
-  name: z.string().min(2, "Name is required"),
-  relationship: z.string().min(2, "Relationship is required"),
-  phone: z.string().min(7, "Valid phone number is required"),
-  address: z.string().optional(),
-});
-
-const childSchema = z.object({
-  // ── Step 1: Essential ID ──────────────────────────────────────────────────
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  dateOfBirth: z.string().min(1, "Date of birth is required"),
-  sex: z.string().min(1, "Sex is required"),
-  ethnicity: z.string().min(2, "Ethnicity is required"),
-  skinColor: z.string().min(1, "Skin color is required"),
-  skinColorOther: z.string().optional(),
-  languageSpoken: z.string().min(1, "Language spoken is required"),
-  unitSystem: z.enum(["imperial", "metric"]),
-  height: z.preprocess(
-    (v) => (v === undefined || v === "" ? undefined : parseFloat(String(v))),
-    z.number().min(30, "Height (cm) seems too low").max(250, "Height seems too high").optional(),
-  ),
-  heightFeet: z.preprocess(
-    (v) => (v === undefined || v === "" ? undefined : parseFloat(String(v))),
-    z.number().min(1, "Height (ft) seems too low").max(8, "Height (ft) seems too high").optional(),
-  ),
-  heightInches: z.preprocess(
-    (v) => (v === undefined || v === "" ? undefined : parseFloat(String(v))),
-    z.number().min(0, "Inches must be 0 or more").max(11, "Inches must be 11 or less").optional(),
-  ),
-  weight: z.preprocess(
-    (v) => (v === undefined || v === "" ? undefined : parseFloat(String(v))),
-    z.number().min(1, "Weight seems too low").optional(),
-  ),
-  hasTrackingDevice: z.string().optional(),
-  trackingDeviceType: z.string().optional(),
-  trackingDeviceTypeOther: z.string().optional(),
-  trackingDeviceDetails: z.string().optional(),
-
-  // ── Step 2: Visual Identifiers ────────────────────────────────────────────
-  eyeColor: z.string().min(1, "Eye color is required"),
-  eyeColorOther: z.string().optional(),
-  hairColor: z.string().min(1, "Hair color is required"),
-  hairColorOther: z.string().optional(),
-  hairStyle: z.string().min(1, "Hair style is required"),
-  hasHat: z.boolean().optional(),
-  hatColor: z.string().optional(),
-  hatStyle: z.string().optional(),
-  topColor: z.string().optional(),
-  pantsColor: z.string().optional(),
-  shoesColor: z.string().optional(),
-  shoesType: z.string().optional(),
-  hasGlasses: z.boolean().optional(),
-  hasHearingAids: z.boolean().optional(),
-  otherSensoryNeeds: z.string().optional(),
-
-  // ── Step 3: Medical ───────────────────────────────────────────────────────
-  lifeThreatAllergies: z.string().min(1, "Life-threatening allergies is required"),
-  emergencyMedications: z.string().min(1, "Emergency medications is required"),
-  communicationNeeds: z.string().optional(),
-  communicationNeedsOther: z.string().optional(),
-  otherMedicalNotes: z.string().optional(),
-  imageUri: z.string().optional(),
-  hasBirthmarks: z.string().optional(),
-  birthmarksDescription: z.string().optional(),
-  hasScars: z.string().optional(),
-  scarsDescription: z.string().optional(),
-  hasIdentifyingFeatures: z.string().optional(),
-  identifyingFeaturesDescription: z.string().optional(),
-  birthmarkImageUris: z.array(z.string()).max(3).optional(),
-  scarImageUris: z.array(z.string()).max(3).optional(),
-  identifyingFeatureImageUris: z.array(z.string()).max(3).optional(),
-  lastKnownLocation: z.string().optional(),
-  schoolDaycareType: z.string().optional(),
-  schoolDaycareName: z.string().optional(),
-  sportsTeams: z.string().optional(),
-
-  // ── Step 4: Contacts ──────────────────────────────────────────────────────
-  guardian1: primaryGuardianSchema,
-  guardian2: guardianSchema,
-  emergencyContacts: z.array(emergencyContactSchema),
-});
-
-type ChildFormData = z.infer<typeof childSchema>;
-
-// ─── Step field keys for per-step validation ─────────────────────────────────
-const STEP_FIELDS: Record<number, (keyof ChildFormData)[]> = {
-  1: [
-    "firstName",
-    "lastName",
-    "dateOfBirth",
-    "sex",
-    "ethnicity",
-    "skinColor",
-    "languageSpoken",
-    "eyeColor",
-    "hairColor",
-    "hairStyle",
-  ],
-  2: ["lifeThreatAllergies", "emergencyMedications"],
-  3: ["guardian1", "guardian2", "emergencyContacts"],
-  4: [],
-};
-
-const YES_NO_OPTIONS = [
-  { label: "Yes", value: "yes" },
-  { label: "No", value: "no" },
-];
-
-type FeatureImageFieldName =
-  | "birthmarkImageUris"
-  | "scarImageUris"
-  | "identifyingFeatureImageUris";
-
-// ─── Dropdown Options ─────────────────────────────────────────────────────────
-const SEX_OPTIONS = [
-  { label: "Male", value: "male" },
-  { label: "Female", value: "female" },
-];
-
-const COMMUNICATION_OPTIONS = [
-  { label: "None", value: "None" },
-  { label: "Verbal", value: "verbal" },
-  { label: "Non-verbal", value: "non_verbal" },
-  { label: "Language Barrier", value: "language_barrier" },
-  { label: "Other", value: "other" },
-];
-
-const SKIN_COLOR_OPTIONS = [
-  { label: "Light", value: "light" },
-  { label: "Fair", value: "fair" },
-  { label: "Medium", value: "medium" },
-  { label: "Olive", value: "olive" },
-  { label: "Brown", value: "brown" },
-  { label: "Dark Brown", value: "dark_brown" },
-  { label: "Dark", value: "dark" },
-  { label: "Other", value: "other" },
-];
-
-const TRACKING_DEVICE_OPTIONS = [
-  { label: "Phone", value: "phone" },
-  { label: "Watch", value: "watch" },
-  { label: "AirTag", value: "airtag" },
-  { label: "Tile", value: "tile" },
-  { label: "Other", value: "other" },
-];
-
-const EYE_COLOR_OPTIONS = [
-  { label: "Brown", value: "brown" },
-  { label: "Blue", value: "blue" },
-  { label: "Green", value: "green" },
-  { label: "Hazel", value: "hazel" },
-  { label: "Grey", value: "grey" },
-  { label: "Amber", value: "amber" },
-  { label: "Other", value: "other" },
-];
-
-const HAIR_COLOR_OPTIONS = [
-  { label: "Black", value: "black" },
-  { label: "Dark Brown", value: "dark_brown" },
-  { label: "Brown", value: "brown" },
-  { label: "Light Brown", value: "light_brown" },
-  { label: "Blonde", value: "blonde" },
-  { label: "Red", value: "red" },
-  { label: "Grey", value: "grey" },
-  { label: "White", value: "white" },
-  { label: "Other", value: "other" },
-];
+import { ChildPassportCard } from "../../components/child-passport";
+import {
+  ChildFormData,
+  childSchema,
+  COMMUNICATION_OPTIONS,
+  EYE_COLOR_OPTIONS,
+  FeatureImageFieldName,
+  HAIR_COLOR_OPTIONS,
+  SEX_OPTIONS,
+  SKIN_COLOR_OPTIONS,
+  STEP_FIELDS,
+  TRACKING_DEVICE_OPTIONS,
+  YES_NO_OPTIONS,
+} from "@/constants/add_child.constants";
 
 // ─── Tab bar + progress bar height constants ──────────────────────────────────
 const TAB_BAR_HEIGHT = 40;
@@ -252,7 +82,6 @@ export default function AddChildScreen() {
 
   const {
     control,
-    handleSubmit,
     formState: { errors },
     reset,
     watch,
@@ -462,19 +291,19 @@ export default function AddChildScreen() {
       sportsTeams: toText(raw.sportsTeams),
       guardian1: {
         name: toText(guardian1?.name),
-        phone: toText(guardian1?.phone),
+        phone: formatPhoneNumber(toText(guardian1?.phone)),
         address: toText(guardian1?.address),
       },
       guardian2: {
         name: toText(guardian2?.name),
-        phone: toText(guardian2?.phone),
+        phone: formatPhoneNumber(toText(guardian2?.phone)),
         address: toText(guardian2?.address),
       },
       emergencyContacts: Array.isArray(raw.emergencyContacts)
-        ? raw.emergencyContacts.map((contact: any) => ({
+        ? raw.emergencyContacts.slice(0, 2).map((contact: any) => ({
             name: toText(contact?.name),
             relationship: toText(contact?.relationship),
-            phone: toText(contact?.phone),
+            phone: formatPhoneNumber(toText(contact?.phone)),
             address: toText(contact?.address),
           }))
         : [],
@@ -528,22 +357,14 @@ export default function AddChildScreen() {
     confirmDiscard(() => router.back());
   };
 
-  const getStep1PhysicalFields = (): (keyof ChildFormData)[] => {
-    const unit = getValues("unitSystem");
-    return unit === "metric"
-      ? ["height", "weight"]
-      : ["heightFeet", "heightInches", "weight"];
-  };
-
   const validateStep = async (step: number): Promise<boolean> => {
     const staticFields = STEP_FIELDS[step];
 
     if (step !== 1 && step !== 4 && staticFields.length === 0) return true;
 
     // Always run trigger on Zod-validated fields first so all inline errors appear
-    const zodValid = staticFields.length > 0
-      ? await trigger(staticFields as any)
-      : true;
+    const zodValid =
+      staticFields.length > 0 ? await trigger(staticFields as any) : true;
 
     // For identifying features on step 4 — at least one of description or photo required
     if (step === 4) {
@@ -586,11 +407,17 @@ export default function AddChildScreen() {
         const w = getValues("weight");
         if (h === undefined || h === null || String(h).trim() === "") {
           manualError = true;
-          setError("height", { type: "manual", message: "Height (cm) is required" });
+          setError("height", {
+            type: "manual",
+            message: "Height (cm) is required",
+          });
         }
         if (w === undefined || w === null || String(w).trim() === "") {
           manualError = true;
-          setError("weight", { type: "manual", message: "Weight (kg) is required" });
+          setError("weight", {
+            type: "manual",
+            message: "Weight (kg) is required",
+          });
         }
       } else {
         // Clear metric-only fields so stale errors don't persist
@@ -600,15 +427,28 @@ export default function AddChildScreen() {
         const w = getValues("weight");
         if (ft === undefined || ft === null || String(ft).trim() === "") {
           manualError = true;
-          setError("heightFeet", { type: "manual", message: "Height (ft) is required" });
+          setError("heightFeet", {
+            type: "manual",
+            message: "Height (ft) is required",
+          });
         }
-        if (inches === undefined || inches === null || String(inches).trim() === "") {
+        if (
+          inches === undefined ||
+          inches === null ||
+          String(inches).trim() === ""
+        ) {
           manualError = true;
-          setError("heightInches", { type: "manual", message: "Height (in) is required" });
+          setError("heightInches", {
+            type: "manual",
+            message: "Height (in) is required",
+          });
         }
         if (w === undefined || w === null || String(w).trim() === "") {
           manualError = true;
-          setError("weight", { type: "manual", message: "Weight (lbs) is required" });
+          setError("weight", {
+            type: "manual",
+            message: "Weight (lbs) is required",
+          });
         }
       }
 
@@ -617,7 +457,10 @@ export default function AddChildScreen() {
         const v = getValues("skinColorOther");
         if (!v || String(v).trim() === "") {
           manualError = true;
-          setError("skinColorOther", { type: "manual", message: "Please describe the skin color" });
+          setError("skinColorOther", {
+            type: "manual",
+            message: "Please describe the skin color",
+          });
         }
       }
 
@@ -626,7 +469,10 @@ export default function AddChildScreen() {
         const v = getValues("eyeColorOther");
         if (!v || String(v).trim() === "") {
           manualError = true;
-          setError("eyeColorOther", { type: "manual", message: "Please describe the eye color" });
+          setError("eyeColorOther", {
+            type: "manual",
+            message: "Please describe the eye color",
+          });
         }
       }
 
@@ -635,7 +481,10 @@ export default function AddChildScreen() {
         const v = getValues("hairColorOther");
         if (!v || String(v).trim() === "") {
           manualError = true;
-          setError("hairColorOther", { type: "manual", message: "Please describe the hair color" });
+          setError("hairColorOther", {
+            type: "manual",
+            message: "Please describe the hair color",
+          });
         }
       }
 
@@ -843,7 +692,6 @@ export default function AddChildScreen() {
       </View>
     </View>
   );
-
 
   // ─── DOB picker handler ───────────────────────────────────────────────────
   const handleDateConfirm = (date: Date) => {
@@ -1134,7 +982,10 @@ export default function AddChildScreen() {
 
   const renderStep2 = () => (
     <>
-      <FormSection title="Medical Info" subtitle="Allergies and medications required">
+      <FormSection
+        title="Medical Info"
+        subtitle="Allergies and medications required"
+      >
         <FormField
           control={control}
           name="lifeThreatAllergies"
@@ -1239,10 +1090,7 @@ export default function AddChildScreen() {
         />
       </FormSection>
 
-      <FormSection
-        title="Primary Contact 2"
-        subtitle="Name and phone required"
-      >
+      <FormSection title="Primary Contact 2" subtitle="Name and phone required">
         <FormField
           control={control}
           name="guardian2.name"
@@ -1268,7 +1116,7 @@ export default function AddChildScreen() {
 
       <FormSection
         title="Additional Emergency Contacts"
-        subtitle="Optional — must not be a primary contact"
+        subtitle="Optional — up to 2, must not be a primary contact"
       >
         {fields.map((field, index) => (
           <View key={field.id} style={styles.contactCard}>
@@ -1310,7 +1158,7 @@ export default function AddChildScreen() {
             />
           </View>
         ))}
-        {fields.length < 4 && (
+        {fields.length < 2 && (
           <TouchableOpacity
             onPress={() =>
               append({ name: "", relationship: "", phone: "", address: "" })
@@ -1328,7 +1176,7 @@ export default function AddChildScreen() {
 
   const renderStep4 = () => (
     <>
-    <FormSection title="Clothing" subtitle="All optional">
+      <FormSection title="Clothing" subtitle="All optional">
         <View style={styles.toggleRow}>
           <AppText style={styles.toggleLabel}>Wearing headwear?</AppText>
           <Switch
@@ -1386,10 +1234,7 @@ export default function AddChildScreen() {
         </View>
       </FormSection>
 
-      <FormSection
-        title="Identifying Features"
-        subtitle="All fields optional"
-      >
+      <FormSection title="Identifying Features" subtitle="All fields optional">
         <AppDropdown
           control={control}
           name="hasBirthmarks"
@@ -1608,10 +1453,7 @@ export default function AddChildScreen() {
           {(currentStep === 4 || isEditMode) && (
             <>
               <TouchableOpacity
-                style={[
-                  sharedStyles.secondaryButton,
-                  styles.exportButton,
-                ]}
+                style={[sharedStyles.secondaryButton, styles.exportButton]}
                 onPress={() => setShowPassport(true)}
               >
                 <AppText
@@ -1660,7 +1502,11 @@ export default function AddChildScreen() {
                 style={{ padding: 8 }}
               >
                 <AppText
-                  style={{ color: colors.primary, fontSize: 16, fontWeight: "600" }}
+                  style={{
+                    color: colors.primary,
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
                 >
                   ✕ Close
                 </AppText>
@@ -1671,7 +1517,6 @@ export default function AddChildScreen() {
             />
           </View>
         </Modal>
-
       </KeyboardAvoidingView>
 
       {/* Progress bar — outside KeyboardAvoidingView so keyboard never shifts it */}

@@ -46,10 +46,6 @@ export default function RootLayout() {
           name="view_child"
           options={{ headerShown: false, presentation: "modal" }}
         />
-        <Stack.Screen
-          name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
-        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
