@@ -219,10 +219,6 @@ This application was built with an iOS-first approach. Unfortunately, for Androi
 
 To enable this functionality on Android, the app would need to be built as a standalone application rather than having it run through Expo Go.
 
-### macOS: Starting ChildGuard.command
-
-If the `.command` file fails to launch the program due to an unknown issue, please follow the manual setup instructions provided in the `ChildGuardID-Doc/` directory.
-
 ### TypeScript `as any` Workarounds
 Several type casts exist throughout `add_child.tsx` and `view_child.tsx` due to mismatches between React Hook Form's generic types and the Zod-inferred types. These are annotated with inline comments where relevant. They do not affect runtime behavior but reduce type safety in those areas.
 
