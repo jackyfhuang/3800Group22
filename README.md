@@ -214,6 +214,11 @@ Deleting either variant of a pair will cause the other platform to crash or sile
 ### Image Capture Timing (Fragile)
 The 30ms delay before `captureRef()` in `add_child.tsx` is a workaround for a render timing race condition. On low-end or heavily loaded devices this delay may not be sufficient, resulting in a blank or partially rendered export image. If this becomes a recurring issue, the delay value may need to be increased or replaced with a render-complete callback.
 
+### Android: Save Image (Expo Go Limitation)
+This application was built with an iOS-first approach. Unfortunately, for Android users, the **"Save Image"** feature will not work while using Expo Go due to current platform restrictions that cannot be overridden.
+
+To enable this functionality on Android, the app would need to be built as a standalone application rather than having it run through Expo Go.
+
 ### TypeScript `as any` Workarounds
 Several type casts exist throughout `add_child.tsx` and `view_child.tsx` due to mismatches between React Hook Form's generic types and the Zod-inferred types. These are annotated with inline comments where relevant. They do not affect runtime behavior but reduce type safety in those areas.
 
