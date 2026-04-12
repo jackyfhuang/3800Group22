@@ -1,59 +1,110 @@
-import React, { useState } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, View, RefreshControl, Alert } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { AppText } from "@/components/ui/app-text";
+import {
+  EmergencyQuickViewCard,
+  EmergencyQuickViewModal,
+} from "@/components/ui/emergency-quick-view";
+import { HelpModal } from "@/components/ui/help-modal";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { palette } from "@/constants/theme";
+import {
+  colors,
+  radius,
+  sharedStyles,
+  spacing,
+  homeStyles as styles,
+  typography,
+} from "@/styles";
+import { MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
+import {
+  Alert,
+  Image,
+  Platform,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 type ChildProfile = {
-  fullName: string;
-  age: number;
-  height: number;
-  weight: number;
-  gender?: string;
-  medicalNotes?: string;
   id?: string;
+  imageUri?: string;
+  fullName?: string;
+  age?: number;
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  sex?: string;
+  ethnicity?: string;
+  height?: number;
+  weight?: number;
+  lifeThreatAllergies?: string;
+  emergencyMedications?: string;
+  communicationNeeds?: string;
+  languageSpoken?: string;
+  otherMedicalNotes?: string;
+  guardian1?: { name?: string; phone?: string; address?: string };
+  guardian2?: { name?: string; phone?: string; address?: string };
+  emergencyContacts?: {
+    name?: string;
+    relationship?: string;
+    phone?: string;
+    address?: string;
+  }[];
+  eyeColor?: string;
+  eyeColorOther?: string;
+  hairColor?: string;
+  hairColorOther?: string;
+  hairStyle?: string;
+  topColor?: string;
+  pantsColor?: string;
+  hasHat?: boolean;
+  hasGlasses?: boolean;
+  hasHearingAids?: boolean;
+  lastUpdated?: string;
 };
 
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [showEmergency, setShowEmergency] = useState(false);
 
+  // ─── Data Handlers ──────────────────────────────────────────────────────────
   const loadChildren = async () => {
     try {
-      // Try to load as array first (new format)
-      const childrenJson = await AsyncStorage.getItem('children_list');
+      const childrenJson = await AsyncStorage.getItem("children_list");
       if (childrenJson) {
-        const childrenList = JSON.parse(childrenJson);
-        setChildren(childrenList);
+        setChildren(JSON.parse(childrenJson));
         return;
       }
-
-      // Fallback: check for old single child format
-      const oldChildJson = await AsyncStorage.getItem('child_profile');
+      // Migrate old single-child format
+      const oldChildJson = await AsyncStorage.getItem("child_profile");
       if (oldChildJson) {
         const oldChild = JSON.parse(oldChildJson);
-        // Migrate to new format
-        const migratedChild = { ...oldChild, id: Date.now().toString() };
-        await AsyncStorage.setItem('children_list', JSON.stringify([migratedChild]));
-        await AsyncStorage.removeItem('child_profile');
-        setChildren([migratedChild]);
+        const migrated = { ...oldChild, id: Date.now().toString() };
+        await AsyncStorage.setItem("children_list", JSON.stringify([migrated]));
+        await AsyncStorage.removeItem("child_profile");
+        setChildren([migrated]);
       } else {
         setChildren([]);
       }
-    } catch (error) {
-      console.error('Error loading children:', error);
+    } catch {
       setChildren([]);
     }
   };
 
-  // Reload when screen comes into focus
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       loadChildren();
-    }, [])
+    }, []),
   );
 
   const onRefresh = async () => {
@@ -62,179 +113,397 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-  const handleDeleteChild = async (id: string, name: string) => {
-    Alert.alert(
-      'Delete Child',
-      `Are you sure you want to delete ${name}'s profile?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const updatedChildren = children.filter(child => child.id !== id);
-              await AsyncStorage.setItem('children_list', JSON.stringify(updatedChildren));
-              setChildren(updatedChildren);
-            } catch (error) {
-              Alert.alert('Error', 'Failed to delete child profile');
-            }
-          },
-        },
-      ]
-    );
+  const performDelete = async (id: string) => {
+    try {
+      const updated = children.filter((c) => c.id !== id);
+      await AsyncStorage.setItem("children_list", JSON.stringify(updated));
+      setChildren(updated);
+    } catch {
+      Alert.alert("Error", "Failed to delete child profile");
+    }
   };
 
-  return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-      <ThemedView style={styles.header}>
-        <ThemedText type="title">ChildGuard</ThemedText>
-        <ThemedText style={styles.subtitle}>Your Child Profiles</ThemedText>
-      </ThemedView>
+  const handleDeleteChild = (id: string, name: string) => {
+    if (Platform.OS === "web") {
+      const ok =
+        typeof window !== "undefined" && window.confirm
+          ? window.confirm(`Delete ${name}'s profile?`)
+          : true;
+      if (ok) performDelete(id);
+    } else {
+      Alert.alert(
+        "Delete Profile",
+        `Remove ${name}'s profile? This cannot be undone.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () => performDelete(id),
+          },
+        ],
+      );
+    }
+  };
 
+  // ─── Render ─────────────────────────────────────────────────────────────────
+  return (
+    <View style={{ flex: 1 }}>
+      {/* ── Frozen Header ────────────────────────────────────────────────── */}
+      <View style={localStyles.header}>
+        <View style={{ flex: 1 }}>
+          <AppText style={localStyles.appTitle}>ChildGuard</AppText>
+          <AppText style={localStyles.appSubtitle}>
+            {children.length === 0
+              ? "Keep your family safe"
+              : `${children.length} profile${children.length > 1 ? "s" : ""} saved`}
+          </AppText>
+        </View>
+        <Pressable
+          onPress={() => setShowHelp(true)}
+          style={({ pressed }) => [
+            localStyles.iconBtn,
+            pressed && localStyles.iconBtnPressed,
+          ]}
+        >
+          <MaterialIcons name="info-outline" size={22} color={palette.navy} />
+        </Pressable>
+      </View>
+
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingBottom: 100 },
+        ]}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* ── Emergency Quick-View Card ─────────────────────────────────── */}
+        {children.length > 0 && (
+          <EmergencyQuickViewCard onPress={() => setShowEmergency(true)} />
+        )}
+
+        {/* ── Profile List or Empty State ───────────────────────────────── */}
+        {children.length === 0 ? (
+          <View style={localStyles.emptyState}>
+            <View style={localStyles.emptyIconCircle}>
+              <MaterialIcons name="child-care" size={52} color={palette.teal} />
+            </View>
+            <AppText style={localStyles.emptyTitle}>No profiles yet</AppText>
+            <AppText style={localStyles.emptySubtitle}>
+              Add your first child profile so you&apos;re always prepared
+            </AppText>
+          </View>
+        ) : (
+          <View style={styles.childrenList}>
+            {children.map((child) => {
+              const name =
+                child.fullName ||
+                `${child.firstName ?? ""} ${child.lastName ?? ""}`.trim() ||
+                "Unnamed Child";
+              return (
+                <TouchableOpacity
+                  key={child.id}
+                  style={sharedStyles.card}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/view_child",
+                      params: { id: child.id },
+                    })
+                  }
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.childCardContent}>
+                    {/* Avatar */}
+                    <View style={styles.avatarContainer}>
+                      <View style={styles.avatarCircle}>
+                        {child.imageUri ? (
+                          <Image
+                            source={{ uri: child.imageUri }}
+                            style={{ width: 64, height: 64, borderRadius: 32 }}
+                          />
+                        ) : (
+                          <IconSymbol
+                            name="person.fill"
+                            size={32}
+                            color={palette.blue}
+                          />
+                        )}
+                      </View>
+                    </View>
+
+                    {/* Info */}
+                    <View style={styles.childInfoContainer}>
+                      <AppText style={styles.childName}>{name}</AppText>
+                      <View style={styles.childDetailsContainer}>
+                        {child.age !== undefined && (
+                          <View style={styles.detailItem}>
+                            <AppText style={styles.detailLabel}>Age</AppText>
+                            <AppText style={styles.detailValue}>
+                              {child.age} yrs
+                            </AppText>
+                          </View>
+                        )}
+                        <LastUpdatedPill lastUpdated={child.lastUpdated} />
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Actions */}
+                  <View style={styles.cardActions}>
+                    <TouchableOpacity
+                      style={styles.editButton}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/(tabs)/add_child",
+                          params: { id: child.id },
+                        })
+                      }
+                      activeOpacity={0.7}
+                    >
+                      <MaterialIcons
+                        name="edit"
+                        size={16}
+                        color={palette.teal}
+                      />
+                      <AppText style={styles.editButtonText}>Edit</AppText>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => handleDeleteChild(child.id!, name)}
+                      activeOpacity={0.7}
+                    >
+                      <MaterialIcons
+                        name="delete-outline"
+                        size={16}
+                        color={palette.red}
+                      />
+                      <AppText style={styles.deleteButtonText}>Delete</AppText>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+
+        {/* ── Add Child Button ──────────────────────────────────────────── */}
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => router.push("/(tabs)/add_child")}
+          activeOpacity={0.8}
+        >
+          <View style={styles.addButtonCircle}>
+            <MaterialIcons name="add" size={28} color={palette.teal} />
+          </View>
+          <AppText style={styles.addButtonText}>Add New Child</AppText>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* ── Add FAB ──────────────────────────────────────────────────────── */}
       <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => router.push('/add_child')}>
-        <IconSymbol name="plus.circle.fill" size={24} color="#fff" />
-        <ThemedText style={styles.addButtonText}>Add New Child</ThemedText>
+        style={localStyles.fab}
+        onPress={() => router.push("/(tabs)/add_child")}
+        activeOpacity={0.85}
+      >
+        <MaterialIcons name="add" size={30} color={palette.white} />
       </TouchableOpacity>
 
-      {children.length === 0 ? (
-        <ThemedView style={styles.emptyState}>
-          <IconSymbol name="person.circle" size={64} color="#999" />
-          <ThemedText style={styles.emptyText}>No children added yet</ThemedText>
-          <ThemedText style={styles.emptySubtext}>
-            Tap "Add New Child" to create your first profile
-          </ThemedText>
-        </ThemedView>
-      ) : (
-        <View style={styles.childrenList}>
-          {children.map((child) => (
-            <TouchableOpacity
-              key={child.id}
-              style={styles.childCard}
-              onPress={() => router.push({ pathname: '/add_child', params: { id: child.id } })}>
-              <View style={styles.childCardHeader}>
-                <View style={styles.childInfo}>
-                  <ThemedText type="defaultSemiBold" style={styles.childName}>
-                    {child.fullName}
-                  </ThemedText>
-                  <ThemedText style={styles.childDetails}>
-                    Age: {child.age} • {child.height}cm • {child.weight}kg
-                    {child.gender && ` • ${child.gender}`}
-                  </ThemedText>
-                </View>
-                <TouchableOpacity
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    handleDeleteChild(child.id!, child.fullName);
-                  }}
-                  style={styles.deleteButton}>
-                  <IconSymbol name="trash" size={20} color="#FF4444" />
-                </TouchableOpacity>
-              </View>
-              {child.medicalNotes && (
-                <ThemedText style={styles.medicalNotes} numberOfLines={2}>
-                  {child.medicalNotes}
-                </ThemedText>
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
+      {/* ── Emergency Quick View FAB ─────────────────────────────────────── */}
+      {children.length > 0 && (
+        <TouchableOpacity
+          style={localStyles.emergencyFab}
+          onPress={() => setShowEmergency(true)}
+          activeOpacity={0.85}
+        >
+          <MaterialIcons name="local-police" size={26} color={palette.white} />
+        </TouchableOpacity>
       )}
-    </ScrollView>
+
+      {/* ── Modals ───────────────────────────────────────────────────────── */}
+      <HelpModal visible={showHelp} onClose={() => setShowHelp(false)} />
+      <EmergencyQuickViewModal
+        visible={showEmergency}
+        profiles={children}
+        onClose={() => setShowEmergency(false)}
+      />
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
+// ─── Last Updated Pill ────────────────────────────────────────────────────────
+function LastUpdatedPill({ lastUpdated }: { lastUpdated?: string }) {
+  let value: string;
+  let bg: string;
+  let textColor: string;
+  let icon: React.ComponentProps<typeof MaterialIcons>["name"];
+
+  if (!lastUpdated) {
+    value = "Never";
+    bg = colors.cardBorder;
+    textColor = colors.textSubtle;
+    icon = "warning";
+  } else {
+    const days = Math.floor(
+      (Date.now() - new Date(lastUpdated).getTime()) / 86_400_000,
+    );
+    const months = Math.floor(days / 30);
+    value =
+      days === 0
+        ? "Today"
+        : days < 30
+          ? `${days}d ago`
+          : months < 12
+            ? `${months}mo ago`
+            : `${Math.floor(months / 12)}yr ago`;
+
+    if (days < 90) {
+      bg = "#E6F7F0";
+      textColor = "#1A7A4A";
+      icon = "check-circle";
+    } else if (days < 180) {
+      bg = "#FFF8E6";
+      textColor = "#A06000";
+      icon = "add-alert";
+    } else {
+      bg = "#FFF8E6";
+      textColor = "#A06000";
+      icon = "warning";
+    }
+  }
+
+  return (
+    <View style={pillStyles.container}>
+      <AppText style={styles.detailLabel}>Updated</AppText>
+      <View style={[pillStyles.pill, { backgroundColor: bg }]}>
+        <MaterialIcons name={icon} size={12} color={textColor} />
+        <AppText style={[styles.detailValue, { color: textColor }]}>
+          {value}
+        </AppText>
+      </View>
+    </View>
+  );
+}
+
+const pillStyles = StyleSheet.create({
   container: {
-    flex: 1,
+    minWidth: 80,
   },
-  contentContainer: {
-    padding: 20,
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 4,
+    paddingVertical: 2,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
   },
+});
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const localStyles = StyleSheet.create({
   header: {
-    marginBottom: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xxxl,
+    paddingBottom: spacing.lg,
+    backgroundColor: colors.appBackground,
   },
-  subtitle: {
-    fontSize: 16,
-    opacity: 0.7,
-    marginTop: 4,
+  appTitle: {
+    fontSize: typography.hero,
+    fontWeight: "800",
+    color: palette.navy,
+    letterSpacing: -1,
   },
-  addButton: {
-    backgroundColor: '#007AFF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
-    gap: 8,
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+  appSubtitle: {
+    fontSize: typography.body,
+    fontWeight: "500",
+    color: colors.textSubtle,
+    marginTop: spacing.xs,
   },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: palette.offWhite,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.07)",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 1, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  iconBtnPressed: {
+    shadowColor: palette.amber,
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    borderColor: palette.amber,
+    elevation: 6,
   },
   emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-    marginTop: 40,
+    alignItems: "center",
+    paddingVertical: 60,
+    paddingHorizontal: spacing.xxl,
   },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
+  emptyIconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.secondaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.xxl,
+    borderWidth: 2,
+    borderColor: colors.secondaryBorder,
   },
-  emptySubtext: {
-    fontSize: 14,
-    opacity: 0.6,
-    textAlign: 'center',
+  emptyTitle: {
+    fontSize: typography.heading,
+    fontWeight: "700",
+    color: palette.navy,
+    marginBottom: spacing.sm,
   },
-  childrenList: {
-    gap: 12,
+  emptySubtitle: {
+    fontSize: typography.default,
+    color: colors.textSubtle,
+    textAlign: "center",
+    lineHeight: 24,
   },
-  childCard: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+  fab: {
+    position: "absolute",
+    bottom: 56,
+    right: 24,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: palette.teal,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: palette.teal,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  childCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  childInfo: {
-    flex: 1,
-  },
-  childName: {
-    fontSize: 18,
-    marginBottom: 4,
-  },
-  childDetails: {
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  deleteButton: {
-    padding: 8,
-  },
-  medicalNotes: {
-    fontSize: 13,
-    opacity: 0.6,
-    marginTop: 8,
-    fontStyle: 'italic',
+  emergencyFab: {
+    position: "absolute",
+    bottom: 130,
+    right: 24,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: palette.red,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: palette.red,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 8,
   },
 });
