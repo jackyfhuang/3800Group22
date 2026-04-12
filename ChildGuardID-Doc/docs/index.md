@@ -29,6 +29,8 @@ To run the ChildGuardID demo, please ensure you have the following:
 
 4. **An Android/iOS Phone (Optional)** | If you wish to view the app on a physical device rather than a computer screen.
 
+5. **Expo Go App** | Ensure you have downloaded the Expo Go app on phone(s) for demo purposes.
+
 ## Software Requirements
 ---
 
